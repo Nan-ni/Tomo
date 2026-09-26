@@ -812,7 +812,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 13</small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 14</small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
@@ -1025,7 +1025,7 @@ function parseTomo(titulo){ const m=String(titulo||"").match(/^(.*?)[\s,.:#-]*(?
   if(/(?:\bnv|\blv|level|nivel|lvl)\.?\s*$/i.test(m[1]) || /^\d{4}$/.test(m[2])) return null; // "nv. 999", años, etc. no son tomos
   return {serie:m[1].replace(/[\s,.:#-]+$/,"").trim(), tomo:m[2].replace(/^0+(?=\d)/,"")}; }
 function fromGoogle(v){ if(!v) return {}; const t=v.title?(v.subtitle?`${v.title}: ${v.subtitle}`:v.title):"";
-  return {titulo:t, autor:(v.authors||[]).join(", "), editorial:v.publisher||"", anio:yearOf(v.publishedDate), paginas:v.pageCount||"", portadaUrl:httpsify(v.imageLinks?.thumbnail||v.imageLinks?.smallThumbnail), categorias:v.categories||[], genero:mapGenre(v.categories), baseTitle:v.title||"", numero:String(v.seriesInfo?.bookDisplayNumber||"").replace(/\D/g,"")}; }
+  return {titulo:t, autor:(v.authors||[]).join(", "), editorial:v.publisher||"", anio:yearOf(v.publishedDate), paginas:v.pageCount||"", portadaUrl:httpsify(v.imageLinks?.thumbnail||v.imageLinks?.smallThumbnail), categorias:v.categories||[], genero:mapGenre(v.categories), baseTitle:v.title||"", numero:String(v.seriesInfo?.bookDisplayNumber||v.seriesInfo?.volumeSeries?.[0]?.orderNumber||"").replace(/\D/g,"")}; }
 async function openLibrary(isbn){
   const ed=await getJson(`https://openlibrary.org/isbn/${isbn}.json`);
   if(ed.__notFound||!ed.title) return null;
@@ -1039,12 +1039,27 @@ async function openLibrary(isbn){
 async function google(isbn){
   const k=gKey(); if(!k) return {skipped:true};
   const j=await gb(`q=isbn:${isbn}`);
-  if(!j.items?.length){ // Google a veces no encuentra por "isbn:" un libro que sí tiene: se busca el número solo y se confirma que sea ese ISBN
+  let it=j.items?.[0];
+  if(!it){ // Google a veces no encuentra por "isbn:" un libro que sí tiene: se busca el número solo y se confirma que sea ese ISBN
     const j2=await gb(`q=${isbn}`).catch(()=>null), i10=isbn10Of(isbn);
-    const v=(j2?.items||[]).map(x=>x.volumeInfo).find(v=>(v?.industryIdentifiers||[]).some(x=>{ const d=String(x.identifier||"").replace(/-/g,""); return d===isbn||(i10&&d===i10); }));
-    if(v) return fromGoogle(v); }
-  return fromGoogle(j.items?.[0]?.volumeInfo);
+    it=(j2?.items||[]).find(x=>(x.volumeInfo?.industryIdentifiers||[]).some(y=>{ const d=String(y.identifier||"").replace(/-/g,""); return d===isbn||(i10&&d===i10); })); }
+  const v=it?.volumeInfo; if(!v) return fromGoogle(v);
+  // Manga, manhwa o cómic sin número en el título (p. ej. "Mi amor por Yamada está al nv. 999"): la búsqueda de Google a veces
+  // no trae el número de tomo, pero la ficha completa del volumen sí suele traerlo ("libro 4 de la serie")
+  if(it.id && !v.seriesInfo?.bookDisplayNumber && !parseTomo(v.title) && pareceSerie(v)){
+    try{ const full=await getJson(`https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(it.id)}`); if(full?.volumeInfo?.seriesInfo) v.seriesInfo=full.volumeInfo.seriesInfo; }catch(e){} }
+  return fromGoogle(v);
 }
+const pareceSerie=v=>/comic|manga|graphic|historieta/i.test((v.categories||[]).join(" "))||MANGA_PUB.test(v.publisher||"")||MANHWAS.test(v.title||"");
+// Manga, manhwa o cómic que quedó sin número de tomo (o con uno deducido del ISBN): se vuelve a preguntar a Google una sola vez
+async function buscarTomo(id){
+  const b=byId(id); if(!b||!b.isbn||(b.tomo&&!b.tomoEstimado)) return;
+  let r; try{ r=await lookup(b.isbn); }catch(e){ return; }
+  const cur=byId(id); if(!cur||(cur.tomo&&!cur.tomoEstimado)||!r.googleOk) return; // si Google no contestó, se intenta otro día
+  const d=r.data, num=(/^\d{1,3}$/.test(d.numero||"")&&+d.numero>0?String(+d.numero):"")||parseTomo(d.baseTitle||"")?.tomo||parseTomo(d.titulo||"")?.tomo||"";
+  const upd={...cur,tomoBuscado:true};
+  if(num&&num!==cur.tomo){ upd.tomo=num; upd.tomoEstimado=false; upd.actualizado=Date.now(); }
+  upsert(upd); }
 // Devuelve {data, found, reached, googleOk, googleProblem}. googleOk: Google Books contestó (aunque sea "no lo tengo").
 async function lookup(isbn){
   const [o,g]=await Promise.allSettled([openLibrary(isbn), google(isbn)]);
@@ -2594,6 +2609,8 @@ if(!VER) (async()=>{ for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0
     if(h.autor) u.autor=h.autor; if(!u.editorial&&h.editorial) u.editorial=h.editorial;
     applyTipo(u,{titulo:u.titulo,baseTitle:u.titulo,categorias:[MANHWAS.test(u.titulo)?"Manhwa":"Manga"],editorial:u.editorial});
     upsert(u); }
+  // mangas sin número de tomo: se pregunta a Google una vez (antes de deducirlo por el ISBN, que es menos seguro)
+  for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoBuscado).slice(0,20)) await buscarTomo(b.id);
   // unificar series escritas distinto (p. ej. "nv." y "Nv.")
   { let ch=false; for(const b of S.books){ if(!b.serie) continue; const before=JSON.stringify(b); const u={...b}; unifySerie(u); if(JSON.stringify(u)!==before){ Object.assign(b,u); ch=true; } } if(ch){ persist(); render(); } }
   for(const b of S.books.filter(b=>b.isbn&&b.titulo&&!b.genero&&!b.generoBuscado).slice(0,40)) await fillGenre(b.id); })();
