@@ -593,6 +593,20 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 }
 @keyframes subir{from{transform:translateY(30px);opacity:0}}
 
+/* ===== ventana de confirmación en el centro ===== */
+.dlg-ov{position:fixed;inset:0;z-index:65;display:flex;align-items:center;justify-content:center;padding:20px 16px;background:rgba(20,14,8,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:fade .15s ease-out}
+.dlg{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow-lg);padding:26px 24px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;animation:pop .18s ease-out;overflow-wrap:anywhere}
+.dlg-ico{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 24px var(--serif);margin-bottom:4px}
+.dlg-ico.warn{background:var(--warn-soft);color:var(--warn)}
+.dlg-ico svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dlg h2{font-size:20px;line-height:1.3}
+.dlg p{margin:0;color:var(--ink-2);font-size:14.5px}
+.dlg-acc{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:10px}
+.dlg-acc .btn{width:100%;padding:13px 16px;font-size:15.5px;border-radius:13px}
+.btn.danger-fill{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn.danger-fill:hover{filter:brightness(1.08);background:var(--warn)}
+@media (min-width:561px){.dlg-acc{flex-direction:row-reverse}.dlg-acc .btn{width:auto;flex:1}}
+
 /* ===== total de tomos y continuaciones detectadas ===== */
 .det{font-size:13.5px;line-height:1.5;color:var(--ink-2);background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .det a{color:var(--accent);text-decoration:none}
@@ -1487,7 +1501,7 @@ function renderSheet(){
       ${isNew?"":loanBox(b)}
       <div class="foot">
         ${isNew?`<button class="btn ghost" id="cancelBtn">Descartar</button><button class="btn primary" id="saveBtn">Guardar en el estante</button>`
-          :`<span id="delZone">${S.delConfirm===b.id?`<span class="confirm">¿Seguro? <button class="btn danger" id="delYes" type="button">Sí, quitar</button><button class="btn ghost" id="delNo" type="button">No</button></span>`:`<button class="btn danger" id="delBtn" type="button">Quitar del estante</button>`}</span><button class="btn primary" id="saveBtn">Guardar cambios</button>`}
+          :`<span id="delZone"><button class="btn danger" id="delBtn" type="button">Quitar del estante</button></span><button class="btn primary" id="saveBtn">Guardar cambios</button>`}
       </div>
     </div>
   </div>`;
@@ -1538,9 +1552,9 @@ function wireSheet(){
   $("#saveBtn").onclick=save;
   $("#cancelBtn")&&($("#cancelBtn").onclick=closeSheet);
   // la confirmación se recuerda, así no se pierde si la ficha se vuelve a dibujar (p. ej. al terminar de cargar una portada)
-  $("#delBtn")&&($("#delBtn").onclick=()=>{ S.delConfirm=S.openId; rerenderKeeping(); });
-  $("#delNo")&&($("#delNo").onclick=()=>{ S.delConfirm=null; rerenderKeeping(); });
-  $("#delYes")&&($("#delYes").onclick=del);
+  $("#delBtn")&&($("#delBtn").onclick=async()=>{ const id=S.openId, b=byId(id); if(!b) return;
+    const si=await confirmar({titulo:`¿Quitar “${b.titulo||"este libro"}” de tu estante?`, texto:"Se borra en todos tus dispositivos y no se puede deshacer.", si:"Sí, quitar", no:"No, cancelar", peligro:true});
+    if(si) del(id); });
   $("#lendBtn")&&($("#lendBtn").onclick=lend);
   $("#returnBtn")&&($("#returnBtn").onclick=giveBack);
   $("#refetchBtn")&&($("#refetchBtn").onclick=()=>fillFromWeb(S.openId,false));
@@ -1600,7 +1614,25 @@ function save(){
     else if(f.isbn && f.isbn!==b.isbn && !upd.portadaLocal) fillFromWeb(upd.id,true).then(()=>{ if(byId(upd.id)?.portadaUrl) toast("Portada encontrada con el ISBN"); });
   }
 }
-function del(){ const b=current(); if(b.portadaLocal) IDB.del(b.id).catch(()=>{}); S.borrados=S.borrados||{}; S.borrados[b.id]=Date.now(); try{ localStorage.setItem(NS+"borrados",JSON.stringify(S.borrados)); }catch(e){} S.books=S.books.filter(x=>x.id!==b.id); persist(); render(); toast("Libro quitado del estante"); closeSheet(); }
+// Ventana de confirmación en el centro de la pantalla. Devuelve true si eliges "sí".
+// Vive fuera de la ficha, así que no se mueve ni desaparece aunque la ficha se vuelva a dibujar.
+function confirmar({titulo,texto="",si="Sí",no="Cancelar",peligro=false}){
+  return new Promise(res=>{
+    let root=$("#dlgRoot"); if(!root){ root=document.createElement("div"); root.id="dlgRoot"; document.body.appendChild(root); }
+    const antes=document.activeElement;
+    root.innerHTML=`<div class="dlg-ov" id="dlgOv"><div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgT" aria-describedby="dlgX">
+      <div class="dlg-ico${peligro?" warn":""}" aria-hidden="true">${peligro?`<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>`:"?"}</div>
+      <h2 id="dlgT">${esc(titulo)}</h2>${texto?`<p id="dlgX">${esc(texto)}</p>`:""}
+      <div class="dlg-acc"><button class="btn ${peligro?"danger-fill":"primary"}" id="dlgSi" type="button">${esc(si)}</button><button class="btn ghost" id="dlgNo" type="button">${esc(no)}</button></div>
+    </div></div>`;
+    const fin=v=>{ document.removeEventListener("keydown",tecla,true); root.innerHTML=""; try{ antes?.focus?.({preventScroll:true}); }catch(e){} res(v); };
+    const tecla=e=>{ if(e.key==="Escape"){ e.stopPropagation(); fin(false); } };
+    document.addEventListener("keydown",tecla,true);
+    $("#dlgSi").onclick=()=>fin(true); $("#dlgNo").onclick=()=>fin(false);
+    $("#dlgOv").onclick=e=>{ if(e.target.id==="dlgOv") fin(false); };
+    setTimeout(()=>$("#dlgNo")?.focus({preventScroll:true}),30); // el foco en "cancelar": lo más seguro
+  }); }
+function del(idQuitar){ const b=idQuitar?byId(idQuitar):current(); if(!b) return; if(b.portadaLocal) IDB.del(b.id).catch(()=>{}); S.borrados=S.borrados||{}; S.borrados[b.id]=Date.now(); try{ localStorage.setItem(NS+"borrados",JSON.stringify(S.borrados)); }catch(e){} S.books=S.books.filter(x=>x.id!==b.id); persist(); render(); toast("Libro quitado del estante"); closeSheet(); }
 function lend(){ const b=current(); const a=$("#l-a").value.trim(), d=$("#l-d").value||today(); if(!a){ toast("Escribe a quién se lo prestas."); $("#l-a").focus(); return; }
   upsert({...b,prestamo:{a,desde:d},actualizado:Date.now()}); toast(`Prestado a ${a}`); renderSheet(); }
 function giveBack(){ const b=current(); if(!b.prestamo) return; const hist=[...(b.historial||[]),{a:b.prestamo.a,desde:b.prestamo.desde,hasta:today()}].slice(-30);
@@ -1977,8 +2009,9 @@ $("#v-colecciones").addEventListener("click",e=>{
   else if(act==="prices"){ S.priceEdit=S.priceEdit===id?null:id; renderCols(); if(S.priceEdit) document.querySelector(`#v-colecciones .pin`)?.focus(); }
   else if(act==="pick"){ S.pick=S.pick===id?null:id; S.pickQ=""; S.pickFocus=true; renderCols(); }
   else if(act==="pickclose"){ S.pick=null; renderCols(); }
-  else if(act==="delgrp"){ if(a.dataset.sure){ const cfg={...S.colsCfg}; delete cfg[id]; S.colsCfg=cfg; saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderOther(); toast("Grupo borrado. Tus libros siguen en el estante."); }
-    else { a.dataset.sure="1"; a.textContent="¿Seguro? Toca otra vez"; } }
+  else if(act==="delgrp"){ const g=colecciones().find(x=>x.id===id);
+    confirmar({titulo:`¿Borrar el grupo “${g?.nombre||""}”?`, texto:"Tus libros no se borran: siguen en tu estante.", si:"Sí, borrar grupo", no:"No, cancelar", peligro:true}).then(si=>{ if(!si) return;
+      const cfg={...S.colsCfg}; delete cfg[id]; S.colsCfg=cfg; saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderOther(); toast("Grupo borrado. Tus libros siguen en el estante."); }); }
   else if(act==="hide"){ setCfg({oculta:true}); renderOther(); toast("Oculta. Puedes volver a mostrarla abajo."); }
   else if(act==="unhide"){ setCfg({oculta:false}); renderOther(); }
   else if(act==="more"){ S.colOpen.add(id); renderCols(); }
