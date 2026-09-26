@@ -82,7 +82,13 @@
   const T = (window.TOMO = {
     sb, fnUrl: C.supabaseUrl.replace(/\/$/, "") + "/functions/v1",
     uid: "", token: "", perfil: null, iniciado: false,
-    authHeaders() { return { Authorization: "Bearer " + T.token, apikey: C.supabaseKey }; },
+    // La sesión vence cada hora: si el celular estuvo en pausa, T.token puede estar vencido. getSession la renueva si hace falta
+    // (sin esperar más de 4 s: sin internet igual se intenta con la que hay).
+    async authHeaders() {
+      let tk = T.token;
+      try { const r = await Promise.race([sb.auth.getSession(), new Promise((res) => setTimeout(() => res(null), 4000))]); tk = r?.data?.session?.access_token || tk; } catch (e) {}
+      return { Authorization: "Bearer " + tk, apikey: C.supabaseKey };
+    },
     aviso,
   });
   sb.auth.onAuthStateChange((ev, s) => {
