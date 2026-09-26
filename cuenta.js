@@ -43,6 +43,33 @@
     $('[data-p="boot"]').innerHTML = "<h1>Falta configurar Tomo</h1><p class='auth-p'>Completa <b>config.js</b> con la dirección y la clave pública de tu proyecto de Supabase.</p>";
     return;
   }
+  // ---------- estante compartido: con el enlace (…/?e=…) se ve sin iniciar sesión ----------
+  const tokenVer = new URLSearchParams(location.search).get("e");
+  if (tokenVer) { verCompartido(tokenVer); return; }
+  async function verCompartido(token) {
+    const boot = $('[data-p="boot"]'), escH = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    boot.innerHTML = '<div class="auth-load"><span class="spin"></span> Abriendo el estante…</div>';
+    pag("boot");
+    const fnUrl = C.supabaseUrl.replace(/\/$/, "") + "/functions/v1";
+    let d = null, error = "";
+    try {
+      const r = await fetch(`${fnUrl}/compartido?t=${encodeURIComponent(token)}`, { headers: { apikey: C.supabaseKey } });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j.libros)) d = j; else error = j.error || "No se pudo abrir este estante. Intenta en un rato.";
+    } catch (e) { error = "Sin conexión. Revisa tu internet y vuelve a abrir el enlace."; }
+    if (!d) {
+      boot.innerHTML = `<h1>No se pudo abrir el estante</h1><p class="auth-p">${escH(error)}</p><a class="btn primary big" href="./">Ir a Tomo</a>`;
+      return;
+    }
+    window.TOMO = {
+      fnUrl, uid: "", token: "", perfil: { nombre: d.nombre || "" }, soloVer: true, compartido: d, iniciado: true, aviso,
+      authHeaders() { return { apikey: C.supabaseKey }; }, estadoNube() {},
+    };
+    document.documentElement.classList.add("solo-ver");
+    auth.hidden = true; app.hidden = false;
+    window.iniciarApp();
+  }
+
   if (!window.supabase) {
     $('[data-p="boot"]').innerHTML = "<h1>No se pudo abrir Tomo</h1><p class='auth-p'>Revisa tu conexión a internet y vuelve a abrir la página.</p>";
     return;
@@ -242,6 +269,25 @@
   T.borrarFoto = (id) => {
     sb.storage.from(BUCKET).remove([ruta(id)]).catch(() => {});
     const p = pend(); p.delete(id); setPend(p);
+  };
+
+  // ---------- compartir mi estante: un enlace secreto para verlo sin cuenta ----------
+  T.compartir = {
+    enlace: (token) => new URL(`./?e=${token}`, location.href).href,
+    async obtener() {
+      const { data, error } = await sb.from("compartidos").select("token").eq("user_id", T.uid).maybeSingle();
+      if (error) throw error;
+      return data?.token || "";
+    },
+    async crear() {
+      const { data, error } = await sb.from("compartidos").insert({ user_id: T.uid }).select("token").single();
+      if (error) { if (String(error.code) === "23505") return T.compartir.obtener(); throw error; } // ya existía
+      return data.token;
+    },
+    async quitar() {
+      const { error } = await sb.from("compartidos").delete().eq("user_id", T.uid);
+      if (error) throw error;
+    },
   };
 
   // ---------- estado del guardado (el puntito junto a "Mi cuenta") ----------
