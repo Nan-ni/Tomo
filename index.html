@@ -290,6 +290,7 @@ html{background:var(--bg)}
 .sech{font-size:14px;font-family:var(--sans);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 -8px}
 .tile .pin{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;font-size:13px}
 .tile .pin:focus{border-color:var(--accent);outline:none}
+.tile-cov{border:0;background:none;padding:0;display:block;width:100%;cursor:pointer}
 #picker .wl{max-height:340px;overflow-y:auto}
 .rn{display:grid;grid-template-columns:92px 1fr;gap:16px;align-items:start}
 .rn .cover{width:92px;cursor:pointer}
@@ -576,6 +577,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .menu-id span{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
 .menu-id b{font-size:17px;letter-spacing:.05em}
 .menu-ver{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.menu-aviso{color:var(--warn);font-weight:600;line-height:1.4;margin-top:6px}
 #logoutBtn{color:var(--warn);border-top:1px solid var(--line);border-radius:0 0 11px 11px;margin-top:4px}
 
 /* cabecera en una sola línea, y "Mi cuenta" como panel desde abajo en el celular */
@@ -812,7 +814,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 14</small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 15</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
@@ -927,6 +929,10 @@ const VER=!!window.TOMO.soloVer;
 const NS=VER?"tomo.ver.":"tomo."+window.TOMO.uid+"."; // datos de este lector en este dispositivo
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dormir = ms => new Promise(r=>setTimeout(r,ms));
+// Las tareas de fondo (completar portadas, géneros, tomos…) ceden el paso: esperan mientras agregas o buscas un libro
+let ultimaAccion=0; const marcarAccion=()=>{ ultimaAccion=Date.now(); };
+async function esperarTurno(){ while(S.pending.size||Date.now()-ultimaAccion<2500) await dormir(400); }
 
 (function(){
   const w=[2,1,1,3,1,2,1,1,2,1,3,1,1,2];
@@ -994,14 +1000,25 @@ function gKey(){ return "servidor"; }
 // Google Books: primero por el servidor de Tomo (con tu clave). Si falla (sesión vencida, límite diario de la clave o el servidor caído),
 // se pregunta directo a Google desde este navegador, que no necesita clave.
 const quePaso=e=>!e?"":e.status?`código ${e.status}`:e.name==="AbortError"?"tardó demasiado":"sin conexión";
+// El buscador de Tomo es la función "libros" de tu Supabase. Si falla (también si responde que no existe: 404), se deja de usar
+// 10 minutos y se pregunta directo a Google, que no necesita clave: así no se paga la demora en cada búsqueda.
+const BUSCADOR={pausaHasta:0,falla:""};
+function mostrarBuscador(){ const el=$("#menuBuscador"); if(!el) return; el.hidden=!BUSCADOR.falla;
+  el.textContent=BUSCADOR.falla?`⚠ El buscador de libros de tu Supabase (función “libros”) no responde: ${BUSCADOR.falla}. Mientras tanto Tomo pregunta directo a Google.`:""; }
 async function gb(params){
-  let e1;
-  try{ return await getJson(`${GB}?${params}`); }catch(e){ e1=e; }
-  try{ const j=await getJson(`https://www.googleapis.com/books/v1/volumes?${params}`);
-    if(!gb.avisado){ gb.avisado=true; console.warn(`Tomo: el buscador de Supabase (función "libros") falló (${quePaso(e1)}); se usó Google directo.`); }
-    return j; }
-  catch(e2){ const e=new Error("google"); e.status=e2.status||e1?.status; e.detalle=`buscador de Tomo: ${quePaso(e1)} · Google directo: ${quePaso(e2)}`; throw e; } }
-async function getJson(url){ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),15000);
+  let e1=null;
+  if(Date.now()>=BUSCADOR.pausaHasta){
+    try{ const j=await getJson(`${GB}?${params}`,8000);
+      if(j&&j.__notFound){ const e=new Error("404"); e.status=404; throw e; }
+      if(BUSCADOR.falla){ BUSCADOR.falla=""; mostrarBuscador(); }
+      return j; }
+    catch(e){ e1=e; if(e.status) BUSCADOR.pausaHasta=Date.now()+10*60e3; // sin señal no es culpa del buscador: no se pausa
+      BUSCADOR.falla=quePaso(e); mostrarBuscador();
+      console.warn(`Tomo: la función "libros" de Supabase falló (${BUSCADOR.falla}); se pregunta directo a Google.`); } }
+  try{ return await getJson(`https://www.googleapis.com/books/v1/volumes?${params}`,8000); }
+  catch(e2){ const e=new Error("google"); e.status=e2.status||e1?.status;
+    e.detalle=`${e1?`buscador de Tomo: ${quePaso(e1)} · `:BUSCADOR.falla?`buscador de Tomo en pausa (${BUSCADOR.falla}) · `:""}Google directo: ${quePaso(e2)}`; throw e; } }
+async function getJson(url,ms=15000){ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
   try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?await window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
     if(!r.ok){ const e=new Error("http "+r.status); e.status=r.status; throw e; } return await r.json(); } finally{ clearTimeout(t); } }
 const yearOf=s=>{ const m=String(s||"").match(/\d{4}/); return m?m[0]:""; };
@@ -1047,7 +1064,7 @@ async function google(isbn){
   // Manga, manhwa o cómic sin número en el título (p. ej. "Mi amor por Yamada está al nv. 999"): la búsqueda de Google a veces
   // no trae el número de tomo, pero la ficha completa del volumen sí suele traerlo ("libro 4 de la serie")
   if(it.id && !v.seriesInfo?.bookDisplayNumber && !parseTomo(v.title) && pareceSerie(v)){
-    try{ const full=await getJson(`https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(it.id)}`); if(full?.volumeInfo?.seriesInfo) v.seriesInfo=full.volumeInfo.seriesInfo; }catch(e){} }
+    try{ const full=await getJson(`https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(it.id)}`,3000); if(full?.volumeInfo?.seriesInfo) v.seriesInfo=full.volumeInfo.seriesInfo; }catch(e){} }
   return fromGoogle(v);
 }
 const pareceSerie=v=>/comic|manga|graphic|historieta/i.test((v.categories||[]).join(" "))||MANGA_PUB.test(v.publisher||"")||MANHWAS.test(v.title||"");
@@ -1057,12 +1074,15 @@ async function buscarTomo(id){
   let r; try{ r=await lookup(b.isbn); }catch(e){ return; }
   const cur=byId(id); if(!cur||(cur.tomo&&!cur.tomoEstimado)||!r.googleOk) return; // si Google no contestó, se intenta otro día
   const d=r.data, num=(/^\d{1,3}$/.test(d.numero||"")&&+d.numero>0?String(+d.numero):"")||parseTomo(d.baseTitle||"")?.tomo||parseTomo(d.titulo||"")?.tomo||"";
-  const upd={...cur,tomoBuscado:true};
+  const upd={...cur,tomoRevisado:true};
   if(num&&num!==cur.tomo){ upd.tomo=num; upd.tomoEstimado=false; upd.actualizado=Date.now(); }
   upsert(upd); }
 // Devuelve {data, found, reached, googleOk, googleProblem}. googleOk: Google Books contestó (aunque sea "no lo tengo").
 async function lookup(isbn){
-  const [o,g]=await Promise.allSettled([openLibrary(isbn), google(isbn)]);
+  const conEstado=pr=>pr.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
+  const oP=conEstado(openLibrary(isbn)), g=await conEstado(google(isbn));
+  // Open Library es lento (a veces 5-10 s): si Google ya trajo el libro, se le da menos de un segundo; si no, hasta 6 s
+  const o=await Promise.race([oP, dormir(g.status==="fulfilled"&&g.value?.titulo?700:6000).then(()=>({status:"tarde"}))]);
   const out={}; let reached=false, googleOk=false, googleProblem="";
   if(g.status==="fulfilled"){ if(!g.value.skipped){ reached=googleOk=true; Object.assign(out,g.value); } }
   else { const st=g.reason?.status; googleProblem=(st===429?"Google Books llegó a su límite de hoy":"Google Books no respondió")+(g.reason?.detalle?` (${g.reason.detalle})`:""); }
@@ -1211,7 +1231,7 @@ async function fillCover(id){
   const b=byId(id); if(!b||b.portadaUrl) return false;
   const url=await findCover(b); const cur=byId(id); if(!cur) return false;
   upsert({...cur, portadaUrl:cur.portadaUrl||url, portadaOtraEd:!!url&&!cur.portadaUrl&&!/amazon\.com\/images\/P\/|waterstones\.com/.test(url), portadaBuscada:true, portadaRevisada:true});
-  if(S.openId===id) renderSheet();
+  if(S.openId===id&&url) rerenderKeeping();
   return !!url;
 }
 // "Ya compré el tomo 2": las editoriales suelen dar ISBN seguidos a los tomos de una serie. Se prueba el ISBN de tus otros tomos
@@ -1290,6 +1310,7 @@ async function fillGenre(id){
 }
 async function fillFromWeb(id, quiet){
   const b=byId(id); if(!b?.isbn) return;
+  if(!quiet) marcarAccion();
   S.pending.add(id); render(); if(S.openId===id) renderSheet();
   let r; try{ r=await lookup(b.isbn); }catch(e){ r={found:false,reached:false,data:{}}; }
   S.diag=S.diag||{};
@@ -1300,31 +1321,33 @@ async function fillFromWeb(id, quiet){
   const upd={...cur, actualizado:Date.now()}; if(r.reached) upd.buscado=true;
   for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl","genero"]) if(!cur[k] && r.data[k]) upd[k]=r.data[k];
   if(!upd.editorial){ const pe=pubByPrefix(upd.isbn); if(pe) upd.editorial=r.data.editorial=pe; }
-  if(r.found && ((!upd.tipoFijado && tipoOf(upd)==="libro" && !detectTipo(r.data)) || !upd.autor || nonLatin.test(upd.autor||""))){
-    const h=await seriesHint(upd.titulo);
-    if(h.autor && (!upd.autor || nonLatin.test(upd.autor))) upd.autor=h.autor;
-    if(h.editorial && !upd.editorial) upd.editorial=h.editorial;
-    if(!upd.tipoFijado && tipoOf(upd)==="libro" && !detectTipo(r.data)){
-      const tp = MANHWAS.test(upd.titulo) ? "manhwa" : (h.tipo || (numberedTitle(upd.titulo)||MANGA_PUB.test(upd.editorial||"") ? "manga" : ""));
-      if(tp) r.data.categorias=(r.data.categorias||[]).concat(tp==="manhwa"?["Manhwa"]:tp==="manga"?["Manga"]:["Comics"]);
-    }
-  }
+  const conPista=r.found && ((!upd.tipoFijado && tipoOf(upd)==="libro" && !detectTipo(r.data)) || !upd.autor || nonLatin.test(upd.autor||""));
   applyTipo(upd, r.data);
   if(!upd.editorial){ const ed=editorialPorIsbn(upd.isbn); if(ed){ upd.editorial=ed; } }
   upsert(upd);
+  if(!quiet) avisarBusqueda(id,b,upd,r);
+  // Lo que sigue afina sin hacerte esperar: tipo y autor mirando otros tomos de la serie, y la portada exacta de tu edición
+  if(conPista){ const h=await seriesHint(upd.titulo), c=byId(id);
+    if(c){ const u={...c};
+      if(h.autor && (!u.autor || nonLatin.test(u.autor))) u.autor=h.autor;
+      if(h.editorial && !u.editorial) u.editorial=h.editorial;
+      if(!u.tipoFijado && tipoOf(u)==="libro" && !detectTipo(r.data)){
+        const tp = MANHWAS.test(u.titulo) ? "manhwa" : (h.tipo || (numberedTitle(u.titulo)||MANGA_PUB.test(u.editorial||"") ? "manga" : ""));
+        if(tp){ r.data.categorias=(r.data.categorias||[]).concat(tp==="manhwa"?["Manhwa"]:tp==="manga"?["Manga"]:["Comics"]); applyTipo(u, r.data); } }
+      if(JSON.stringify(u)!==JSON.stringify(c)) upsert(u); } }
   if(upd.isbn) await upgradeCover(id);
-  if(upd.titulo && !byId(id)?.portadaUrl) await fillCover(id);
-  if(S.openId===id) renderSheet();
-  if(!quiet){
-    const tip = r.googleProblem ? ` ${r.googleProblem}` : (!gKey() ? ` Con una clave de Google Books (en “Ajustes de búsqueda”) se encuentran muchos más libros.` : "");
-    if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}`,"ok");
-    else if(!r.reached || !r.googleOk){ // no es que no exista: Google no llegó a contestar
-      const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
-      setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${esc(r.googleProblem||"no pude conectarme a las bases de libros")}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo por ISBN” en su ficha más tarde."}`,"err");
-      if(otraVez) setTimeout(()=>{ const x=byId(id); if(x&&!x.titulo&&!S.pending.has(id)) fillFromWeb(id,false); },15000); }
-    else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
-  }
+  if(byId(id)?.titulo && !byId(id)?.portadaUrl) await fillCover(id);
   return r;
+}
+// Mensaje bajo el escáner según lo que encontró la búsqueda
+function avisarBusqueda(id,b,upd,r){
+  const tip = r.googleProblem ? ` ${r.googleProblem}` : (!gKey() ? ` Con una clave de Google Books (en “Ajustes de búsqueda”) se encuentran muchos más libros.` : "");
+  if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}`,"ok");
+  else if(!r.reached || !r.googleOk){ // no es que no exista: Google no llegó a contestar
+    const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
+    setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${esc(r.googleProblem||"no pude conectarme a las bases de libros")}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo por ISBN” en su ficha más tarde."}`,"err");
+    if(otraVez) setTimeout(()=>{ const x=byId(id); if(x&&!x.titulo&&!S.pending.has(id)){ BUSCADOR.pausaHasta=0; fillFromWeb(id,false); } },15000); } // el reintento vuelve a probar el buscador de Tomo
+  else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
 }
 
 /* ---------- fotos de portada propias (IndexedDB) ---------- */
@@ -1496,6 +1519,7 @@ const TIPO_PLURAL={libro:"Libros",manga:"Mangas",manhwa:"Manhwas",comic:"Cómics
 const numLabel=b=>({libro:"Vol.",comic:"N.º"}[tipoOf(b)]||"Tomo");
 const tipoOf=b=>b.tipo||"libro";
 function handleIsbn(raw){
+  marcarAccion();
   if(S.view!=="estante") setView("estante");
   const r=normalizeIsbn(raw);
   if(r.error){ setStatus(esc(r.error),"err"); return; }
@@ -1771,7 +1795,7 @@ function wireSheet(){
     box.onclick=e=>{ const p=e.target.closest("[data-i]"); if(!p) return; const c=cands[+p.dataset.i]; const cur=byId(id); if(!cur) return;
       upsert({...cur,portadaUrl:c.url,portadaOtraEd:!!c.otra,portadaLocal:false,portadaManual:true,actualizado:Date.now()});
       toast("Portada cambiada"); if(S.openId===id) rerenderKeeping(); }; });
-  $("#tsForm").onsubmit=async e=>{ e.preventDefault(); const q=$("#ts-q").value.trim(); if(!q) return; const box=$("#tsRes");
+  $("#tsForm").onsubmit=async e=>{ e.preventDefault(); const q=$("#ts-q").value.trim(); if(!q) return; const box=$("#tsRes"); marcarAccion();
     box.innerHTML=`<li><span class="spin"></span> Buscando…</li>`;
     try{ const res=await searchTitle(q); S.tsRes=res;
       box.innerHTML=res.length?res.map((r,i)=>`<li class="ts-it">${r.portadaUrl?`<img src="${esc(coverSrc(r.portadaUrl))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">`:`<i class="ts-sin" aria-hidden="true"></i>`}<span><b style="color:var(--ink)">${esc(r.titulo)}</b><br>${esc(r.autor||"")}${r.editorial?" · "+esc(r.editorial):""}${r.anio?" · "+esc(r.anio):""}</span><button class="btn" data-pick="${i}" type="button">Usar</button></li>`).join(""):`<li>Sin resultados. Escribe los datos a mano.</li>`;
@@ -2138,7 +2162,7 @@ function serieCard(c){
   // tomos que tienes pero sin número: se muestran primero, para que les pongas el número y se ubiquen en la colección
   const sinNumTiles=sinNum.map(b=>pe
     ? `<div class="tile own">${coverHtml(b)}<span class="tn">${tag} ?</span>${priceInput(b)}</div>`
-    : `<button type="button" class="tile own" data-open="${esc(b.id)}" title="${esc(b.titulo||"Sin título")} · sin número: tócalo para ponérselo">${coverHtml(b)}<span class="tn">${tag} ?</span><span class="tt">${esc(b.titulo||"Sin título")}</span></button>`);
+    : `<div class="tile own"><button type="button" class="tile-cov" data-open="${esc(b.id)}" title="${esc(b.titulo||"Sin título")}">${coverHtml(b)}</button><input class="pin mono" data-tomo="${esc(b.id)}" inputmode="numeric" maxlength="3" placeholder="${tag} ?" aria-label="Número de ${tag.toLowerCase()} de ${esc(b.titulo||"este libro")}"><span class="tt">${esc(b.titulo||"Sin título")}</span></div>`);
   const sub=[c.editorial, c.distribuye&&`distribuye ${c.distribuye}`, total?`${total} ${w[1]}`:"total sin definir", c.frecuencia, c.precio&&!c.distribuye?`${soles(c.precio)} c/u`:""].filter(Boolean).map(esc).join(" · ")+(c.nota?`<br>${esc(c.nota)}`:"");
   return `<section class="panel" aria-label="${esc(c.nombre)}">
     ${cardHead(c,sub)}
@@ -2150,7 +2174,7 @@ function serieCard(c){
         :!total?`<div class="kpi"><b>?</b><span>¿Cuántos ${w[1]} son? Ponlo en “Editar”</span></div>`:""}
     </div>
     ${total?`<div class="prog" role="img" aria-label="${pct}% completada"><i style="width:${pct}%"></i></div>`:""}
-    ${sinNum.length?`<p class="muted" style="margin:0">${sinNum.length===1?`Un ${w[0]} no tiene número`:`${sinNum.length} ${w[1]} no tienen número`}: tócalo y escribe su número en “Tomo, volumen o número” para ubicarlo en la colección.</p>`:""}
+    ${sinNum.length?`<p class="muted" style="margin:0">${sinNum.length===1?`Un ${w[0]} no tiene número`:`${sinNum.length} ${w[1]} no tienen número`} (Google no lo sabe): escríbelo en la casilla bajo su portada y se ubica solo en la colección.</p>`:""}
     ${sinNum.length&&!tiene?"":sig?`<div class="nextrow"><span>Sigue el <b>${tag} ${sig}</b>${nombreEntrega(c,sig)?`: ${esc(nombreEntrega(c,sig))}`:""}${precioDe(c,sig)?` · ${soles(precioDe(c,sig))}`:""}</span><button class="btn primary sm" type="button" data-buy="${sig}" data-col="${esc(c.id)}">Ya compré el ${tag.toLowerCase()} ${sig}</button></div>`
       :`<div class="nextrow"><span>¡Colección completa!</span></div>`}
     ${huecos.length?`<div><span class="pill loan">Te faltan de antes: ${huecos.join(", ")}</span></div>`:""}
@@ -2231,6 +2255,12 @@ $("#v-colecciones").addEventListener("click",e=>{
   else if(act==="deseoSigue"){ const c=colecciones().find(x=>x.id===id), s=c?.det?.sigue?.[+a.dataset.i]; if(!s) return;
     if(!S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo))){ S.wish.items.unshift({id:"w-"+Date.now().toString(36),titulo:s.titulo,autor:c.autor||"",nota:`${s.rel.replace("Continúa en","Continuación")} de ${c.nombre}${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:""}`,creado:Date.now()}); saveJ(WISH_KEY,S.wish); }
     renderOther(); toast(`“${s.titulo}” está en tu lista de deseos`); } });
+// número de tomo escrito en la casilla de un tomo "?": se guarda y el tomo pasa a su lugar en la colección
+$("#v-colecciones").addEventListener("change",e=>{ const t=e.target.closest("[data-tomo]"); if(!t) return;
+  const n=t.value.replace(/\D/g,"").replace(/^0+(?=\d)/,""), b=byId(t.dataset.tomo); if(!b) return;
+  if(!n||+n<1){ t.value=""; return; }
+  upsert({...b,tomo:n,tomoEstimado:false,actualizado:Date.now()}); toast(`${b.titulo||"Libro"}: ${numLabel(b).toLowerCase()} ${n}`); });
+$("#v-colecciones").addEventListener("keydown",e=>{ const t=e.target.closest("[data-tomo]"); if(t&&e.key==="Enter"){ e.preventDefault(); t.blur(); } });
 // precios: se guardan sin redibujar para no perder el foco al pasar a la siguiente casilla
 $("#v-colecciones").addEventListener("change",e=>{ const p=e.target.closest("[data-price]"); if(!p) return;
   const val=p.value.trim().replace(/^S\/\s*/i,"").replace(",","."); const b=byId(p.dataset.price); if(!b) return;
@@ -2597,23 +2627,24 @@ if(VER){ // encabezado y pie del estante compartido
   $("#estSub").textContent="Compartido desde Tomo · solo para mirar";
   $("#storeNote").innerHTML=`Estás viendo el estante de ${esc(nombreDueno()||"un lector")}. <a href="./">¿Quieres el tuyo? Pide una cuenta de Tomo</a>`; }
 // Completar libros que quedaron sin datos (por ejemplo, sin internet al escanear)
-if(!VER) (async()=>{ for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0,40)) await fillFromWeb(b.id,true);
-  for(const b of S.books.filter(b=>b.isbn&&!b.amazonProbado&&!b.portadaAmazon&&autoCover(b)).slice(0,60)) await upgradeCover(b.id);
-  for(const b of S.books.filter(b=>b.titulo&&!b.portadaUrl&&!b.portadaBuscada).slice(0,40)) await fillCover(b.id);
+if(!VER) (async()=>{ await dormir(3000);
+  for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0,40)){ await esperarTurno(); await fillFromWeb(b.id,true); }
+  for(const b of S.books.filter(b=>b.isbn&&!b.amazonProbado&&!b.portadaAmazon&&autoCover(b)).slice(0,60)){ await esperarTurno(); await upgradeCover(b.id); }
+  for(const b of S.books.filter(b=>b.titulo&&!b.portadaUrl&&!b.portadaBuscada).slice(0,40)){ await esperarTurno(); await fillCover(b.id); }
   // portadas que puso la página y salieron de costado o apaisadas: se cambian por una buena (una sola revisión por libro)
-  for(const b of S.books.filter(b=>b.portadaUrl&&!b.portadaLocal&&!b.portadaManual&&!b.portadaRevisada).slice(0,60)) await revisarPortada(b.id);
+  for(const b of S.books.filter(b=>b.portadaUrl&&!b.portadaLocal&&!b.portadaManual&&!b.portadaRevisada).slice(0,60)){ await esperarTurno(); await revisarPortada(b.id); }
   // mangas/manhwas que quedaron como "Libro"
-  for(const b of S.books.filter(b=>!b.tipoFijado&&tipoOf(b)==="libro"&&b.titulo&&(MANHWAS.test(b.titulo)||numberedTitle(b.titulo))&&!b.revisadoSerie).slice(0,40)){
+  for(const b of S.books.filter(b=>!b.tipoFijado&&tipoOf(b)==="libro"&&b.titulo&&(MANHWAS.test(b.titulo)||numberedTitle(b.titulo))&&!b.revisadoSerie).slice(0,40)){ await esperarTurno();
     const u={...b,revisadoSerie:true}; if(!u.editorial) u.editorial=pubByPrefix(u.isbn);
     const h=(!u.autor||nonLatin.test(u.autor))?await seriesHint(u.titulo):{};
     if(h.autor) u.autor=h.autor; if(!u.editorial&&h.editorial) u.editorial=h.editorial;
     applyTipo(u,{titulo:u.titulo,baseTitle:u.titulo,categorias:[MANHWAS.test(u.titulo)?"Manhwa":"Manga"],editorial:u.editorial});
     upsert(u); }
   // mangas sin número de tomo: se pregunta a Google una vez (antes de deducirlo por el ISBN, que es menos seguro)
-  for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoBuscado).slice(0,20)) await buscarTomo(b.id);
+  for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoRevisado).slice(0,20)){ await esperarTurno(); await buscarTomo(b.id); }
   // unificar series escritas distinto (p. ej. "nv." y "Nv.")
   { let ch=false; for(const b of S.books){ if(!b.serie) continue; const before=JSON.stringify(b); const u={...b}; unifySerie(u); if(JSON.stringify(u)!==before){ Object.assign(b,u); ch=true; } } if(ch){ persist(); render(); } }
-  for(const b of S.books.filter(b=>b.isbn&&b.titulo&&!b.genero&&!b.generoBuscado).slice(0,40)) await fillGenre(b.id); })();
+  for(const b of S.books.filter(b=>b.isbn&&b.titulo&&!b.genero&&!b.generoBuscado).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); } })();
 };
 </script>
 <!-- crossorigin: así la app instalada puede guardar la librería y abrir sin internet -->
