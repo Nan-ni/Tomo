@@ -985,8 +985,13 @@ function setStatus(msg,kind){ const el=$("#status"); el.className="status"+(kind
 // Google Books se consulta a través del servidor de Tomo: la clave no está en la página
 const GB=window.TOMO.fnUrl+"/libros";
 function gKey(){ return "servidor"; }
+// Google Books: primero por el servidor de Tomo (con tu clave). Si falla (sesión vencida, límite diario de la clave o el servidor caído),
+// se pregunta directo a Google desde este navegador, que no necesita clave.
+async function gb(params){
+  try{ return await getJson(`${GB}?${params}`); }
+  catch(e){ if(e.status===400) throw e; return await getJson(`https://www.googleapis.com/books/v1/volumes?${params}`); } }
 async function getJson(url){ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),15000);
-  try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
+  try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?await window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
     if(!r.ok){ const e=new Error("http "+r.status); e.status=r.status; throw e; } return await r.json(); } finally{ clearTimeout(t); } }
 const yearOf=s=>{ const m=String(s||"").match(/\d{4}/); return m?m[0]:""; };
 const soloHttps=u=>/^https:\/\//i.test(u||"")?u:"#";
@@ -1022,22 +1027,26 @@ async function openLibrary(isbn){
 }
 async function google(isbn){
   const k=gKey(); if(!k) return {skipped:true};
-  const j=await getJson(`${GB}?q=isbn:${isbn}`);
+  const j=await gb(`q=isbn:${isbn}`);
+  if(!j.items?.length){ // Google a veces no encuentra por "isbn:" un libro que sí tiene: se busca el número solo y se confirma que sea ese ISBN
+    const j2=await gb(`q=${isbn}`).catch(()=>null), i10=isbn10Of(isbn);
+    const v=(j2?.items||[]).map(x=>x.volumeInfo).find(v=>(v?.industryIdentifiers||[]).some(x=>{ const d=String(x.identifier||"").replace(/-/g,""); return d===isbn||(i10&&d===i10); }));
+    if(v) return fromGoogle(v); }
   return fromGoogle(j.items?.[0]?.volumeInfo);
 }
-// Devuelve {data, found, reached, googleProblem}
+// Devuelve {data, found, reached, googleOk, googleProblem}. googleOk: Google Books contestó (aunque sea "no lo tengo").
 async function lookup(isbn){
   const [o,g]=await Promise.allSettled([openLibrary(isbn), google(isbn)]);
-  const out={}; let reached=false, googleProblem="";
-  if(g.status==="fulfilled"){ if(!g.value.skipped){ reached=true; Object.assign(out,g.value); } }
-  else { const st=g.reason?.status; if(st===400||st===403) googleProblem="La clave de Google Books no es válida."; else if(st===429) googleProblem="Google Books llegó a su límite diario."; else if(st) reached=true; }
+  const out={}; let reached=false, googleOk=false, googleProblem="";
+  if(g.status==="fulfilled"){ if(!g.value.skipped){ reached=googleOk=true; Object.assign(out,g.value); } }
+  else { const st=g.reason?.status; googleProblem = st===400||st===403 ? "La clave de Google Books no es válida." : st===429 ? "Google Books llegó a su límite de hoy." : "Google Books no respondió."; }
   if(o.status==="fulfilled"){ reached=true; const ol=o.value||{}; const gc=out.categorias||[]; for(const k in ol) if(!out[k]&&ol[k]) out[k]=ol[k]; out.categorias=gc.concat(ol.categorias||[]); }
   else if(o.reason?.status) reached=true;
-  return {data:out, found:!!out.titulo, reached, googleProblem};
+  return {data:out, found:!!out.titulo, reached, googleOk, googleProblem};
 }
 async function searchTitle(q){
   if(gKey()){
-    try{ const j=await getJson(`${GB}?q=${encodeURIComponent(q)}&maxResults=6&printType=books`);
+    try{ const j=await gb(`q=${encodeURIComponent(q)}&maxResults=6&printType=books`);
       const r=(j.items||[]).map(it=>fromGoogle(it.volumeInfo)); if(r.length) return r; }catch(e){}
   }
   const j=await getJson(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=6&fields=title,author_name,publisher,first_publish_year,cover_i,number_of_pages_median`);
@@ -1056,7 +1065,7 @@ async function findCover(b){
   if(k && t){
     const base=`intitle:"${t}"`+(serial?` ${b.tomo}`:""), nt=normSerie(t), vistos=new Set();
     for(const q of a?[`${base} inauthor:"${a}"`,base]:[base]){
-      try{ const j=await getJson(`${GB}?q=${encodeURIComponent(q)}&maxResults=20&printType=books`);
+      try{ const j=await gb(`q=${encodeURIComponent(q)}&maxResults=20&printType=books`);
         let withImg=(j.items||[]).map(i=>i.volumeInfo).filter(v=>v?.imageLinks?.thumbnail&&!vistos.has(v.imageLinks.thumbnail));
         withImg.forEach(v=>vistos.add(v.imageLinks.thumbnail));
         if(serial) withImg=withImg.filter(v=>{ const tt=normSerie(`${v.title} ${v.subtitle||""}`); return tt.includes(nt) && (hasTomo(tt.replace(nt,""),b.tomo) || v.seriesInfo?.bookDisplayNumber==String(+b.tomo)); });
@@ -1075,7 +1084,7 @@ async function findCover(b){
 // Pistas de otras ediciones/tomos del mismo título: tipo, autor y editorial más frecuentes
 async function seriesHint(titulo){
   const k=gKey(); const p=parseTomo(titulo); const t=(p?p.serie:(titulo||"").split(":")[0]).trim(); if(!k||!t) return {};
-  try{ const j=await getJson(`${GB}?q=${encodeURIComponent(`intitle:"${t}"`)}&maxResults=20`);
+  try{ const j=await gb(`q=${encodeURIComponent(`intitle:"${t}"`)}&maxResults=20`);
     const vs=(j.items||[]).map(i=>i.volumeInfo||{}).filter(v=>normSerie(v.title).startsWith(normSerie(t)));
     const top=arr=>{ const c={}; for(const x of arr) if(x) c[x]=(c[x]||0)+1; const b=Object.entries(c).sort((a,b)=>b[1]-a[1])[0]; return b?b:null; };
     const tp=top(vs.map(v=>detectTipo({categorias:v.categories||[],editorial:v.publisher||"",titulo:v.title})));
@@ -1138,13 +1147,13 @@ async function coverCandidates(b){
     jobs.push(probeImg(w).then(d=>{ if(d && !(d.w===260&&d.h===400) && !(d.w===500&&d.h===500) && portadaVertical(d)) add(w,"Waterstones"); }));
     const o=`https://covers.openlibrary.org/b/isbn/${i}-L.jpg?default=false`;
     jobs.push(probeImg(o).then(d=>{ if(portadaVertical(d)) add(o,"Open Library"); }));
-    if(gKey()) jobs.push(getJson(`${GB}?q=isbn:${i}`).then(j=>{ const v=j.items?.[0]?.volumeInfo; if(v?.imageLinks?.thumbnail) add(coverSrc(httpsify(v.imageLinks.thumbnail)),"Google Books"); }).catch(()=>{}));
+    if(gKey()) jobs.push(gb(`q=isbn:${i}`).then(j=>{ const v=j.items?.[0]?.volumeInfo; if(v?.imageLinks?.thumbnail) add(coverSrc(httpsify(v.imageLinks.thumbnail)),"Google Books"); }).catch(()=>{}));
   }
   await Promise.all(jobs);
   // otras ediciones (mismo tomo si es manga/cómic)
   const k=gKey(), t=(b.serie||(b.titulo||"").split(":")[0]).trim(), serial=tipoOf(b)!=="libro";
   if(k&&t&&(!serial||b.tomo)){
-    try{ const j=await getJson(`${GB}?q=${encodeURIComponent(`intitle:"${t}"`+(serial?` ${b.tomo}`:""))}&maxResults=20&printType=books`);
+    try{ const j=await gb(`q=${encodeURIComponent(`intitle:"${t}"`+(serial?` ${b.tomo}`:""))}&maxResults=20&printType=books`);
       let vs=(j.items||[]).map(x=>x.volumeInfo).filter(v=>v?.imageLinks?.thumbnail);
       if(serial) vs=vs.filter(v=>hasTomo(`${v.title} ${v.subtitle||""}`.replace(t,""),b.tomo));
       vs.sort((a,c)=>(c.language==="es")-(a.language==="es"));
@@ -1262,7 +1271,10 @@ async function fillFromWeb(id, quiet){
   if(!quiet){
     const tip = r.googleProblem ? ` ${r.googleProblem}` : (!gKey() ? ` Con una clave de Google Books (en “Ajustes de búsqueda”) se encuentran muchos más libros.` : "");
     if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}`,"ok");
-    else if(!r.reached) setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no pude conectarme a las bases de libros.${esc(tip)} Usa “Buscar de nuevo” más tarde.`,"err");
+    else if(!r.reached || !r.googleOk){ // no es que no exista: Google no llegó a contestar
+      const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
+      setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${r.reached?"Google Books no respondió":"no pude conectarme a las bases de libros"}${r.googleProblem&&r.googleProblem!=="Google Books no respondió."?` (${esc(r.googleProblem.replace(/\.$/,"").toLowerCase())})`:""}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo” en su ficha más tarde."}`,"err");
+      if(otraVez) setTimeout(()=>{ const x=byId(id); if(x&&!x.titulo&&!S.pending.has(id)) fillFromWeb(id,false); },15000); }
     else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
   }
   return r;
