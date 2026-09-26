@@ -593,6 +593,14 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 }
 @keyframes subir{from{transform:translateY(30px);opacity:0}}
 
+/* ===== total de tomos y continuaciones detectadas ===== */
+.det{font-size:13.5px;line-height:1.5;color:var(--ink-2);background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.det a{color:var(--accent);text-decoration:none}
+.det a:hover{text-decoration:underline}
+.det .btn.sm{padding:4px 10px;font-size:12.5px;margin-left:4px}
+.det-sigue{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+@media (max-width:560px){.det .btn.sm{min-height:34px;padding:6px 12px}}
+
 /* ===== ajustes de la revisión visual ===== */
 /* textos largos sin espacios (correos, títulos) no se salen de su caja */
 .auth-card,.panel,.sheet,.card .meta,.wl .wt,.menu-pop,.rn .rt,.welcome,.tile{overflow-wrap:anywhere}
@@ -1787,6 +1795,75 @@ function renderOther(){ if(!S.colsCfg) return; // aún cargando
 
 /* ---------- vista: colecciones ---------- */
 S.priceEdit=null; S.pick=null; S.pickQ="";
+/* ---------- cuántos tomos tiene cada serie y si continúa ----------
+   Manga, manhwa y cómics: AniList (base de datos pública de manga). Series de libros: Wikidata.
+   AniList cuenta la edición ORIGINAL japonesa/coreana. Si tu edición junta tomos (kanzenban, 2 en 1, deluxe),
+   no se toca tu total: se muestra una estimación para que la confirmes. Un total que pusiste tú nunca se cambia solo. */
+const ANI_Q=`query($s:String){Page(perPage:6){media(search:$s,type:MANGA){id siteUrl format status volumes title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}}}}`;
+async function buscarAniList(nombre){
+  const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:ANI_Q,variables:{s:nombre}})});
+  if(!r.ok) throw new Error("anilist "+r.status);
+  const ms=(await r.json()).data?.Page?.media||[], k=normSerie(nombre);
+  const titulos=m=>[m.title?.romaji,m.title?.english,m.title?.native,...(m.synonyms||[])].filter(Boolean).map(normSerie).filter(Boolean);
+  return ms.find(m=>titulos(m).includes(k)) || ms.find(m=>titulos(m).some(t=>t.startsWith(k+" ")||k.startsWith(t+" "))) || null; }
+async function buscarWikidata(nombre){
+  const s=await getJson(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(nombre)}&language=es&uselang=es&type=item&limit=6&format=json&origin=*`);
+  const ids=(s.search||[]).map(x=>x.id); if(!ids.length) return null;
+  const e=await getJson(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join("|")}&props=claims|labels&languages=es|en&format=json&origin=*`);
+  const SERIE=new Set(["Q277759","Q1667921","Q7725310"]); // serie de libros, serie de novelas, serie de obras
+  const val=(it,p)=>it.claims?.[p]?.[0]?.mainsnak?.datavalue?.value;
+  for(const id of ids){ const it=e.entities?.[id]; if(!it) continue;
+    const inst=(it.claims?.P31||[]).map(c=>c.mainsnak?.datavalue?.value?.id); if(!inst.some(x=>SERIE.has(x))) continue;
+    const n=+String(val(it,"P2635")?.amount||val(it,"P1113")?.amount||"").replace("+","")||(it.claims?.P527||[]).length||0;
+    return {fuente:"Wikidata",url:`https://www.wikidata.org/wiki/${id}`,titulo:it.labels?.es?.value||it.labels?.en?.value||nombre,original:n,estado:""}; }
+  return null; }
+// ¿Tu edición junta tomos? (kanzenban, 2 en 1…) Se nota en el título/nota o porque cada tomo pasa de ~330 páginas
+function edicionAgrupada(c){
+  const bs=[...tomosDe(c).values()], txt=[c.nombre,c.nota,...bs.map(b=>`${b.titulo} ${b.notas||""}`)].join(" ");
+  if(/kanzenban|deluxe|2 ?en ?1|maximum|integral|omnibus|edici[oó]n definitiva/i.test(txt)) return true;
+  const p=bs.map(b=>+String(b.paginas||"").replace(/\D/g,"")).filter(n=>n>0).sort((a,b)=>a-b);
+  return p.length>0 && p[p.length>>1]>=330; }
+async function detectarSerie(c){
+  const q=String(c.nombreBusqueda||c.nombre).trim(), det={consulta:q,fecha:Date.now(),sigue:[]};
+  try{
+    if(c.tipo==="libro"){ const w=await buscarWikidata(q); if(w){ Object.assign(det,w); det.total=w.original; } else det.noEncontrado=true; }
+    else{ const m=await buscarAniList(q);
+      if(!m) det.noEncontrado=true;
+      else{ det.fuente="AniList"; det.url=m.siteUrl; det.titulo=m.title?.english||m.title?.romaji||q; det.original=+m.volumes||0;
+        det.estado={FINISHED:"terminada",RELEASING:"sigue saliendo",HIATUS:"en pausa",CANCELLED:"cancelada"}[m.status]||"";
+        det.agrupada=edicionAgrupada(c); det.total=det.agrupada?0:det.original; det.estimado=det.agrupada&&det.original?Math.ceil(det.original/2):0;
+        const REL={SEQUEL:"Continúa en",PREQUEL:"Historia anterior",SIDE_STORY:"Historia paralela",SPIN_OFF:"Spin-off"};
+        det.sigue=(m.relations?.edges||[]).filter(x=>REL[x.relationType]&&x.node?.type==="MANGA"&&x.node?.format!=="NOVEL")
+          .map(x=>({rel:REL[x.relationType],titulo:x.node.title?.english||x.node.title?.romaji||"",tomos:+x.node.volumes||0,unico:x.node.format==="ONE_SHOT",url:x.node.siteUrl}))
+          .sort((a,b)=>(a.rel!=="Continúa en")-(b.rel!=="Continúa en")).slice(0,3); } }
+  }catch(e){ det.error=true; }
+  const cur=S.colsCfg[c.id]||{}, patch={det};
+  if(det.total && !cur.totalManual && (!(+cur.total) || cur.totalAuto)){ patch.total=det.total; patch.totalAuto=true; }
+  S.colsCfg={...S.colsCfg,[c.id]:{...cur,...patch}}; saveJ(COLS_KEY,S.colsCfg); }
+const necesitaDet=c=>{ const d=c.det; if(!d) return true; if(d.consulta!==String(c.nombreBusqueda||c.nombre).trim()) return true;
+  const edad=Date.now()-(d.fecha||0); return d.error?edad>36e5:edad>30*864e5; };
+let detectando=false;
+async function detectarPendientes(){ if(detectando||!navigator.onLine) return; detectando=true;
+  try{ for(let i=0;i<30;i++){ const c=colecciones().find(c=>c.clase==="serie"&&!c.distribuye&&!c.oculta&&necesitaDet(c)); if(!c) break;
+      await detectarSerie(c); if(S.view==="colecciones") renderCols(); await new Promise(r=>setTimeout(r,900)); } }
+  finally{ detectando=false; } }
+function detHtml(c,maxH){ if(c.distribuye) return "";
+  const d=c.det, fuente=c.tipo==="libro"?"Wikidata":"AniList";
+  if(!d||necesitaDet(c)&&!d.error) return `<div class="det"><span><span class="spin"></span> Buscando cuántos ${unidad(c)[1]} tiene la serie…</span></div>`;
+  if(d.error) return `<div class="det">No pude buscar cuántos ${unidad(c)[1]} tiene (¿sin conexión?). Lo intentaré de nuevo más tarde.</div>`;
+  if(d.noEncontrado) return `<div class="det">No encontré “${esc(d.consulta)}” en ${fuente}. Pon el total en <b>Editar</b>, o escribe ahí su <b>nombre original</b> para buscarla.</div>`;
+  const tot=+c.total||0, lin=[];
+  if(d.original) lin.push(`Según <a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${d.original}</b> ${c.tipo==="libro"?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
+  else lin.push(`${esc(d.fuente)} tiene la serie${d.estado?` (${esc(d.estado)})`:""}, pero no dice cuántos tomos son todavía.`);
+  if(d.agrupada&&d.estimado) lin.push(`Tu edición junta tomos (2 en 1 o kanzenban), así que serían unos <b>${d.estimado}</b>.${!tot?` <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.estimado}" data-col="${esc(c.id)}">Usar ${d.estimado}</button>`:tot!==d.estimado?` Tú pusiste ${tot}.`:""}`);
+  else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.total}" data-col="${esc(c.id)}">Usar ${d.total}</button>`);
+  if(d.estado==="sigue saliendo") lin.push(`Todavía salen tomos nuevos: el total puede subir.`);
+  for(const [i,s] of (d.sigue||[]).entries()){ const tiene=S.books.some(b=>b.serie&&normSerie(b.serie)===normSerie(s.titulo));
+    const enDeseos=S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo));
+    lin.push(`<span class="det-sigue">${esc(s.rel)}: <a href="${esc(s.url)}" target="_blank" rel="noopener"><b>${esc(s.titulo)}</b></a>${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:s.unico?" · tomo único":""}
+      ${tiene?`<span class="pill leido">La tienes</span>`:enDeseos?`<span class="pill">En tu lista de deseos</span>`:`<button class="btn sm" type="button" data-act="deseoSigue" data-i="${i}" data-col="${esc(c.id)}">A mi lista de deseos</button>`}</span>`); }
+  return `<div class="det">${lin.map(l=>`<div>${l}</div>`).join("")}</div>`; }
+
 function renderCols(){
   const all=colecciones(), vis=all.filter(c=>!c.oculta), ocultas=all.filter(c=>c.oculta);
   const series=vis.filter(c=>c.clase==="serie"), grps=vis.filter(c=>c.clase==="grupo");
@@ -1799,7 +1876,8 @@ function renderCols(){
     <h3 class="sech">Grupos: misma editorial, diseño o club</h3>
     ${grps.length?grps.sort(orden).map(grupoCard).join(""):`<p class="muted" style="margin:0">Crea un grupo para juntar libros que van juntos aunque no estén numerados, por ejemplo los de un mismo sello o de tu club de lectura.</p>`}
     ${ocultas.length?`<p class="muted">Ocultas: ${ocultas.map(c=>`${esc(c.nombre)} <button class="linkbtn" data-act="unhide" data-col="${esc(c.id)}">Mostrar</button>`).join(" · ")}</p>`:""}`;
-  if(S.pick){ const q=$("#pk-q"); if(q&&document.activeElement!==q&&S.pickFocus){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); S.pickFocus=false; } } }
+  if(S.pick){ const q=$("#pk-q"); if(q&&document.activeElement!==q&&S.pickFocus){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); S.pickFocus=false; } }
+  setTimeout(detectarPendientes,400); }
 function priceInput(b){ return `<input class="pin mono" data-price="${esc(b.id)}" inputmode="decimal" value="${hasPrecio(b)?(+b.precio).toFixed(2):""}" placeholder="S/ precio" aria-label="Precio de ${esc(b.titulo)}">`; }
 function cardHead(c,sub){ const pe=S.priceEdit===c.id;
   return `<div class="phead"><div><h3>${esc(c.nombre)}</h3><div class="sub">${sub}</div></div>
@@ -1823,6 +1901,7 @@ function serieCard(c){
   const sub=[c.editorial, c.distribuye&&`distribuye ${c.distribuye}`, total?`${total} ${w[1]}`:"total sin definir", c.frecuencia, c.precio&&!c.distribuye?`${soles(c.precio)} c/u`:""].filter(Boolean).map(esc).join(" · ")+(c.nota?`<br>${esc(c.nota)}`:"");
   return `<section class="panel" aria-label="${esc(c.nombre)}">
     ${cardHead(c,sub)}
+    ${detHtml(c,maxH)}
     <div class="kpis">
       <div class="kpi"><b>${tiene}${total?` de ${total}`:""}</b><span>${total?`${pct}% de la colección`:`${tiene===1?w[0]:w[1]} que tienes`}</span></div>
       <div class="kpi"><b>${aprox?"≈ ":""}${soles(gastado)}</b><span>Gastado${aprox?" (con precio de lista)":""}${sinP?` · ${sinP} sin precio`:""}</span></div>
@@ -1877,7 +1956,9 @@ function colForm(c){ const n=!c, g=n?(S.newClase==="grupo"):c.clase==="grupo", w
       <div class="f"><label for="cf-precio">Precio habitual (S/)</label><input id="cf-precio" inputmode="decimal" value="${c?.precio?(+c.precio).toFixed(2):""}" placeholder="Ej.: 39.90"></div>
       <div class="f"><label for="cf-frec">Frecuencia (opcional)</label><input id="cf-frec" value="${esc(c?.frecuencia||"")}" placeholder="Ej.: mensual"></div>
       <div class="f"><label for="cf-nota">Nota (opcional)</label><input id="cf-nota" value="${esc(c?.nota||"")}" placeholder="Ej.: serie abierta"></div>
+      ${c&&!g&&!c.distribuye?`<div class="f"><label for="cf-orig">Nombre original (para buscar sus tomos)</label><input id="cf-orig" value="${esc(c.nombreBusqueda||"")}" placeholder="Ej.: Yamada-kun to Lv999"></div>`:""}
     </div>
+    ${c&&!g&&!c.distribuye?`<p class="muted" style="margin:0">Si dejas el total vacío, Tomo lo busca solo. <button class="linkbtn" type="button" data-act="redet" data-col="${esc(c.id)}">Buscar de nuevo ahora</button></p>`:""}
     ${c&&c.precios&&Object.keys(c.precios).length?`<p class="muted" style="margin:0">Las primeras entregas mantienen su precio de lanzamiento: ${Object.entries(c.precios).map(([k,v])=>`N.º ${k} a ${soles(v)}`).join(", ")}.</p>`:""}
     ${c&&!g?`<p class="muted" style="margin:0">El precio habitual sirve para calcular lo que te falta y se propone al agregar el siguiente ${w[0]}. Lo que pagaste de verdad va en <b>Precios</b>.</p>`:""}
     <div class="pacts"><button class="btn primary sm" type="submit">Guardar</button><button class="btn ghost sm" type="button" data-act="cancel">Cancelar</button>${c&&g?`<button class="btn danger sm" type="button" data-act="delgrp" data-col="${esc(c.id)}" style="margin-left:auto">Borrar grupo</button>`:""}</div>
@@ -1901,7 +1982,12 @@ $("#v-colecciones").addEventListener("click",e=>{
   else if(act==="hide"){ setCfg({oculta:true}); renderOther(); toast("Oculta. Puedes volver a mostrarla abajo."); }
   else if(act==="unhide"){ setCfg({oculta:false}); renderOther(); }
   else if(act==="more"){ S.colOpen.add(id); renderCols(); }
-  else if(act==="less"){ S.colOpen.delete(id); renderCols(); } });
+  else if(act==="less"){ S.colOpen.delete(id); renderCols(); }
+  else if(act==="usarTotal"){ setCfg({total:+a.dataset.n,totalManual:true,totalAuto:false}); renderOther(); toast(`Total: ${a.dataset.n}`); }
+  else if(act==="redet"){ const cf={...(S.colsCfg[id]||{})}; delete cf.det; if(!cf.totalManual) { cf.totalAuto=true; } S.colsCfg={...S.colsCfg,[id]:cf}; saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderCols(); }
+  else if(act==="deseoSigue"){ const c=colecciones().find(x=>x.id===id), s=c?.det?.sigue?.[+a.dataset.i]; if(!s) return;
+    if(!S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo))){ S.wish.items.unshift({id:"w-"+Date.now().toString(36),titulo:s.titulo,autor:c.autor||"",nota:`${s.rel.replace("Continúa en","Continuación")} de ${c.nombre}${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:""}`,creado:Date.now()}); saveJ(WISH_KEY,S.wish); }
+    renderOther(); toast(`“${s.titulo}” está en tu lista de deseos`); } });
 // precios: se guardan sin redibujar para no perder el foco al pasar a la siguiente casilla
 $("#v-colecciones").addEventListener("change",e=>{ const p=e.target.closest("[data-price]"); if(!p) return;
   const val=p.value.trim().replace(/^S\/\s*/i,"").replace(",","."); const b=byId(p.dataset.price); if(!b) return;
@@ -1920,7 +2006,11 @@ $("#v-colecciones").addEventListener("submit",e=>{ e.preventDefault();
     S.colsCfg={...S.colsCfg,[id]:{id,propia:true,clase:g?"grupo":"serie",nombre,editorial:v("cf-editorial"),tipo:v("cf-tipo")||(g?"libro":"manga"),autor:"",genero:"",...(g?{libros:[]}:{}),...patch}};
     if(g){ S.pick=id; S.pickQ=""; S.pickFocus=true; toast(`Grupo “${nombre}” creado. Ahora elige sus libros.`); }
     else toast(`Colección “${nombre}” creada. Sus tomos se unen por el nombre de la serie.`); }
-  else { const id=S.colEdit; S.colsCfg={...S.colsCfg,[id]:{...(S.colsCfg[id]||{}),...patch}}; toast("Guardado"); }
+  else { const id=S.colEdit, c=colecciones().find(x=>x.id===id);
+    if($("#cf-orig")) patch.nombreBusqueda=v("cf-orig");
+    // si cambiaste el total a mano, manda el tuyo; si lo vaciaste, Tomo vuelve a calcularlo
+    if(c && (+patch.total||0)!==(+c.total||0)){ patch.totalManual=!!patch.total; patch.totalAuto=false; }
+    S.colsCfg={...S.colsCfg,[id]:{...(S.colsCfg[id]||{}),...patch}}; toast("Guardado"); }
   saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderOther(); });
 
 /* ---------- vista: lista de deseos ---------- */
