@@ -516,6 +516,17 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .welcome .pacts{width:100%;justify-content:center;margin-top:4px}
 .welcome .btn.primary{min-width:140px;padding:11px 20px}
 
+/* ===== escáner con cámara en vivo ===== */
+.cam{position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column;justify-content:space-between;animation:fade .15s ease-out}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam-frame{position:absolute;left:50%;top:50%;width:min(82vw,420px);height:min(34vw,170px);transform:translate(-50%,-50%);border-radius:18px;box-shadow:0 0 0 100vmax rgba(0,0,0,.5);border:3px solid rgba(255,255,255,.9)}
+.cam-frame i{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#ff5a4f;box-shadow:0 0 12px #ff5a4f;animation:laser 1.6s ease-in-out infinite}
+@keyframes laser{0%,100%{transform:translateY(-38px)}50%{transform:translateY(38px)}}
+.cam-tip{position:relative;z-index:1;margin:calc(20px + env(safe-area-inset-top,0px)) 16px 0;align-self:center;background:rgba(0,0,0,.6);color:#fff;padding:10px 16px;border-radius:999px;font-weight:600;font-size:14.5px;text-align:center;max-width:520px}
+.cam-bar{position:relative;z-index:1;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:16px 16px calc(22px + env(safe-area-inset-bottom,0px))}
+.cam-bar .btn{background:rgba(255,255,255,.92);color:#1E1912;border-color:transparent;padding:12px 18px}
+.cam-bar .btn.primary{background:var(--accent);color:var(--accent-ink)}
+
 /* ===== Tomo: ingreso, cuenta y guardado en la nube ===== */
 .auth{position:fixed;inset:0;z-index:60;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));background:var(--bg)}
 .auth-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background:
@@ -684,11 +695,11 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
       <button class="btn primary" type="submit">Agregar</button>
     </form>
     <div class="actions">
-      <label class="btn" for="barcodePhoto">
+      <button class="btn" id="camBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
-        Foto del código
-      </label>
-      <input type="file" id="barcodePhoto" accept="image/*" capture="environment" class="sr">
+        Escanear con cámara
+      </button>
+      <input type="file" id="barcodePhoto" accept="image/*" class="sr">
       <button class="btn" id="noIsbnBtn" type="button">Sin ISBN</button>
     </div>
     <div class="hint">
@@ -1264,7 +1275,7 @@ async function decodeBarcode(file){
     if(window.ZXing){ const Z=window.ZXing, hints=new Map();
       hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A]); hints.set(Z.DecodeHintType.TRY_HARDER,true);
       const reader=new Z.MultiFormatReader(); reader.setHints(hints);
-      for(const size of [1400,900,2000]) for(const rot of [0,90]){ try{ const c=toCanvas(img,size,rot); const res=reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c)))); if(res) return res.getText(); }catch(e){} } }
+      for(const size of [1400,900]) for(const rot of [0,90]){ let c=null; try{ c=toCanvas(img,size,rot); const res=reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c)))); if(res) return res.getText(); }catch(e){} finally{ if(c){ c.width=0; c.height=0; } } } }
     return null;
   } finally{ URL.revokeObjectURL(url); }
 }
@@ -1274,6 +1285,53 @@ $("#barcodePhoto").addEventListener("change",async e=>{
   try{ const v=await decodeBarcode(f); if(!v){ setStatus("No encontré un código de barras en la foto. Acércate a las barras con buena luz o escribe el número.","err"); return; } handleIsbn(v); }
   catch(err){ setStatus("No pude abrir esa imagen.","err"); }
 });
+
+/* ---------- escáner con la cámara en vivo, dentro de la página ----------
+   En Android, abrir la app de Cámara aparte puede hacer que el sistema cierre el navegador por falta de memoria
+   ("no se pudo completar la operación"). Aquí la cámara corre dentro de Tomo y el código se lee solo al apuntar. */
+const CAM={stream:null,timer:0,busy:false,bd:null,reader:null,canvas:null};
+async function abrirCamara(){
+  if(!navigator.mediaDevices?.getUserMedia){ $("#barcodePhoto").click(); return; }
+  let root=$("#camRoot"); if(!root){ root=document.createElement("div"); root.id="camRoot"; document.body.appendChild(root); }
+  root.innerHTML=`<div class="cam" role="dialog" aria-modal="true" aria-label="Escanear código de barras">
+    <video id="camVideo" playsinline muted autoplay></video>
+    <div class="cam-frame" aria-hidden="true"><i></i></div>
+    <p class="cam-tip" id="camTip" role="status">Abriendo la cámara…</p>
+    <div class="cam-bar"><button class="btn" id="camFoto" type="button">Elegir una foto</button><button class="btn" id="camTorch" type="button" hidden>Linterna</button><button class="btn primary" id="camClose" type="button">Cerrar</button></div>
+  </div>`;
+  $("#camClose").onclick=cerrarCamara;
+  $("#camFoto").onclick=()=>{ cerrarCamara(); $("#barcodePhoto").click(); };
+  document.addEventListener("keydown",camEsc);
+  try{ CAM.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false}); }
+  catch(e){ const t=$("#camTip"); if(t) t.textContent = e&&e.name==="NotAllowedError" ? "Tomo no tiene permiso para usar la cámara. Actívalo tocando el candado junto a la dirección, o elige una foto." : "No encontré una cámara. Elige una foto del código."; return; }
+  if(!$("#camVideo")){ cerrarCamara(); return; } // la cerraron mientras pedía permiso
+  const v=$("#camVideo"); v.srcObject=CAM.stream; await v.play().catch(()=>{});
+  const track=CAM.stream.getVideoTracks()[0], caps=track.getCapabilities?.()||{};
+  if(caps.torch){ const t=$("#camTorch"); let on=false; t.hidden=false; t.onclick=()=>{ on=!on; track.applyConstraints({advanced:[{torch:on}]}).catch(()=>{}); t.classList.toggle("primary",on); }; }
+  if("BarcodeDetector" in window){ try{ const f=await BarcodeDetector.getSupportedFormats(); if(f.includes("ean_13")) CAM.bd=new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e"]}); }catch(e){} }
+  if(!CAM.bd){ $("#camTip").textContent="Preparando el lector…"; await loadZXing().catch(()=>{});
+    if(window.ZXing){ const Z=window.ZXing, h=new Map(); h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A]); CAM.reader=new Z.MultiFormatReader(); CAM.reader.setHints(h); } }
+  if(!CAM.stream) return;
+  if(!CAM.bd&&!CAM.reader){ $("#camTip").textContent="No pude cargar el lector. Revisa tu conexión o elige una foto."; return; }
+  $("#camTip").textContent="Apunta al código de barras de la contratapa";
+  CAM.canvas=document.createElement("canvas"); CAM.timer=setInterval(leerCuadro,CAM.bd?150:250);
+}
+async function leerCuadro(){ const v=$("#camVideo"); if(CAM.busy||!v||v.readyState<2) return; CAM.busy=true;
+  try{ let code="";
+    if(CAM.bd){ const r=await CAM.bd.detect(v); code=(r.find(x=>/^97[89]/.test(x.rawValue))||r[0])?.rawValue||""; }
+    else if(CAM.reader){ // solo la franja central del video, a 800 px: rápido y liviano
+      const Z=window.ZXing, c=CAM.canvas, vw=v.videoWidth, vh=v.videoHeight, cw=Math.min(800,vw), sc=cw/vw, ch=Math.max(1,Math.round(vh*0.5*sc));
+      c.width=cw; c.height=ch; c.getContext("2d",{willReadFrequently:true}).drawImage(v,0,vh*0.25,vw,vh*0.5,0,0,cw,ch);
+      try{ code=CAM.reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c)))).getText(); }catch(e){} }
+    if(code && !normalizeIsbn(code).error){ if(navigator.vibrate) navigator.vibrate(60); cerrarCamara(); handleIsbn(code); }
+  }catch(e){} finally{ CAM.busy=false; } }
+function cerrarCamara(){ clearInterval(CAM.timer); CAM.timer=0;
+  if(CAM.stream){ CAM.stream.getTracks().forEach(t=>t.stop()); CAM.stream=null; }
+  if(CAM.canvas){ CAM.canvas.width=0; CAM.canvas=null; }
+  const r=$("#camRoot"); if(r) r.innerHTML=""; document.removeEventListener("keydown",camEsc); }
+function camEsc(e){ if(e.key==="Escape") cerrarCamara(); }
+document.addEventListener("visibilitychange",()=>{ if(document.hidden&&CAM.stream) cerrarCamara(); });
+$("#camBtn").addEventListener("click",abrirCamara);
 
 /* ---------- ficha ---------- */
 function openBook(id){ if(!byId(id)) return; S.draft=null; S.openId=id; renderSheet(); }

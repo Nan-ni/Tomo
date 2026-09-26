@@ -1,6 +1,6 @@
 // Tomo · service worker: permite instalar la app y abrirla aunque no haya internet.
 // Al publicar cambios, sube el número de VERSION para que todos reciban la versión nueva.
-const VERSION = "tomo-v1";
+const VERSION = "tomo-v2";
 const BASE = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
