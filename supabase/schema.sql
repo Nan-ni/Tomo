@@ -90,3 +90,29 @@ drop policy if exists "borrar mis portadas" on storage.objects;
 create policy "borrar mis portadas" on storage.objects
   for delete to authenticated
   using (bucket_id = 'portadas' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- ---------------------------------------------------------------------
+--  Estante compartido: un enlace secreto para que cualquiera vea tu estante
+--  y tu lista de deseos sin iniciar sesión. Lo lee solo la función "compartido".
+--  Borrar la fila = el enlace deja de funcionar.
+-- ---------------------------------------------------------------------
+create table if not exists public.compartidos (
+  user_id uuid primary key references auth.users on delete cascade,
+  token   uuid not null unique default gen_random_uuid(),
+  creado  timestamptz not null default now()
+);
+alter table public.compartidos enable row level security;
+
+drop policy if exists "ver mi enlace" on public.compartidos;
+create policy "ver mi enlace" on public.compartidos
+  for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "crear mi enlace" on public.compartidos;
+create policy "crear mi enlace" on public.compartidos
+  for insert to authenticated with check (user_id = (select auth.uid()));
+drop policy if exists "borrar mi enlace" on public.compartidos;
+create policy "borrar mi enlace" on public.compartidos
+  for delete to authenticated using (user_id = (select auth.uid()));
+revoke all on public.compartidos from anon;
+-- el enlace lo inventa la base de datos (al azar), no el lector
+revoke insert on public.compartidos from authenticated;
+grant insert (user_id) on public.compartidos to authenticated;
