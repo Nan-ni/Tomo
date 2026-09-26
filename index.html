@@ -575,6 +575,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .menu-id{padding:10px 12px 12px;border-bottom:1px solid var(--line);margin-bottom:4px;display:flex;flex-direction:column;gap:2px}
 .menu-id span{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
 .menu-id b{font-size:17px;letter-spacing:.05em}
+.menu-ver{font-size:11.5px;color:var(--ink-3);margin-top:2px}
 #logoutBtn{color:var(--warn);border-top:1px solid var(--line);border-radius:0 0 11px 11px;margin-top:4px}
 
 /* cabecera en una sola línea, y "Mi cuenta" como panel desde abajo en el celular */
@@ -806,7 +807,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 12</small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
@@ -987,9 +988,14 @@ const GB=window.TOMO.fnUrl+"/libros";
 function gKey(){ return "servidor"; }
 // Google Books: primero por el servidor de Tomo (con tu clave). Si falla (sesión vencida, límite diario de la clave o el servidor caído),
 // se pregunta directo a Google desde este navegador, que no necesita clave.
+const quePaso=e=>!e?"":e.status?`código ${e.status}`:e.name==="AbortError"?"tardó demasiado":"sin conexión";
 async function gb(params){
-  try{ return await getJson(`${GB}?${params}`); }
-  catch(e){ if(e.status===400) throw e; return await getJson(`https://www.googleapis.com/books/v1/volumes?${params}`); } }
+  let e1;
+  try{ return await getJson(`${GB}?${params}`); }catch(e){ e1=e; }
+  try{ const j=await getJson(`https://www.googleapis.com/books/v1/volumes?${params}`);
+    if(!gb.avisado){ gb.avisado=true; console.warn(`Tomo: el buscador de Supabase (función "libros") falló (${quePaso(e1)}); se usó Google directo.`); }
+    return j; }
+  catch(e2){ const e=new Error("google"); e.status=e2.status||e1?.status; e.detalle=`buscador de Tomo: ${quePaso(e1)} · Google directo: ${quePaso(e2)}`; throw e; } }
 async function getJson(url){ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),15000);
   try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?await window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
     if(!r.ok){ const e=new Error("http "+r.status); e.status=r.status; throw e; } return await r.json(); } finally{ clearTimeout(t); } }
@@ -1039,7 +1045,7 @@ async function lookup(isbn){
   const [o,g]=await Promise.allSettled([openLibrary(isbn), google(isbn)]);
   const out={}; let reached=false, googleOk=false, googleProblem="";
   if(g.status==="fulfilled"){ if(!g.value.skipped){ reached=googleOk=true; Object.assign(out,g.value); } }
-  else { const st=g.reason?.status; googleProblem = st===400||st===403 ? "La clave de Google Books no es válida." : st===429 ? "Google Books llegó a su límite de hoy." : "Google Books no respondió."; }
+  else { const st=g.reason?.status; googleProblem=(st===429?"Google Books llegó a su límite de hoy":"Google Books no respondió")+(g.reason?.detalle?` (${g.reason.detalle})`:""); }
   if(o.status==="fulfilled"){ reached=true; const ol=o.value||{}; const gc=out.categorias||[]; for(const k in ol) if(!out[k]&&ol[k]) out[k]=ol[k]; out.categorias=gc.concat(ol.categorias||[]); }
   else if(o.reason?.status) reached=true;
   return {data:out, found:!!out.titulo, reached, googleOk, googleProblem};
@@ -1248,6 +1254,9 @@ async function fillFromWeb(id, quiet){
   const b=byId(id); if(!b?.isbn) return;
   S.pending.add(id); render(); if(S.openId===id) renderSheet();
   let r; try{ r=await lookup(b.isbn); }catch(e){ r={found:false,reached:false,data:{}}; }
+  S.diag=S.diag||{};
+  if(r.found) delete S.diag[id];
+  else S.diag[id]=r.googleOk?"Google Books y Open Library respondieron que no tienen este ISBN.":`${r.googleProblem||"No pude conectarme a las bases de libros"}. Toca “Buscar de nuevo por ISBN” en un rato.`;
   S.pending.delete(id);
   const cur=byId(id); if(!cur){ render(); return; }
   const upd={...cur, actualizado:Date.now()}; if(r.reached) upd.buscado=true;
@@ -1273,7 +1282,7 @@ async function fillFromWeb(id, quiet){
     if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}`,"ok");
     else if(!r.reached || !r.googleOk){ // no es que no exista: Google no llegó a contestar
       const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
-      setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${r.reached?"Google Books no respondió":"no pude conectarme a las bases de libros"}${r.googleProblem&&r.googleProblem!=="Google Books no respondió."?` (${esc(r.googleProblem.replace(/\.$/,"").toLowerCase())})`:""}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo” en su ficha más tarde."}`,"err");
+      setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${esc(r.googleProblem||"no pude conectarme a las bases de libros")}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo por ISBN” en su ficha más tarde."}`,"err");
       if(otraVez) setTimeout(()=>{ const x=byId(id); if(x&&!x.titulo&&!S.pending.has(id)) fillFromWeb(id,false); },15000); }
     else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
   }
@@ -1625,6 +1634,7 @@ function renderSheet(){
       <div class="box" id="coverPick" hidden></div>
       <div class="box" id="titleSearch">
         <h4>¿No aparece? Búscalo por título</h4>
+        ${!isNew&&S.diag?.[b.id]?`<p class="origin" id="tsDiag" style="margin:0">${esc(S.diag[b.id])}</p>`:""}
         <form id="tsForm" style="display:flex;gap:8px"><label for="ts-q" class="sr">Título y autor</label><input id="ts-q" class="search" style="max-width:none" placeholder="Ej.: La ciudad y los perros Vargas Llosa" value="${esc(b.titulo?"":"")}"><button class="btn" type="submit">Buscar</button></form>
         <div id="tsRes" class="hist"></div>
       </div>
