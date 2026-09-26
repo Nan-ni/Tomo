@@ -1139,7 +1139,7 @@ async function fillFromWeb(id, quiet){
     const tip = r.googleProblem ? ` ${r.googleProblem}` : (!gKey() ? ` Con una clave de Google Books (en “Ajustes de búsqueda”) se encuentran muchos más libros.` : "");
     if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}`,"ok");
     else if(!r.reached) setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no pude conectarme a las bases de libros.${esc(tip)} Usa “Buscar de nuevo” más tarde.`,"err");
-    else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); }
+    else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
   }
   return r;
 }
@@ -1173,7 +1173,7 @@ function hydrateLocalCovers(){
     let got; try{ got=await IDB.getMany(need); }catch(e){ got=new Map(); }
     let changed=false;
     for(const id of need){ if(localUrls.has(id)) continue; const blob=got.get(id); if(blob){ localUrls.set(id,URL.createObjectURL(blob)); changed=true; } else localUrls.set(id,""); }
-    if(changed){ render(); if(S.openId) rerenderKeeping(); }
+    if(changed){ render(); if(S.openId&&need.includes(S.openId)) rerenderKeeping(); } // la ficha abierta solo se redibuja si cambió SU portada
   })().finally(()=>{ hydrating=null; if(hydrateQueued){ hydrateQueued=false; hydrateLocalCovers(); } });
   return hydrating; }
 let hydrateTimer=0;
@@ -1420,7 +1420,8 @@ $("#camBtn").addEventListener("click",()=>abrirCamara());
 
 /* ---------- ficha ---------- */
 function openBook(id){ if(!byId(id)) return; S.draft=null; S.openId=id; renderSheet(); }
-function closeSheet(){ S.openId=null; S.draft=null; $("#sheetRoot").innerHTML=""; document.removeEventListener("keydown",escClose); $("#isbnInput").focus({preventScroll:true}); }
+function closeSheet(){ S.openId=null; S.draft=null; S.delConfirm=null; $("#sheetRoot").innerHTML=""; document.removeEventListener("keydown",escClose);
+  if(!matchMedia("(pointer:coarse)").matches) $("#isbnInput").focus({preventScroll:true}); } // en el celular no se abre el teclado solo
 function current(){ return S.draft||byId(S.openId); }
 const today=()=>{ const d=new Date(); return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
 const fmtDate=d=>{ if(!d) return ""; const [y,m,dd]=d.split("-"); return `${+dd}/${+m}/${y}`; };
@@ -1478,7 +1479,7 @@ function renderSheet(){
       ${isNew?"":loanBox(b)}
       <div class="foot">
         ${isNew?`<button class="btn ghost" id="cancelBtn">Descartar</button><button class="btn primary" id="saveBtn">Guardar en el estante</button>`
-          :`<span id="delZone"><button class="btn danger" id="delBtn">Quitar del estante</button></span><button class="btn primary" id="saveBtn">Guardar cambios</button>`}
+          :`<span id="delZone">${S.delConfirm===b.id?`<span class="confirm">¿Seguro? <button class="btn danger" id="delYes" type="button">Sí, quitar</button><button class="btn ghost" id="delNo" type="button">No</button></span>`:`<button class="btn danger" id="delBtn" type="button">Quitar del estante</button>`}</span><button class="btn primary" id="saveBtn">Guardar cambios</button>`}
       </div>
     </div>
   </div>`;
@@ -1528,7 +1529,10 @@ function wireSheet(){
   $("#isbnCam")&&($("#isbnCam").onclick=()=>abrirCamara(code=>{ const r=normalizeIsbn(code), el=$("#f-isbn"); if(el){ el.value=r.isbn||code; toast("ISBN leído. Toca Guardar."); } }));
   $("#saveBtn").onclick=save;
   $("#cancelBtn")&&($("#cancelBtn").onclick=closeSheet);
-  $("#delBtn")&&($("#delBtn").onclick=()=>{ $("#delZone").innerHTML=`<span class="confirm">¿Seguro? <button class="btn danger" id="delYes">Sí, quitar</button><button class="btn ghost" id="delNo">No</button></span>`; $("#delNo").onclick=renderSheet; $("#delYes").onclick=del; });
+  // la confirmación se recuerda, así no se pierde si la ficha se vuelve a dibujar (p. ej. al terminar de cargar una portada)
+  $("#delBtn")&&($("#delBtn").onclick=()=>{ S.delConfirm=S.openId; rerenderKeeping(); });
+  $("#delNo")&&($("#delNo").onclick=()=>{ S.delConfirm=null; rerenderKeeping(); });
+  $("#delYes")&&($("#delYes").onclick=del);
   $("#lendBtn")&&($("#lendBtn").onclick=lend);
   $("#returnBtn")&&($("#returnBtn").onclick=giveBack);
   $("#refetchBtn")&&($("#refetchBtn").onclick=()=>fillFromWeb(S.openId,false));
