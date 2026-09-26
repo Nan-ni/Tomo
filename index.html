@@ -697,6 +697,11 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
   #tipoSeg{grid-template-columns:repeat(2,1fr)}
 }
 
+/* resultados de "Búscalo por título" con su portada */
+.hist li.ts-it{align-items:center;gap:10px}
+.ts-it img,.ts-it .ts-sin{width:34px;height:51px;flex:none;border-radius:3px;object-fit:cover;background:var(--surface-2)}
+.ts-it span{flex:1;min-width:0}
+
 /* ===== compartir el estante ===== */
 a.btn{text-decoration:none;color:inherit}
 .share-link{width:100%;margin-top:6px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font:13px/1.45 var(--mono);color:var(--ink);text-align:left;overflow-wrap:anywhere;user-select:all;-webkit-user-select:all}
@@ -807,7 +812,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 12</small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 13</small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
@@ -1050,13 +1055,31 @@ async function lookup(isbn){
   else if(o.reason?.status) reached=true;
   return {data:out, found:!!out.titulo, reached, googleOk, googleProblem};
 }
+// Búsqueda por título: Google en español, Google en general y Open Library a la vez; sin repetidos y ordenados para que salga
+// primero el libro cuyo título es lo que escribiste (aunque agregues el autor: "La tregua Mario"), luego en español y con portada.
 async function searchTitle(q){
-  if(gKey()){
-    try{ const j=await gb(`q=${encodeURIComponent(q)}&maxResults=6&printType=books`);
-      const r=(j.items||[]).map(it=>fromGoogle(it.volumeInfo)); if(r.length) return r; }catch(e){}
-  }
-  const j=await getJson(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=6&fields=title,author_name,publisher,first_publish_year,cover_i,number_of_pages_median`);
-  return (j.docs||[]).map(d=>({titulo:d.title||"", autor:(d.author_name||[]).slice(0,3).join(", "), editorial:d.publisher?.[0]||"", anio:d.first_publish_year?String(d.first_publish_year):"", paginas:d.number_of_pages_median||"", portadaUrl:olCover(d.cover_i)}));
+  const qq=encodeURIComponent(q);
+  const [es,todo,ol]=await Promise.allSettled([
+    gb(`q=${qq}&maxResults=20&printType=books&langRestrict=es`),
+    gb(`q=${qq}&maxResults=20&printType=books`),
+    getJson(`https://openlibrary.org/search.json?q=${qq}&limit=10&fields=title,author_name,publisher,first_publish_year,cover_i,number_of_pages_median,language`)]);
+  if(es.status==="rejected"&&todo.status==="rejected"&&ol.status==="rejected") throw es.reason;
+  const out=[];
+  for(const r of [es,todo]) if(r.status==="fulfilled") for(const it of r.value.items||[]) if(it.volumeInfo?.title) out.push({...fromGoogle(it.volumeInfo),idioma:it.volumeInfo.language||""});
+  if(ol.status==="fulfilled") for(const d of ol.value.docs||[]) if(d.title) out.push({titulo:d.title, autor:(d.author_name||[]).slice(0,3).join(", "), editorial:d.publisher?.[0]||"", anio:d.first_publish_year?String(d.first_publish_year):"", paginas:d.number_of_pages_median||"", portadaUrl:olCover(d.cover_i), idioma:(d.language||[]).includes("spa")?"es":""});
+  const pal=normSerie(q).split(" ").filter(Boolean), setQ=new Set(pal), vistos=new Map();
+  for(const r of out){ const k=normSerie(r.titulo)+"|"+normSerie((r.autor||"").split(",")[0]); const prev=vistos.get(k);
+    if(!prev) vistos.set(k,r); else for(const c in r) if(!prev[c]&&r[c]) prev[c]=r[c]; } // mismo libro en dos fuentes: se juntan sus datos
+  const puntaje=r=>{ const tw=normSerie(r.titulo).split(" ").filter(Boolean), ta=normSerie(`${r.titulo} ${r.autor}`).split(" ");
+    let p=0;
+    if(pal.every(w=>ta.includes(w))) p+=4;                                   // todo lo que escribiste está en el título o el autor
+    p+=3*pal.filter(w=>tw.includes(w)).length/Math.max(1,pal.length);
+    if(tw.length && tw.every(w=>setQ.has(w))) p+=tw.length===pal.length?6:5;  // el título es lo que escribiste (más, quizá, el autor)
+    if(r.idioma==="es") p+=3;
+    if(r.portadaUrl) p+=1;
+    if(r.autor) p+=.5;
+    return p; };
+  return [...vistos.values()].map((r,i)=>({r,p:puntaje(r)-i*.001})).sort((a,b)=>b.p-a.p).slice(0,8).map(x=>x.r);
 }
 // Busca una portada cuando la edición exacta no tiene: primero otras ediciones en Google Books (prefiere español), luego Open Library.
 // ¿El número de tomo aparece en este título? (acepta "2", "02", "Nº 2", "#2", "vol. 2")
@@ -1736,7 +1759,7 @@ function wireSheet(){
   $("#tsForm").onsubmit=async e=>{ e.preventDefault(); const q=$("#ts-q").value.trim(); if(!q) return; const box=$("#tsRes");
     box.innerHTML=`<li><span class="spin"></span> Buscando…</li>`;
     try{ const res=await searchTitle(q); S.tsRes=res;
-      box.innerHTML=res.length?res.map((r,i)=>`<li style="align-items:center"><span><b style="color:var(--ink)">${esc(r.titulo)}</b><br>${esc(r.autor||"")}${r.editorial?" · "+esc(r.editorial):""}${r.anio?" · "+esc(r.anio):""}</span><button class="btn" data-pick="${i}" type="button">Usar</button></li>`).join(""):`<li>Sin resultados. Escribe los datos a mano.</li>`;
+      box.innerHTML=res.length?res.map((r,i)=>`<li class="ts-it">${r.portadaUrl?`<img src="${esc(coverSrc(r.portadaUrl))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">`:`<i class="ts-sin" aria-hidden="true"></i>`}<span><b style="color:var(--ink)">${esc(r.titulo)}</b><br>${esc(r.autor||"")}${r.editorial?" · "+esc(r.editorial):""}${r.anio?" · "+esc(r.anio):""}</span><button class="btn" data-pick="${i}" type="button">Usar</button></li>`).join(""):`<li>Sin resultados. Escribe los datos a mano.</li>`;
     }catch(err){ box.innerHTML=`<li>No hay conexión con Google Books. Intenta más tarde.</li>`; } };
   $("#tsRes").onclick=e=>{ const p=e.target.closest("[data-pick]"); if(!p) return; const r=S.tsRes[+p.dataset.pick];
     for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl","genero"]){ const el=$("#f-"+k); if(el && r[k] && (k!=="genero"||!el.value)) el.value=r[k]; }
