@@ -1,0 +1,5 @@
+# GitHub Pages: la página publica solo la app.
+# Estos archivos quedan en el repositorio pero no se sirven en nan-ni.github.io/Tomo.
+exclude:
+  - README.md
+  - supabase
