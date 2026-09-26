@@ -900,7 +900,7 @@ const hasTomo=(title,n)=>new RegExp(`(^|[^0-9])0*${+n}([^0-9]|$)`).test(String(t
 // Busca una portada cuando la edición exacta no tiene.
 // Libros: otra edición del mismo título (prefiere español). Mangas/cómics: solo el MISMO tomo; si no, ninguna.
 async function findCover(b){
-  if(b.isbn){ const u=await amazonCover(b.isbn); if(u) return u; }
+  if(b.isbn){ const u=await portadaPorIsbn(b.isbn); if(u) return u; }
   const k=gKey(), t=(b.serie||(b.titulo||"").split(":")[0]).trim(), a=(b.autor||"").split(",")[0].trim();
   const serial=tipoOf(b)!=="libro";
   if(serial && !b.tomo) return "";
@@ -909,13 +909,14 @@ async function findCover(b){
       const j=await getJson(`${GB}?q=${encodeURIComponent(q)}&maxResults=20&printType=books`);
       let withImg=(j.items||[]).map(i=>i.volumeInfo).filter(v=>v?.imageLinks?.thumbnail);
       if(serial) withImg=withImg.filter(v=>hasTomo(`${v.title} ${v.subtitle||""}`.replace(t,""),b.tomo) || (v.seriesInfo?.bookDisplayNumber==String(+b.tomo)));
-      const pick=withImg.find(v=>v.language==="es")||withImg[0];
-      if(pick) return httpsify(pick.imageLinks.thumbnail);
+      withImg.sort((x,y)=>(y.language==="es")-(x.language==="es"));
+      for(const v of withImg.slice(0,5)){ const u=httpsify(v.imageLinks.thumbnail); if(portadaVertical(await probeImg(coverSrc(u),6000))) return u; }
     }catch(e){}
   }
   if(serial) return ""; // mejor sin portada que con la de otro tomo
-  try{ if(b.isbn){ const j=await getJson(`https://openlibrary.org/search.json?isbn=${b.isbn}&fields=cover_i`); const c=j.docs?.[0]?.cover_i; if(c) return olCover(c); } }catch(e){}
-  if(t){ try{ const j=await getJson(`https://openlibrary.org/search.json?q=${encodeURIComponent(t+" "+a)}&limit=5&fields=cover_i`); const c=(j.docs||[]).find(d=>d.cover_i)?.cover_i; if(c) return olCover(c); }catch(e){} }
+  const olOk=async c=>{ const u=olCover(c); return portadaVertical(await probeImg(u,6000))?u:""; };
+  try{ if(b.isbn){ const j=await getJson(`https://openlibrary.org/search.json?isbn=${b.isbn}&fields=cover_i`); const c=j.docs?.[0]?.cover_i; if(c){ const u=await olOk(c); if(u) return u; } } }catch(e){}
+  if(t){ try{ const j=await getJson(`https://openlibrary.org/search.json?q=${encodeURIComponent(t+" "+a)}&limit=5&fields=cover_i`); for(const d of (j.docs||[]).filter(d=>d.cover_i).slice(0,3)){ const u=await olOk(d.cover_i); if(u) return u; } }catch(e){} }
   return "";
 }
 // Si Google no trae categorías ni editorial, mira otras ediciones del mismo título para saber si es manga/manhwa/cómic
@@ -942,13 +943,32 @@ const numberedTitle=t=>/\b0\d\s*$|(?:\bvol\.?|\btomo|n[º°]|#)\s*\d{1,3}\s*$/i.
 function isbn10Of(i13){ if(!/^978\d{10}$/.test(i13||"")) return ""; const b=i13.slice(3,12); let t=0; for(let i=0;i<9;i++) t+=(10-i)*+b[i]; const c=(11-t%11)%11; return b+(c===10?"X":String(c)); }
 function amazonCover(isbn){ const i10=isbn10Of(isbn); if(!i10) return Promise.resolve("");
   const u=`https://images-na.ssl-images-amazon.com/images/P/${i10}.01.LZZZZZZZ.jpg`;
-  return new Promise(res=>{ const img=new Image(); const t=setTimeout(()=>res(""),9000); img.referrerPolicy="no-referrer";
-    img.onload=()=>{ clearTimeout(t); res(img.naturalWidth>50?u:""); }; img.onerror=()=>{ clearTimeout(t); res(""); }; img.src=u; }); }
+  return revisarImagen(u).then(d=>d&&portadaVertical(d)&&!d.maqueta?u:""); }
+// Mira la imagen por dentro (solo si el sitio lo permite, como Amazon): una "foto 3D" del libro, con el lomo a la vista,
+// deja márgenes blancos alrededor; una portada plana llena toda la imagen.
+function revisarImagen(u,ms=9000){ return new Promise(res=>{ const im=new Image(); const t=setTimeout(()=>res(null),ms); im.crossOrigin="anonymous"; im.referrerPolicy="no-referrer";
+  im.onload=()=>{ clearTimeout(t); const d={w:im.naturalWidth,h:im.naturalHeight,maqueta:false};
+    try{ const W=48, H=Math.max(2,Math.round(48*d.h/Math.max(1,d.w))), c=document.createElement("canvas"); c.width=W; c.height=H;
+      const g=c.getContext("2d",{willReadFrequently:true}); g.drawImage(im,0,0,W,H); const px=g.getImageData(0,0,W,H).data;
+      let x0=W,x1=-1,y0=H,y1=-1;
+      for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=(y*W+x)*4; if(Math.min(px[i],px[i+1],px[i+2])<232){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+      if(x1>=0) d.maqueta=(x1-x0+1)/W<0.9 && (y1-y0+1)/H<0.96;
+      c.width=0; }catch(e){}
+    res(d); };
+  im.onerror=()=>{ clearTimeout(t); res(null); }; im.src=u; }); }
+// Una portada de verdad es vertical: alto entre 1,15 y 1,9 veces el ancho. Así se descartan fotos de costado, cuadradas o apaisadas.
+const portadaVertical=d=>!!d && d.w>50 && d.h/d.w>=1.15 && d.h/d.w<=1.9;
+// Portada exacta por ISBN: primero Waterstones (escaneos planos) y, si no la tiene, Amazon sin fotos 3D
+async function portadaPorIsbn(isbn){
+  if(/^97[89]\d{10}$/.test(isbn||"")){
+    const w=`https://cdn.waterstones.com/bookjackets/large/${isbn.slice(0,4)}/${isbn.slice(4,8)}/${isbn}.jpg`;
+    const d=await probeImg(w); if(d && !(d.w===260&&d.h===400) && !(d.w===500&&d.h===500) && portadaVertical(d)) return w; }
+  return amazonCover(isbn); }
 // ¿Esta portada la puso la página automáticamente (y se puede mejorar)? Las que pegaste tú o tus fotos no se tocan.
 const autoCover=b=>!b.portadaLocal && !b.portadaManual && (!b.portadaUrl || b.portadaOtraEd || /googleapis|books\.google|openlibrary/.test(b.portadaUrl));
 async function upgradeCover(id){ const b=byId(id); if(!b||!b.isbn||!autoCover(b)) return false;
-  const u=await amazonCover(b.isbn); const cur=byId(id); if(!cur) return false;
-  if(u && autoCover(cur)){ upsert({...cur,portadaUrl:u,portadaOtraEd:false,portadaAmazon:true}); if(S.openId===id) rerenderKeeping(); return true; }
+  const u=await portadaPorIsbn(b.isbn); const cur=byId(id); if(!cur) return false;
+  if(u && autoCover(cur)){ upsert({...cur,portadaUrl:u,portadaOtraEd:false,portadaAmazon:/amazon/.test(u),amazonProbado:true,portadaRevisada:true}); if(S.openId===id) rerenderKeeping(); return true; }
   upsert({...cur,amazonProbado:true}); return false; }
 const normSerie=x=>String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 const nonLatin=/[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]/;
@@ -963,9 +983,9 @@ async function coverCandidates(b){
     const i=b.isbn;
     jobs.push(amazonCover(i).then(u=>u&&add(u,"Amazon")));
     const w=`https://cdn.waterstones.com/bookjackets/large/${i.slice(0,4)}/${i.slice(4,8)}/${i}.jpg`;
-    jobs.push(probeImg(w).then(d=>{ if(d && !(d.w===260&&d.h===400) && !(d.w===500&&d.h===500)) add(w,"Waterstones"); }));
+    jobs.push(probeImg(w).then(d=>{ if(d && !(d.w===260&&d.h===400) && !(d.w===500&&d.h===500) && portadaVertical(d)) add(w,"Waterstones"); }));
     const o=`https://covers.openlibrary.org/b/isbn/${i}-L.jpg?default=false`;
-    jobs.push(probeImg(o).then(d=>{ if(d&&d.w>50) add(o,"Open Library"); }));
+    jobs.push(probeImg(o).then(d=>{ if(portadaVertical(d)) add(o,"Open Library"); }));
     if(gKey()) jobs.push(getJson(`${GB}?q=isbn:${i}`).then(j=>{ const v=j.items?.[0]?.volumeInfo; if(v?.imageLinks?.thumbnail) add(coverSrc(httpsify(v.imageLinks.thumbnail)),"Google Books"); }).catch(()=>{}));
   }
   await Promise.all(jobs);
@@ -985,9 +1005,16 @@ async function coverCandidates(b){
 async function fillCover(id){
   const b=byId(id); if(!b||b.portadaUrl) return false;
   const url=await findCover(b); const cur=byId(id); if(!cur) return false;
-  upsert({...cur, portadaUrl:cur.portadaUrl||url, portadaOtraEd:!!url&&!cur.portadaUrl&&!/amazon\.com\/images\/P\//.test(url), portadaBuscada:true});
+  upsert({...cur, portadaUrl:cur.portadaUrl||url, portadaOtraEd:!!url&&!cur.portadaUrl&&!/amazon\.com\/images\/P\/|waterstones\.com/.test(url), portadaBuscada:true, portadaRevisada:true});
   if(S.openId===id) renderSheet();
   return !!url;
+}
+async function revisarPortada(id){
+  const b=byId(id); if(!b||!b.portadaUrl||b.portadaLocal||b.portadaManual) return;
+  const u=coverSrc(b.portadaUrl), d=await (/amazon/.test(u)?revisarImagen(u,8000):probeImg(u,8000)); const cur=byId(id); if(!cur) return;
+  if(!d||(portadaVertical(d)&&!d.maqueta)){ upsert({...cur,portadaRevisada:true}); return; } // si no cargó, no se toca
+  const nueva=await findCover({...cur,portadaUrl:""}); const cur2=byId(id); if(!cur2||cur2.portadaManual||cur2.portadaLocal) return;
+  upsert({...cur2,portadaUrl:nueva,portadaOtraEd:!!nueva&&!/amazon\.com\/images\/P\/|waterstones\.com/.test(nueva),portadaAmazon:/amazon/.test(nueva),portadaRevisada:true,actualizado:Date.now()});
 }
 function applyTipo(upd, data){
   if(!upd.tipoFijado){ const t=detectTipo(data); if(t) upd.tipo=t; }
@@ -1289,8 +1316,10 @@ $("#barcodePhoto").addEventListener("change",async e=>{
 /* ---------- escáner con la cámara en vivo, dentro de la página ----------
    En Android, abrir la app de Cámara aparte puede hacer que el sistema cierre el navegador por falta de memoria
    ("no se pudo completar la operación"). Aquí la cámara corre dentro de Tomo y el código se lee solo al apuntar. */
-const CAM={stream:null,timer:0,busy:false,bd:null,reader:null,canvas:null};
-async function abrirCamara(){
+const CAM={stream:null,timer:0,busy:false,bd:null,reader:null,canvas:null,cb:null};
+// alLeer: opcional. Si viene, el código se entrega ahí (p. ej. para llenar el ISBN de una ficha) en vez de agregar un libro.
+async function abrirCamara(alLeer){
+  CAM.cb=typeof alLeer==="function"?alLeer:null;
   if(!navigator.mediaDevices?.getUserMedia){ $("#barcodePhoto").click(); return; }
   let root=$("#camRoot"); if(!root){ root=document.createElement("div"); root.id="camRoot"; document.body.appendChild(root); }
   root.innerHTML=`<div class="cam" role="dialog" aria-modal="true" aria-label="Escanear código de barras">
@@ -1323,7 +1352,7 @@ async function leerCuadro(){ const v=$("#camVideo"); if(CAM.busy||!v||v.readySta
       const Z=window.ZXing, c=CAM.canvas, vw=v.videoWidth, vh=v.videoHeight, cw=Math.min(800,vw), sc=cw/vw, ch=Math.max(1,Math.round(vh*0.5*sc));
       c.width=cw; c.height=ch; c.getContext("2d",{willReadFrequently:true}).drawImage(v,0,vh*0.25,vw,vh*0.5,0,0,cw,ch);
       try{ code=CAM.reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c)))).getText(); }catch(e){} }
-    if(code && !normalizeIsbn(code).error){ if(navigator.vibrate) navigator.vibrate(60); cerrarCamara(); handleIsbn(code); }
+    if(code && !normalizeIsbn(code).error){ if(navigator.vibrate) navigator.vibrate(60); const cb=CAM.cb; cerrarCamara(); if(cb) cb(code); else handleIsbn(code); }
   }catch(e){} finally{ CAM.busy=false; } }
 function cerrarCamara(){ clearInterval(CAM.timer); CAM.timer=0;
   if(CAM.stream){ CAM.stream.getTracks().forEach(t=>t.stop()); CAM.stream=null; }
@@ -1331,7 +1360,7 @@ function cerrarCamara(){ clearInterval(CAM.timer); CAM.timer=0;
   const r=$("#camRoot"); if(r) r.innerHTML=""; document.removeEventListener("keydown",camEsc); }
 function camEsc(e){ if(e.key==="Escape") cerrarCamara(); }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden&&CAM.stream) cerrarCamara(); });
-$("#camBtn").addEventListener("click",abrirCamara);
+$("#camBtn").addEventListener("click",()=>abrirCamara());
 
 /* ---------- ficha ---------- */
 function openBook(id){ if(!byId(id)) return; S.draft=null; S.openId=id; renderSheet(); }
@@ -1383,7 +1412,7 @@ function renderSheet(){
         <div class="f"><label for="f-paginas">Páginas</label><input id="f-paginas" inputmode="numeric" value="${esc(b.paginas)}"></div>
         <div class="f"><label for="f-precio">Precio pagado (S/)</label><input id="f-precio" inputmode="decimal" value="${esc(b.precio??"")}" placeholder="Opcional">${b.precioFuente&&b.precio?`<span class="origin">${esc(b.precioFuente)}</span>`:""}</div>
         <div class="f full"><label for="f-portadaUrl">Enlace de portada</label><input id="f-portadaUrl" value="${esc(b.portadaUrl)}" placeholder="https://…"></div>
-        ${!b.isbn?`<div class="f full"><label for="f-isbn">ISBN (opcional)</label><input id="f-isbn" class="mono" inputmode="numeric"></div>`:""}
+        ${!b.isbn?`<div class="f full"><label for="f-isbn">ISBN (opcional: con él sale la portada exacta de tu edición)</label><div style="display:flex;gap:8px"><input id="f-isbn" class="mono" inputmode="numeric" style="flex:1;min-width:0"><button class="btn" type="button" id="isbnCam">Escanear</button></div></div>`:""}
       </div>
       <div class="f"><label>Estado de lectura</label><div class="seg" id="seg">${ESTADOS.map(([k,l])=>`<button type="button" data-e="${k}" aria-pressed="${(b.estado||"por-leer")===k}">${l}</button>`).join("")}</div></div>
       <div class="f" id="leidoBox" ${b.estado==="leido"?"":"hidden"}><label for="f-leidoEn">Lo terminaste el</label><input id="f-leidoEn" type="date" value="${esc(b.leidoEn||"")}" style="max-width:220px"></div>
@@ -1440,6 +1469,7 @@ function wireSheet(){
     $("#leidoBox").hidden=k.dataset.e!=="leido"; if(k.dataset.e==="leido"&&!$("#f-leidoEn").value) $("#f-leidoEn").value=today(); };
   $("#rate").onclick=e=>{ const k=e.target.closest("[data-r]"); if(!k) return; let n=+k.dataset.r; const curr=+($("#rate").dataset.v ?? current().calificacion ?? 0); if(n===curr) n=0; $("#rate").dataset.v=n; [...$("#rate").children].forEach((x,i)=>x.classList.toggle("on",i<n)); };
   $("#grpChips")&&($("#grpChips").onclick=e=>{ const g=e.target.closest("[data-g]"); if(!g) return; const on=toggleGrupo(g.dataset.g,S.openId); g.setAttribute("aria-pressed",on); toast(on?`Agregado a ${g.textContent}`:`Quitado de ${g.textContent}`); renderOther(); });
+  $("#isbnCam")&&($("#isbnCam").onclick=()=>abrirCamara(code=>{ const r=normalizeIsbn(code), el=$("#f-isbn"); if(el){ el.value=r.isbn||code; toast("ISBN leído. Toca Guardar."); } }));
   $("#saveBtn").onclick=save;
   $("#cancelBtn")&&($("#cancelBtn").onclick=closeSheet);
   $("#delBtn")&&($("#delBtn").onclick=()=>{ $("#delZone").innerHTML=`<span class="confirm">¿Seguro? <button class="btn danger" id="delYes">Sí, quitar</button><button class="btn ghost" id="delNo">No</button></span>`; $("#delNo").onclick=renderSheet; $("#delYes").onclick=del; });
@@ -1485,7 +1515,9 @@ function save(){
     upsert({...blankBook(isbn),...f,isbn,id,estado,calificacion:cal,creado:Date.now(),actualizado:Date.now()});
     if(cat) dataUrlToBlob(cat).then(bl=>IDB.put(id,bl).then(()=>{ localUrls.set(id,URL.createObjectURL(bl)); const cur=byId(id); if(cur) upsert({...cur,portadaLocal:true,portadaManual:true}); })).catch(()=>{});
     if(wish){ S.wish.items=S.wish.items.filter(w=>w.id!==wish); saveJ(WISH_KEY,S.wish); renderOther(); }
-    toast(`“${f.titulo||"Libro"}” guardado`); closeSheet(); if(isbn && !f.titulo) fillFromWeb(id);
+    toast(`“${f.titulo||"Libro"}” guardado`); closeSheet();
+    // buscar datos y portada al tiro: con ISBN, por ISBN; sin ISBN (p. ej. "Ya compré el tomo 2"), por título y tomo
+    if(isbn) fillFromWeb(id, !!f.titulo); else if(!cat && !f.portadaUrl && f.titulo) fillCover(id).then(ok=>{ if(ok) toast(`Portada de “${f.titulo}” encontrada`); });
   } else {
     const upd={...b,...f,estado,calificacion:cal,actualizado:Date.now()};
     if(f.portadaUrl!==b.portadaUrl){ upd.portadaOtraEd=false; upd.portadaManual=!!f.portadaUrl; }
@@ -1497,6 +1529,7 @@ function save(){
     if(refetch){ upd.portadaUrl=""; upd.portadaOtraEd=false; }
     upsert(upd); toast("Cambios guardados"); closeSheet();
     if(refetch) fillCover(upd.id).then(ok=>{ if(ok) toast(`Portada del ${numLabel(upd).toLowerCase()} ${upd.tomo} encontrada`); });
+    else if(f.isbn && f.isbn!==b.isbn && !upd.portadaLocal) fillFromWeb(upd.id,true).then(()=>{ if(byId(upd.id)?.portadaUrl) toast("Portada encontrada con el ISBN"); });
   }
 }
 function del(){ const b=current(); if(b.portadaLocal) IDB.del(b.id).catch(()=>{}); S.borrados=S.borrados||{}; S.borrados[b.id]=Date.now(); try{ localStorage.setItem(NS+"borrados",JSON.stringify(S.borrados)); }catch(e){} S.books=S.books.filter(x=>x.id!==b.id); persist(); render(); toast("Libro quitado del estante"); closeSheet(); }
@@ -2120,6 +2153,8 @@ setView(S.view);
 (async()=>{ for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0,40)) await fillFromWeb(b.id,true);
   for(const b of S.books.filter(b=>b.isbn&&!b.amazonProbado&&!b.portadaAmazon&&autoCover(b)).slice(0,60)) await upgradeCover(b.id);
   for(const b of S.books.filter(b=>b.titulo&&!b.portadaUrl&&!b.portadaBuscada).slice(0,40)) await fillCover(b.id);
+  // portadas que puso la página y salieron de costado o apaisadas: se cambian por una buena (una sola revisión por libro)
+  for(const b of S.books.filter(b=>b.portadaUrl&&!b.portadaLocal&&!b.portadaManual&&!b.portadaRevisada).slice(0,60)) await revisarPortada(b.id);
   // mangas/manhwas que quedaron como "Libro"
   for(const b of S.books.filter(b=>!b.tipoFijado&&tipoOf(b)==="libro"&&b.titulo&&(MANHWAS.test(b.titulo)||numberedTitle(b.titulo))&&!b.revisadoSerie).slice(0,40)){
     const u={...b,revisadoSerie:true}; if(!u.editorial) u.editorial=pubByPrefix(u.isbn);
