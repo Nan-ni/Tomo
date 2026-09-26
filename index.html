@@ -577,6 +577,22 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .menu-id b{font-size:17px;letter-spacing:.05em}
 #logoutBtn{color:var(--warn);border-top:1px solid var(--line);border-radius:0 0 11px 11px;margin-top:4px}
 
+/* cabecera en una sola línea, y "Mi cuenta" como panel desde abajo en el celular */
+.top{flex-wrap:nowrap}
+.brand{min-width:0;flex:1}
+.brand>div{min-width:0}
+.top h1,.top p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-r{flex:none}
+@media (max-width:560px){
+  .top h1{font-size:22px}
+  .top p{font-size:12.5px}
+  .menu[open]::before{content:"";position:fixed;inset:0;z-index:29;background:rgba(20,14,8,.42);animation:fade .15s ease-out}
+  .menu-pop{position:fixed;left:10px;right:10px;top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));min-width:0;max-height:78vh;overflow-y:auto;border-radius:22px;padding:8px;animation:subir .2s cubic-bezier(.2,.8,.2,1)}
+  .menu-item{padding:13px 14px;font-size:15px}
+  .menu-id{padding:12px 14px 14px}
+}
+@keyframes subir{from{transform:translateY(30px);opacity:0}}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -1923,7 +1939,7 @@ function applyVm(){ $("#list").classList.toggle("gallery",S.vm==="portadas"); fo
 $("#viewMode").addEventListener("click",e=>{ const b=e.target.closest("[data-vm]"); if(!b) return; S.vm=b.dataset.vm; try{ localStorage.setItem(NS+"vm",S.vm); }catch(err){} applyVm(); });
 applyVm();
 document.addEventListener("click",e=>{ const m=$("#dataMenu"); if(!m.open) return;
-  if(!m.contains(e.target)) m.open=false; else if(e.target.closest("button.menu-item,label.menu-item")&&e.target.closest("#autoBtn")===null) setTimeout(()=>m.open=false,0); });
+  if(!m.contains(e.target)||e.target===m) m.open=false; /* e.target===m: tocaste el fondo oscuro del panel */ else if(e.target.closest("button.menu-item,label.menu-item")&&e.target.closest("#autoBtn")===null) setTimeout(()=>m.open=false,0); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#dataMenu").open=false; });
 
 /* ---------- qué leer ahora ---------- */
