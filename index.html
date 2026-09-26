@@ -593,6 +593,46 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 }
 @keyframes subir{from{transform:translateY(30px);opacity:0}}
 
+/* ===== ajustes de la revisión visual ===== */
+/* textos largos sin espacios (correos, títulos) no se salen de su caja */
+.auth-card,.panel,.sheet,.card .meta,.wl .wt,.menu-pop,.rn .rt,.welcome,.tile{overflow-wrap:anywhere}
+.tile .tp{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-top:-3px}
+.views .tl-s{display:none}
+@media (max-width:560px){
+  /* pestañas abajo, como en una app: las 4 siempre a la vista */
+  .views{position:fixed;top:auto;bottom:0;left:0;right:0;margin:0;z-index:18;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-bottom:0;border-top:1px solid var(--line);background:color-mix(in oklab,var(--surface) 94%,transparent);overflow:visible}
+  .views button{flex-direction:column;justify-content:center;gap:3px;padding:7px 2px 6px;border-radius:12px;min-height:54px;position:relative;font-size:11.5px}
+  .views button svg{width:21px;height:21px}
+  .views button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+  .views button .n{position:absolute;top:3px;left:calc(50% + 7px);margin:0}
+  .views .tl-l{display:none}
+  .views .tl-s{display:inline}
+  .wrap{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  /* filtros: el buscador a lo ancho, los menús en dos columnas */
+  .typebar,.toolbar{flex-direction:column;align-items:stretch}
+  .typebar .tools{display:grid;grid-template-columns:1fr 1fr;min-width:0}
+  .toolbar .tools{display:grid;grid-template-columns:minmax(0,1fr) auto;min-width:0}
+  .toolbar .search{grid-column:1/-1;max-width:none}
+  .typebar select,.toolbar select{width:100%;min-width:0}
+  /* enlaces más fáciles de tocar */
+  .linkbtn{padding:8px 2px;min-height:36px}
+  .hero .linkbtn{padding:6px 0;min-height:32px;display:block}
+  .auth .linkbtn.center{padding:10px 14px;min-height:42px}
+  /* colecciones más compactas */
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis .kpi:last-child:nth-child(odd){grid-column:1/-1}
+  .kpi b{font-size:20px}
+  .tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px}
+  .tile .tt{font-size:11.5px}
+  /* lista de deseos */
+  #wishForm{grid-template-columns:1fr 1fr}
+  #wishForm .f:first-child,#wishForm .btn{grid-column:1/-1}
+  .wl li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start}
+  .wl li .chips,.wl li .pacts{grid-column:1/-1}
+  .hbars li{grid-template-columns:112px 1fr 28px}
+}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -698,7 +738,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
   <nav class="views" id="views" role="tablist" aria-label="Secciones">
     <button type="button" role="tab" data-v="estante" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M4 19V5M8.5 19V7M13 19V4M17 19l-2.5-12M3 20h18"/></svg><span class="tl">Estante</span></button>
     <button type="button" role="tab" data-v="colecciones" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="tl">Colecciones</span></button>
-    <button type="button" role="tab" data-v="deseos" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span class="tl">Lista de deseos</span></button>
+    <button type="button" role="tab" data-v="deseos" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span class="tl"><span class="tl-l">Lista de deseos</span><span class="tl-s">Deseos</span></span></button>
     <button type="button" role="tab" data-v="stats" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tl">Estadísticas</span></button>
   </nav>
 
@@ -1701,7 +1741,10 @@ function autoSeries(cfg,known){ // series del estante sin colección propia: apa
 let colsCache=null;
 function colsState(){ const cfg=S.colsCfg||{};
   if(colsCache&&colsCache.ver===S.ver&&colsCache.cfg===cfg&&colsCache.books===S.books&&colsCache.n===S.books.length) return colsCache;
-  const base=CATALOGO.map(c=>({clase:"serie",...c,...(cfg[c.id]||{})}));
+  // Las colecciones de quiosco empiezan ocultas solo si no tienes ningún tomo de ellas (y siempre manda lo que elijas tú)
+  const base=CATALOGO.map(c=>{ const cf=cfg[c.id]||{}, m={clase:"serie",...c,...cf};
+    if(cf.oculta===undefined){ const k=normSerie(c.nombre); m.oculta=!S.books.some(b=>b.serie&&normSerie(b.serie)===k); }
+    return m; });
   const propias=Object.values(cfg).filter(c=>c&&c.propia&&c.nombre).map(c=>({clase:"serie",...c}));
   const known=new Set(base.concat(propias).filter(c=>c.clase==="serie").map(c=>normSerie(c.nombre)));
   const list=base.concat(propias,autoSeries(cfg,known)), bySerie=new Map();
@@ -1718,7 +1761,7 @@ const numTag=c=>c.tipo==="manga"||c.tipo==="manhwa"?"Tomo":"N.º";
 const precioDe=(c,n)=>+((c.precios||{})[n])||+c.precio||0;
 const tituloEntrega=(c,n)=>{ const t=(c.entregas||[])[n-1]; return t?(c.prefijo?`${c.nombre} ${n}: ${t}`:t):`${c.nombre} ${n}`; };
 const nombreEntrega=(c,n)=>(c.entregas||[])[n-1]||"";
-const soles=n=>"S/ "+(Math.round((+n||0)*100)/100).toLocaleString("es-PE",{minimumFractionDigits:2,maximumFractionDigits:2});
+const soles=n=>"S/ "+(Math.round((+n||0)*100)/100).toLocaleString("es-PE",{minimumFractionDigits:2,maximumFractionDigits:2});
 function tomosDe(c){ const k=normSerie(c.nombre), m=new Map(); for(const b of S.books) if(b.serie&&normSerie(b.serie)===k&&+b.tomo>0) m.set(+b.tomo,b); return m; }
 function nuevaEntrega(c,n){
   const p=precioDe(c,n);
@@ -1735,7 +1778,7 @@ function setView(v){ S.view=v; try{ localStorage.setItem(NS+"view",v); }catch(e)
 $("#views").addEventListener("click",e=>{ const b=e.target.closest("[data-v]"); if(b) setView(b.dataset.v); });
 function renderOther(){ if(!S.colsCfg) return; // aún cargando
   const nw=S.wish.items.length+faltantes().filter(s=>!s.oculta).length;
-  const tab=$('#views [data-v="deseos"] .tl'); if(tab) tab.innerHTML=`Lista de deseos${nw?`<span class="n">${nw}</span>`:""}`;
+  const tab=$('#views [data-v="deseos"] .tl'); if(tab) tab.innerHTML=`<span class="tl-l">Lista de deseos</span><span class="tl-s">Deseos</span>${nw?`<span class="n">${nw}</span>`:""}`;
   if(S.view==="colecciones") renderCols(); else if(S.view==="deseos") renderWish(); else if(S.view==="stats") renderStats(); }
 
 /* ---------- vista: colecciones ---------- */
@@ -1771,7 +1814,7 @@ function serieCard(c){
   const tiles=[]; for(let n=1;n<=shown;n++){ const b=have.get(n), img=catSrc(`${c.id}-${n}`), name=nombreEntrega(c,n);
     if(b) tiles.push(pe
       ? `<div class="tile own">${coverHtml(b)}<span class="tn">${tag} ${n}</span>${priceInput(b)}</div>`
-      : `<button type="button" class="tile own" data-open="${esc(b.id)}" title="${tag} ${n}${name?` · ${esc(name)}`:""}${hasPrecio(b)?` · ${soles(b.precio)}`:""}"><span class="chk" aria-hidden="true">✓</span>${coverHtml(b)}<span class="tn">${tag} ${n}${hasPrecio(b)?` · ${soles(b.precio)}`:""}</span><span class="tt">${esc(name||b.titulo)}</span></button>`);
+      : `<button type="button" class="tile own" data-open="${esc(b.id)}" title="${tag} ${n}${name?` · ${esc(name)}`:""}${hasPrecio(b)?` · ${soles(b.precio)}`:""}"><span class="chk" aria-hidden="true">✓</span>${coverHtml(b)}<span class="tn">${tag} ${n}</span>${hasPrecio(b)?`<span class="tp">${soles(b.precio)}</span>`:""}<span class="tt">${esc(name||b.titulo)}</span></button>`);
     else tiles.push(`<button type="button" class="tile${n===sig?" is-next":""}" data-buy="${n}" data-col="${esc(c.id)}" title="${tag} ${n}${name?` · ${esc(name)}`:""}${precioDe(c,n)?` · ${soles(precioDe(c,n))}`:""} · toca si ya lo compraste"><div class="cover ghost">${img?`<img src="${img}" alt="">`:`<span class="ph">${n===sig&&!total?"+ ":""}${tag} ${n}</span>`}</div><span class="tn">${tag} ${n}</span><span class="tt">${esc(name||(n===sig?"Siguiente":"Te falta"))}</span></button>`); }
   const sub=[c.editorial, c.distribuye&&`distribuye ${c.distribuye}`, total?`${total} ${w[1]}`:"total sin definir", c.frecuencia, c.precio&&!c.distribuye?`${soles(c.precio)} c/u`:""].filter(Boolean).map(esc).join(" · ")+(c.nota?`<br>${esc(c.nota)}`:"");
   return `<section class="panel" aria-label="${esc(c.nombre)}">
@@ -1787,7 +1830,7 @@ function serieCard(c){
       :`<div class="nextrow"><span>¡Colección completa!</span></div>`}
     ${huecos.length?`<div><span class="pill loan">Te faltan de antes: ${huecos.join(", ")}</span></div>`:""}
     <div class="tiles">${tiles.join("")}</div>
-    ${shown<upto?`<button class="linkbtn" type="button" data-act="more" data-col="${esc(c.id)}">Ver ${total?`las ${total}`:"todas"} ${w[1]}</button>`:open&&upto>12?`<button class="linkbtn" type="button" data-act="less" data-col="${esc(c.id)}">Ver menos</button>`:""}
+    ${shown<upto?`<button class="linkbtn" type="button" data-act="more" data-col="${esc(c.id)}">Ver ${w[0]==="entrega"?(total?`las ${total}`:"todas las"):(total?`los ${total}`:"todos los")} ${w[1]}</button>`:open&&upto>12?`<button class="linkbtn" type="button" data-act="less" data-col="${esc(c.id)}">Ver menos</button>`:""}
   </section>`; }
 function grupoCard(c){
   const libs=(c.libros||[]).map(byId).filter(Boolean), pe=S.priceEdit===c.id, w=unidad(c), total=+c.total||0;
