@@ -15,7 +15,7 @@
 <script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" crossorigin>
 <style>
 body{margin:0}
 [hidden]{display:none!important}
@@ -655,6 +655,47 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
   .hbars li{grid-template-columns:112px 1fr 28px}
 }
 
+/* ===== revisión en celulares, tablets y computadoras ===== */
+/* Filtros en tablet y laptop angosta: si no caben en una línea, los menús y el buscador bajan a su propia fila
+   (antes se encimaban sobre las pestañas y el buscador quedaba de 40 px) */
+@media (min-width:561px){
+  .typebar,.toolbar{flex-wrap:wrap}
+  .typebar .tools{flex:1 1 300px;flex-wrap:nowrap;justify-content:flex-end}
+  .toolbar .tools{flex:1 1 420px;flex-wrap:nowrap}
+  .tools select{flex:0 1 auto;min-width:0}
+  .toolbar .search{flex:1 1 160px;max-width:none}
+}
+/* iPhone y iPad hacen zoom (y la página queda agrandada) al tocar un campo con letra menor a 16 px */
+@media (pointer:coarse){.search,select,.f input:not(.title),.f textarea,.tile .pin{font-size:16px}}
+/* celulares con muesca en horizontal: el contenido no queda debajo de la cámara */
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:561px){
+  .views{margin-left:calc(-1*max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1*max(16px,env(safe-area-inset-right,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+.sheet{padding-right:calc(24px + env(safe-area-inset-right,0px))}
+.sheet-head{margin-right:calc(-24px - env(safe-area-inset-right,0px));padding-right:calc(24px + env(safe-area-inset-right,0px))}
+/* los números no se parten a la mitad ("S/ 14.9" y "0" en otra línea) */
+.kpi b,.stat b{overflow-wrap:normal}
+.dlg h2{hyphens:auto;-webkit-hyphens:auto}
+/* celulares angostos (hasta 380 px): el campo del ISBN gana espacio y "¿Qué leo ahora?" usa todo el ancho */
+@media (max-width:380px){
+  .dock .bars{display:none}
+  .rn{grid-template-columns:64px minmax(0,1fr);column-gap:12px;row-gap:6px}
+  .rn>[data-rn-open]{grid-row:span 3}
+  .rn .cover{width:64px}
+  .rn .rt{display:contents}
+  .rn .why,.rn .pacts{grid-column:1/-1}
+}
+/* muy angostos (celulares plegables cerrados, ~280 px) */
+@media (max-width:300px){
+  .top h1{font-size:19px}
+  .views button{font-size:10.5px}
+  .kpis{grid-template-columns:minmax(0,1fr)}
+  .kpis .kpi:last-child:nth-child(odd){grid-column:auto}
+  .form{grid-template-columns:minmax(0,1fr)}
+  #tipoSeg{grid-template-columns:repeat(2,1fr)}
+}
+
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -769,7 +810,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
     <form class="field" id="scanForm" autocomplete="off">
       <span class="bars" aria-hidden="true" id="bars"></span>
       <label for="isbnInput" class="sr">ISBN</label>
-      <input id="isbnInput" inputmode="numeric" placeholder="Escanea o escribe el ISBN…" autofocus>
+      <input id="isbnInput" inputmode="numeric" enterkeyhint="go" autocomplete="off" placeholder="Escanea o escribe el ISBN…">
       <button class="btn primary" type="submit">Agregar</button>
     </form>
     <div class="actions">
@@ -919,6 +960,7 @@ async function getJson(url){ const ctl=new AbortController(); const t=setTimeout
   try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
     if(!r.ok){ const e=new Error("http "+r.status); e.status=r.status; throw e; } return await r.json(); } finally{ clearTimeout(t); } }
 const yearOf=s=>{ const m=String(s||"").match(/\d{4}/); return m?m[0]:""; };
+const soloHttps=u=>/^https:\/\//i.test(u||"")?u:"#";
 const httpsify=u=>u?String(u).replace(/^http:/,"https:").replace(/&edge=curl/,""):"";
 const olCover=id=>id?`https://covers.openlibrary.org/b/id/${id}-L.jpg`:"";
 // Portadas nítidas: Google entrega miniaturas de 128 px; pedimos una más grande. Open Library: tamaño L.
@@ -1217,9 +1259,13 @@ function coverHtml(b){
     if(u) return `<div class="cover" style="background:var(--surface-2)"><img src="${u}" alt="" decoding="async"></div>`;
     if(u===undefined) scheduleHydrate(); }
   const src=coverSrc(b.portadaUrl);
-  const img=src?`<img src="${esc(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="if(this.dataset.f!=='1'&&this.src!=='${esc(b.portadaUrl)}'){this.dataset.f='1';this.src='${esc(b.portadaUrl)}'}else this.remove()">`:"";
+  const img=src?`<img src="${esc(src)}" data-orig="${esc(b.portadaUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:"";
   return `<div class="cover" style="background:linear-gradient(160deg,hsl(${h} 32% 34%),hsl(${(h+30)%360} 36% 22%))">${ph}${img}</div>`;
 }
+// Si la portada grande no carga, se prueba con el enlace original; si tampoco, queda el color con el título.
+// (Un solo aviso para todas: así el enlace nunca se mete dentro de código.)
+document.addEventListener("error",e=>{ const im=e.target; if(!(im instanceof HTMLImageElement)||im.dataset.orig==null) return;
+  if(!im.dataset.f&&im.src!==im.dataset.orig){ im.dataset.f="1"; im.src=im.dataset.orig; } else im.remove(); },true);
 const starStr=n=>n?"★".repeat(n)+"☆".repeat(5-n):"";
 function counts(){ const c={todos:S.books.length,"por-leer":0,leyendo:0,leido:0,prestados:0,sindatos:0};
   for(const b of S.books){ c[b.estado||"por-leer"]++; if(b.prestamo) c.prestados++; if(!b.titulo) c.sindatos++; } return c; }
@@ -1366,7 +1412,7 @@ function toCanvas(img,max,rot){ const sc=Math.min(1,max/Math.max(img.naturalWidt
 // El lector de códigos (ZXing, ~400 KB) ya no bloquea la carga: se baja en segundo plano o al usar "Foto del código"
 let zxingP=null;
 function loadZXing(){ if(window.ZXing) return Promise.resolve(); if(zxingP) return zxingP;
-  zxingP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"; s.async=true;
+  zxingP=new Promise((res,rej)=>{ const s=document.createElement("script"); s.src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"; s.crossOrigin="anonymous"; s.async=true;
     s.onload=()=>res(); s.onerror=()=>{ zxingP=null; rej(new Error("zxing")); }; document.head.appendChild(s); });
   return zxingP; }
 (window.requestIdleCallback||(f=>setTimeout(f,3000)))(()=>setTimeout(()=>loadZXing().catch(()=>{}),4000));
@@ -1443,12 +1489,14 @@ $("#camBtn").addEventListener("click",()=>abrirCamara());
 /* ---------- ficha ---------- */
 function openBook(id){ if(!byId(id)) return; S.draft=null; S.openId=id; renderSheet(); }
 function closeSheet(){ S.openId=null; S.draft=null; S.delConfirm=null; $("#sheetRoot").innerHTML=""; document.removeEventListener("keydown",escClose);
-  if(!matchMedia("(pointer:coarse)").matches) $("#isbnInput").focus({preventScroll:true}); } // en el celular no se abre el teclado solo
+  enfocarIsbn(); }
 function current(){ return S.draft||byId(S.openId); }
 const today=()=>{ const d=new Date(); return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
 const fmtDate=d=>{ if(!d) return ""; const [y,m,dd]=d.split("-"); return `${+dd}/${+m}/${y}`; };
 const daysSince=d=>Math.max(0,Math.round((Date.now()-new Date(d+"T12:00:00").getTime())/864e5));
 function escClose(e){ if(e.key==="Escape") closeSheet(); }
+// El campo del ISBN recibe el foco (para el lector USB) solo con mouse: en el celular abriría el teclado encima de todo
+function enfocarIsbn(){ if(!matchMedia("(pointer:coarse)").matches) $("#isbnInput").focus({preventScroll:true}); }
 
 function renderSheet(){
   const b=current(); if(!b){ $("#sheetRoot").innerHTML=""; return; }
@@ -1818,7 +1866,7 @@ function setView(v){ S.view=v; try{ localStorage.setItem(NS+"view",v); }catch(e)
   for(const b of document.querySelectorAll("#views [data-v]")) b.setAttribute("aria-selected", b.dataset.v===v);
   for(const id of ["estante","colecciones","deseos","stats"]) $("#v-"+id).hidden = id!==v;
   if(v==="estante"&&S.estanteDirty) render(); else renderOther();
-  if(v==="estante") $("#isbnInput").focus({preventScroll:true}); }
+  if(v==="estante") enfocarIsbn(); }
 $("#views").addEventListener("click",e=>{ const b=e.target.closest("[data-v]"); if(b) setView(b.dataset.v); });
 function renderOther(){ if(!S.colsCfg) return; // aún cargando
   const nw=S.wish.items.length+faltantes().filter(s=>!s.oculta).length;
@@ -1885,14 +1933,14 @@ function detHtml(c,maxH){ if(c.distribuye) return "";
   if(d.error) return `<div class="det">No pude buscar cuántos ${unidad(c)[1]} tiene (¿sin conexión?). Lo intentaré de nuevo más tarde.</div>`;
   if(d.noEncontrado) return `<div class="det">No encontré “${esc(d.consulta)}” en ${fuente}. Pon el total en <b>Editar</b>, o escribe ahí su <b>nombre original</b> para buscarla.</div>`;
   const tot=+c.total||0, lin=[];
-  if(d.original) lin.push(`Según <a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${d.original}</b> ${c.tipo==="libro"?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
+  if(d.original) lin.push(`Según <a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${d.original}</b> ${c.tipo==="libro"?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
   else lin.push(`${esc(d.fuente)} tiene la serie${d.estado?` (${esc(d.estado)})`:""}, pero no dice cuántos tomos son todavía.`);
   if(d.agrupada&&d.estimado) lin.push(`Tu edición junta tomos (2 en 1 o kanzenban), así que serían unos <b>${d.estimado}</b>.${!tot?` <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.estimado}" data-col="${esc(c.id)}">Usar ${d.estimado}</button>`:tot!==d.estimado?` Tú pusiste ${tot}.`:""}`);
   else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.total}" data-col="${esc(c.id)}">Usar ${d.total}</button>`);
   if(d.estado==="sigue saliendo") lin.push(`Todavía salen tomos nuevos: el total puede subir.`);
   for(const [i,s] of (d.sigue||[]).entries()){ const tiene=S.books.some(b=>b.serie&&normSerie(b.serie)===normSerie(s.titulo));
     const enDeseos=S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo));
-    lin.push(`<span class="det-sigue">${esc(s.rel)}: <a href="${esc(s.url)}" target="_blank" rel="noopener"><b>${esc(s.titulo)}</b></a>${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:s.unico?" · tomo único":""}
+    lin.push(`<span class="det-sigue">${esc(s.rel)}: <a href="${esc(soloHttps(s.url))}" target="_blank" rel="noopener"><b>${esc(s.titulo)}</b></a>${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:s.unico?" · tomo único":""}
       ${tiene?`<span class="pill leido">La tienes</span>`:enDeseos?`<span class="pill">En tu lista de deseos</span>`:`<button class="btn sm" type="button" data-act="deseoSigue" data-i="${i}" data-col="${esc(c.id)}">A mi lista de deseos</button>`}</span>`); }
   return `<div class="det">${lin.map(l=>`<div>${l}</div>`).join("")}</div>`; }
 
@@ -2247,7 +2295,7 @@ function askNombre(first){ const n=nombreDueno();
   $("#welcomeForm").addEventListener("submit",e=>{ e.preventDefault(); const v=inp.value.trim().replace(/\s+/g," ");
     if(!v){ toast("Escribe tu nombre para empezar."); inp.focus(); return; }
     window.TOMO.guardarNombre(v); applyNombre(); scheduleAutoSave(); $("#welcomeRoot").innerHTML="";
-    toast(first?`¡Listo, ${v}! Escanea tu primer libro.`:"Nombre cambiado"); $("#isbnInput").focus({preventScroll:true}); }); }
+    toast(first?`¡Listo, ${v}! Escanea tu primer libro.`:"Nombre cambiado"); enfocarIsbn(); }); }
 $("#renameBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; askNombre(false); });
 
 function showKeyState(){ const k=gKey(), propia=(()=>{ try{ return localStorage.getItem(NS+"gkey")||""; }catch(e){ return ""; } })();
@@ -2304,6 +2352,7 @@ $("#keyTest").addEventListener("click",async()=>{ const k=$("#gkey").value.trim(
     if(!desdeSubir){ if(firma(M)!==firma(Rn)) programar(300); else if(!N.pend) T.estadoNube("ok"); } }
   async function subir(){
     if(N.saving){ N.again=true; return; }
+    if(navigator.onLine===false){ N.pend=true; T.estadoNube("off"); return; } // se sube solo al volver la conexión (evento "online")
     N.saving=true; clearTimeout(N.timer); T.estadoNube("sync");
     try{
       for(let intento=0;intento<4;intento++){
@@ -2317,17 +2366,20 @@ $("#keyTest").addEventListener("click",async()=>{ const k=$("#gkey").value.trim(
       throw new Error("conflicto");
     }catch(e){ N.pend=true; T.estadoNube(navigator.onLine?"err":"off"); reintentar(); }
     finally{ N.saving=false; if(N.again){ N.again=false; programar(300); } } }
-  function programar(ms){ N.pend=true; T.estadoNube("pend"); clearTimeout(N.timer); N.timer=setTimeout(subir,ms??1500); }
+  function programar(ms){ N.pend=true; T.estadoNube(navigator.onLine===false?"off":"pend"); clearTimeout(N.timer); N.timer=setTimeout(subir,ms??1500); }
   function reintentar(){ clearTimeout(N.retry); N.retry=setTimeout(()=>{ if(N.pend) subir(); },20000); }
   let subiendoFotos=false;
   async function subirFotosPendientes(){ const ids=T.fotosPendientes(); if(subiendoFotos||!ids.length) return; subiendoFotos=true;
     try{ const m=await IDB.getManyLocal(ids); for(const id of ids){ const b=m.get(id); if(b) await T.subirFoto(id,b); } }catch(e){} finally{ subiendoFotos=false; } }
   T.alCambiar=()=>programar();
   window.addEventListener("online",()=>{ if(N.pend) subir(); else traer().catch(()=>{}); });
-  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState!=="visible"||N.saving) return;
+  document.addEventListener("visibilitychange",()=>{
+    // al pasar a otra app (en el celular puede que no vuelvas por horas): lo pendiente se sube ya, sin esperar el 1,5 s
+    if(document.visibilityState==="hidden"){ if(N.pend&&!N.saving) subir(); return; }
+    if(N.saving) return;
     if(N.pend) subir(); else if(Date.now()-N.ultimoPull>15000) traer().catch(()=>{}); });
   window.addEventListener("beforeunload",e=>{ if(N.pend||N.saving){ subir(); e.preventDefault(); e.returnValue=""; } });
-  T.estadoNube("sync");
+  T.estadoNube(navigator.onLine===false?"off":"sync");
   traer().then(subirFotosPendientes).catch(()=>{ T.estadoNube(navigator.onLine?"err":"off"); reintentar(); });
 })();
 
@@ -2353,7 +2405,8 @@ setView(S.view);
   for(const b of S.books.filter(b=>b.isbn&&b.titulo&&!b.genero&&!b.generoBuscado).slice(0,40)) await fillGenre(b.id); })();
 };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- crossorigin: así la app instalada puede guardar la librería y abrir sin internet -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="cuenta.js"></script>
 
 </body>

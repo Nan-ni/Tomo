@@ -82,7 +82,7 @@
       localStorage.setItem(perfilKey(), JSON.stringify(data));
       return data;
     } catch (e) {
-      try { return JSON.parse(localStorage.getItem(perfilKey()) || "null"); } catch (_) { return null; } // sin internet: el último conocido
+      return perfilLocal(); // sin internet: el último conocido
     }
   }
   T.guardarNombre = (v) => {
@@ -91,9 +91,11 @@
     sb.from("perfiles").update({ nombre: v }).eq("user_id", T.uid).then(({ error }) => { if (error) aviso("No se pudo guardar el nombre en tu cuenta."); });
   };
 
-  async function entrar(session) {
+  const perfilLocal = () => { try { return JSON.parse(localStorage.getItem(perfilKey()) || "null"); } catch (e) { return null; } };
+  // sinRed: se entra con la sesión guardada en este dispositivo, sin esperar a Supabase
+  async function entrar(session, sinRed) {
     T.uid = session.user.id; T.token = session.access_token;
-    const p = await cargarPerfil();
+    const p = (sinRed && perfilLocal()) || await cargarPerfil();
     if (!p) {
       await sb.auth.signOut().catch(() => {});
       pag("login"); msg("#lMsg", "No encontramos tu perfil. Si el problema sigue, pide ayuda a quien te dio la cuenta.");
@@ -198,7 +200,8 @@
 
   // ---------- instalar como app ----------
   let instalador = null;
-  const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // El iPad (iPadOS 13 o más nuevo) se presenta como Mac: se reconoce porque tiene pantalla táctil
+  const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   const instalada = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); instalador = e; $("#installBtn").hidden = false; });
   window.addEventListener("appinstalled", () => { $("#installBtn").hidden = true; aviso("¡Tomo quedó instalado!"); });
@@ -209,7 +212,7 @@
     else if (esIOS) aviso("En Safari toca Compartir ⬆︎ y luego “Agregar a pantalla de inicio”.");
     else aviso("Abre el menú del navegador y elige “Instalar Tomo”.");
   });
-  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
 
   // ---------- fotos de portada en la nube (carpeta privada de cada lector) ----------
   const BUCKET = "portadas";
@@ -254,10 +257,25 @@
   };
 
   // ---------- al abrir ----------
+  // La sesión que Supabase dejó guardada en este dispositivo (sirve para abrir el estante sin internet)
+  const sesionGuardada = () => {
+    try { const s = JSON.parse(localStorage.getItem("tomo.sesion") || "null"); return s && s.user && s.user.id && s.refresh_token ? s : null; }
+    catch (e) { return null; }
+  };
   (async () => {
     pag("boot");
-    let session = null;
-    try { ({ data: { session } } = await sb.auth.getSession()); } catch (e) {}
-    if (session) entrar(session); else pag("login");
+    const guardada = sesionGuardada();
+    // Sin internet no se puede renovar la sesión (vence cada hora): se abre con la guardada y se renueva sola al volver la conexión
+    if (guardada && navigator.onLine === false) return entrar(guardada, true);
+    // Con internet lento o que no responde, no se espera más de 5 s
+    const r = await Promise.race([
+      sb.auth.getSession().then((x) => x, (error) => ({ data: {}, error })),
+      new Promise((res) => setTimeout(() => res({ lento: true }), guardada ? 5000 : 60000)),
+    ]);
+    const session = r.data?.session;
+    if (session) return entrar(session);
+    const sinRed = r.lento || /fetch|network|retryable|timeout/i.test(`${r.error?.name} ${r.error?.message}`);
+    if (guardada && sinRed) return entrar(guardada, true);
+    pag("login");
   })();
 })();
