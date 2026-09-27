@@ -17,8 +17,11 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 - **Colecciones de quiosco y grupos:** colecciones por entregas, y grupos por editorial, diseño o club de lectura, con lo que llevas gastado en soles.
 - **Lista de deseos:** los libros que quieres y los tomos que te faltan de tus series. Se puede copiar para mandarla por WhatsApp.
 - **Préstamos:** anota a quién le prestaste cada libro y desde cuándo.
-- **¿Qué leo ahora?:** sugerencias entre tus pendientes (algo corto, cambiar de género, seguir una serie…).
-- **Estadísticas:** libros leídos por mes, por género, por tipo y por autor.
+- **Estados de lectura:** Por leer, Leyendo, Leído, Pausado y Abandonado, cada uno con su filtro.
+- **Leyendo ahora:** arriba del estante, los libros que estás leyendo con su barra de avance y el botón *Anotar página*. Al llegar a la última página, el libro queda como Leído.
+- **Racha y meta del año:** días seguidos leyendo (cuenta el día que anotas páginas o terminas un libro) y cuántos libros quieres leer este año. La meta se guarda en tu cuenta.
+- **¿Qué leo ahora?:** sugerencias entre tus pendientes (algo corto, cambiar de género, seguir una serie, retomar uno en pausa…).
+- **Estadísticas:** meta del año y tu ritmo, páginas por día (últimos 30 días), racha, y libros leídos por mes, por género, por tipo y por autor.
 - **Compartir tu estante:** un enlace para que cualquiera vea tu estante y tu lista de deseos sin crear cuenta. No se muestran tus notas, préstamos ni precios.
 - **Tu cuenta en la nube:** se guarda solo, se sincroniza entre tus dispositivos y funciona sin internet.
 - **Libros académicos aparte:** los de estudio (derecho, economía, medicina, ingeniería, manuales universitarios…) son del tipo *Académico*, con su pestaña, su área en vez de género y su propio cuadro en las estadísticas. No aparecen en “¿Qué leo ahora?”.
