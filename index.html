@@ -821,7 +821,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 16</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 17</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
@@ -2586,7 +2586,7 @@ async function abrirCompartir(){
   try{ const t=await C.obtener(); pintar(t?"con":"sin",t); }catch(e){ pintar("error","",falla(e)); } }
 $("#shareBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirCompartir(); });
 
-/* ---------- enviar comentario: llega a la tabla "comentarios" de Supabase ---------- */
+/* ---------- enviar comentario: llega a la tabla "comentarios" de Supabase y al correo del administrador ---------- */
 const ICO_COMENTARIO=`<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg>`;
 function abrirComentario(){
   const T=window.TOMO; if(!T.enviarComentario) return;
@@ -2619,7 +2619,7 @@ function abrirComentario(){
       instalada:matchMedia("(display-mode: standalone)").matches, vista:S.view, libros:S.books.length};
     try{ await T.enviarComentario(tipo,texto,contexto); cerrar(); toast("¡Gracias! Tu comentario llegó 💚"); }
     catch(x){ btn.disabled=false; btn.textContent="Enviar";
-      err.textContent=/comentarios|schema cache|does not exist|42P01|PGRST20/i.test(`${x?.code} ${x?.message}`)?"Falta preparar la base de datos: vuelve a ejecutar supabase/schema.sql en Supabase."
+      err.textContent=x?.mensaje?x.mensaje:/comentarios|schema cache|does not exist|42P01|PGRST20/i.test(`${x?.code} ${x?.message}`)?"Falta preparar la base de datos: vuelve a ejecutar supabase/schema.sql en Supabase."
         :navigator.onLine===false?"Sin conexión. Tu mensaje sigue aquí: envíalo cuando tengas internet.":"No se pudo enviar. Intenta de nuevo en un rato."; } };
   setTimeout(()=>$("#fbTexto")?.focus({preventScroll:true}),30); }
 $("#feedbackBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirComentario(); });

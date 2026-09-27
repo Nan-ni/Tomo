@@ -297,9 +297,23 @@
   };
 
   // ---------- enviar un comentario (idea, error u otro) ----------
+  // La función "comentario" lo guarda y te lo manda por correo. Si no está publicada o no responde,
+  // se guarda directo en la tabla (sin correo). El id evita que quede dos veces si ambos caminos lo guardan.
   T.enviarComentario = async (tipo, texto, contexto) => {
-    const { error } = await sb.from("comentarios").insert({ user_id: T.uid, tipo, texto, contexto });
-    if (error) throw error;
+    const id = crypto.randomUUID ? crypto.randomUUID() : undefined;
+    try {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 12000);
+      const r = await fetch(`${T.fnUrl}/comentario`, {
+        method: "POST", signal: ctl.signal,
+        headers: { ...(await T.authHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({ id, tipo, texto, contexto }),
+      }).finally(() => clearTimeout(t));
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) return;
+      if (r.status === 400 || r.status === 429) throw Object.assign(new Error(j.error || "No se pudo enviar."), { mensaje: j.error });
+    } catch (e) { if (e.mensaje) throw e; }
+    const { error } = await sb.from("comentarios").insert({ ...(id ? { id } : {}), user_id: T.uid, tipo, texto, contexto });
+    if (error && String(error.code) !== "23505") throw error;
   };
 
   // ---------- estado del guardado (el puntito junto a "Mi cuenta") ----------
