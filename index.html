@@ -311,6 +311,47 @@ html{background:var(--bg)}
 .tile .pin:focus{border-color:var(--accent);outline:none}
 .tile-cov{border:0;background:none;padding:0;display:block;width:100%;cursor:pointer}
 #picker .wl{max-height:340px;overflow-y:auto}
+/* Lista de deseos */
+.w-resumen{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.w-resumen span{font-size:12.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:3px 10px;border-radius:999px}
+.vhead .btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.w-panel{gap:14px}
+.w-h{display:flex;align-items:center;gap:8px}
+.w-n{font-size:12px;font-weight:700;background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.w-form{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--bg);border:1px solid var(--line)}
+.w-fila{display:flex;gap:8px}
+.w-fila input,.w-fila2 input{flex:1;min-width:0;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px;font:inherit;color:var(--ink)}
+.w-fila input:focus,.w-fila2 input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.w-fila .btn{flex:none}
+.w-mas>summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13.5px;list-style:none;display:inline-flex;align-items:center;gap:6px;padding:6px 2px;min-height:32px}
+.w-mas>summary::-webkit-details-marker{display:none}
+.w-mas>summary::before{content:"+";font-size:16px;line-height:1}
+.w-mas[open]>summary::before{content:"−"}
+.w-fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.w-fila2 .f label{font-size:12.5px}
+.wl.w-libros li,.wl.w-series li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:6px 14px;padding:12px 0}
+.wmini{width:44px;height:64px;border-radius:3px 6px 6px 3px;display:grid;place-items:center;color:rgba(255,255,255,.92);font-family:var(--serif);font-weight:700;font-size:20px;box-shadow:inset 3px 0 0 rgba(0,0,0,.18),0 2px 6px -2px rgba(0,0,0,.35)}
+.w-nota{font-size:13px;color:var(--ink-3)!important;margin-top:2px}
+.w-nota::before{content:"“"}.w-nota::after{content:"”"}
+.w-libros .pacts{flex-wrap:nowrap;gap:6px}
+.w-quitar{display:inline-flex;align-items:center;gap:6px}
+.w-quitar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.w-sr .cover{width:44px}
+.w-sr .cover .ph{display:none}
+.w-prog{height:5px;border-radius:5px;background:var(--surface-2);margin-top:7px;overflow:hidden;max-width:240px}
+.w-prog i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.wl.w-series .chips{grid-column:2/-1;flex-wrap:wrap}
+.wl.w-series .w-nosigo{grid-column:2/-1;justify-self:start;font-size:13px;color:var(--ink-3)}
+.wl.w-series li>.wt{grid-column:2/-1}
+.w-vacio{padding:18px 14px;border:1px dashed var(--line);border-radius:12px;color:var(--ink-3);font-size:14px;text-align:center}
+.w-ocultas{margin:0;font-size:13px}
+@media (max-width:560px){
+  .wl.w-libros li{grid-template-columns:44px minmax(0,1fr)}
+  .wl.w-libros li .pacts{grid-column:2/-1}
+  .w-fila2{grid-template-columns:1fr}
+  .w-quitar span{display:none}
+  .w-quitar{min-width:44px;justify-content:center}
+}
 .rn{display:grid;grid-template-columns:92px 1fr;gap:16px;align-items:start}
 .rn .cover{width:92px;cursor:pointer}
 .rn .rt{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -511,19 +552,51 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .top h1{font-size:clamp(26px,4.4vw,34px);line-height:1.1}
 .top p{font-size:14px;color:var(--ink-3);margin-top:3px}
 .menu{position:relative}
-.menu>summary{list-style:none;color:var(--ink-2)}
+.menu>summary{list-style:none}
+/* Mi cuenta: un botón que se ve como botón (tu inicial y una flecha), y el menú con íconos */
+.cuenta-btn{display:inline-flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:600;font-size:14px;cursor:pointer;min-height:44px;box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,.05));transition:border-color .15s,background .15s,box-shadow .15s}
+.cuenta-btn:hover{border-color:color-mix(in oklab,var(--accent) 45%,var(--line));background:var(--card)}
+.cuenta-btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.menu[open]>.cuenta-btn{border-color:var(--accent);background:var(--accent-soft)}
+.cuenta-btn .chev{width:16px;height:16px;fill:none;stroke:var(--ink-3);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+.menu[open]>.cuenta-btn .chev{transform:rotate(180deg)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:16px;line-height:1;flex:none;text-transform:uppercase}
+.avatar svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.avatar.lg{width:48px;height:48px;font-size:22px}
+.avatar.lg svg{width:24px;height:24px}
+.menu-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:30;width:340px;max-height:calc(100vh - 110px);overflow-y:auto;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-lg);padding:8px;display:flex;flex-direction:column;animation:pop .14s ease-out}
+.menu-head{display:flex;align-items:center;gap:12px;padding:10px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.menu-who{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.menu-who>b{font-family:var(--serif);font-size:17px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu-id{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)}
+.menu-id b{font-size:13px;letter-spacing:.04em;color:var(--ink)}
+.menu-id .linkbtn{font-size:12.5px;padding:3px 10px;min-height:28px;border:1px solid var(--line);border-radius:999px;line-height:1.2}
+.menu-id .linkbtn:hover{border-color:var(--accent)}
+.menu-ver{font-size:11.5px;color:var(--ink-3)}
+.menu-aviso{color:var(--warn);font-weight:600;line-height:1.4;padding:4px 10px 8px;font-size:12.5px}
+.menu-x{display:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--surface-2);color:var(--ink-2);place-items:center;cursor:pointer;flex:none}
+.menu-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.menu-sec{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);padding:12px 10px 4px}
+.menu-item{display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;gap:12px;text-align:left;border:0;background:none;padding:8px 10px;border-radius:12px;font-weight:600;font-size:14px;line-height:1.3;cursor:pointer;color:var(--ink);width:100%}
+.menu-item:hover,.menu-item:focus-visible{background:var(--surface-2);outline:none}
+.mi-ico{width:36px;height:36px;border-radius:10px;background:var(--surface-2);color:var(--accent);display:grid;place-items:center}
+.menu-item:hover .mi-ico{background:var(--card)}
+.mi-ico svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mi-t{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mi-t small{font-weight:400;font-size:12.5px;color:var(--ink-3);line-height:1.35}
+.menu-item.warn .mi-ico,.menu-item.warn{color:var(--warn)}
+.menu-item.salir{color:var(--warn);margin-top:6px;border-top:1px solid var(--line);border-radius:0 0 12px 12px;padding-top:12px}
+.menu-item.salir .mi-ico{color:var(--warn);background:color-mix(in oklab,var(--warn) 10%,var(--surface))}
+@media (max-width:520px){.cuenta-txt{display:none}.cuenta-btn{padding:4px 8px 4px 4px;gap:4px}.logo{width:42px;height:42px}}
+@media (max-width:380px){
+  .cuenta-btn{padding:3px;gap:0}.cuenta-btn .chev{display:none}.avatar{width:36px;height:36px}
+  .logo{width:36px;height:36px;border-radius:11px}.logo svg{width:24px;height:24px}.brand{gap:10px}
+  .top h1{font-size:20px}.sync{width:36px}
+  .menu-head{gap:10px}.avatar.lg{width:40px;height:40px;font-size:19px}
+  .menu .menu-id .linkbtn{min-height:28px;padding:3px 10px}
+}
 .menu>summary::-webkit-details-marker{display:none}
-.menu[open]>summary{background:var(--surface-2)}
-.menu-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:30;min-width:280px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;animation:pop .14s ease-out}
 @keyframes pop{from{opacity:0;transform:translateY(-4px)}}
-.menu-item{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;border:0;background:none;padding:10px 12px;border-radius:11px;font-weight:600;font-size:14px;cursor:pointer;color:var(--ink)}
-.menu-item small{font-weight:400;font-size:12.5px;color:var(--ink-3)}
-.menu-item:hover{background:var(--surface-2)}
-.menu-item.warn{color:var(--warn)}
-#autoBtn{border-bottom:1px solid var(--line);border-radius:11px 11px 0 0;margin-bottom:4px}
-.menu-sec{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);padding:12px 12px 3px}
-.menu-sec:first-of-type{padding-top:6px}
-@media (max-width:520px){.menu>summary span{display:none}.logo{width:42px;height:42px}}
 
 /* pestañas: fijas arriba al bajar */
 .views{position:sticky;top:0;z-index:15;margin:0 -16px -4px;padding:10px 16px;gap:6px;border-bottom:1px solid var(--line);background:color-mix(in oklab,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
@@ -567,6 +640,15 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .kpi{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .kpi b{font-size:23px;letter-spacing:-.01em}
 .kpi span{color:var(--ink-3)}
+.kpi-btn{font:inherit;text-align:left;color:inherit;cursor:pointer;border-style:dashed;transition:border-color .15s,background .15s}
+.kpi-btn:hover,.kpi-btn:focus-visible{border-color:var(--accent);background:var(--card)}
+.kpi-btn span{color:var(--accent)}
+.ch-acts{gap:6px;flex-wrap:wrap}
+.btn.ch-act{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);color:var(--ink-2);font-weight:600}
+.btn.ch-act:hover{border-color:color-mix(in oklab,var(--accent) 45%,var(--line));color:var(--ink)}
+.btn.ch-act.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.btn.ch-act.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ch-act svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .prog{height:10px;background:var(--surface-2)}
 .prog i{background:linear-gradient(90deg,var(--accent),color-mix(in oklab,var(--accent) 70%,var(--brass)))}
 .nextrow{border-radius:14px;padding:12px 14px;background:var(--accent-soft);border:1px solid color-mix(in oklab,var(--accent) 18%,transparent)}
@@ -616,7 +698,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 
 /* modo portadas: un estante de verdad */
 #list.gallery .grid{grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:26px 18px}
-#list.gallery .card{grid-template-columns:1fr;background:none;border:0;padding:0;gap:11px;box-shadow:none;transform:none}
+#list.gallery .card{grid-template-columns:1fr;background:none;border:0;padding:0;gap:11px;box-shadow:none;transform:none;align-content:start}
 #list.gallery .card .cover{width:100%;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
 #list.gallery .card:hover .cover{transform:translateY(-6px) rotate(-.6deg);box-shadow:var(--book),0 22px 30px -14px rgba(40,25,10,.45)}
 #list.gallery .card .meta{gap:2px;padding:0 2px}
@@ -653,8 +735,17 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 @keyframes fade{from{opacity:0}}
 @keyframes slide{from{transform:translateX(30px);opacity:.4}}
 @media (max-width:560px){.sheet{border-radius:0}.hero{grid-template-columns:96px 1fr}.hero .cover{width:96px}}
+/* ficha: acciones de la portada juntas y con ícono; Guardar siempre a la vista */
+.cov-acts{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-top:8px}
+.hero .cov-acts .linkbtn{display:inline-flex;align-items:center;gap:7px;margin:0;padding:6px 0;min-height:36px;font-size:14px;color:var(--accent);cursor:pointer;text-align:left}
+.cov-acts .linkbtn svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sheet>.foot{position:sticky;bottom:calc(-28px - env(safe-area-inset-bottom,0px));z-index:5;margin:0 calc(-24px - env(safe-area-inset-right,0px)) calc(-28px - env(safe-area-inset-bottom,0px)) -24px;padding:12px calc(24px + env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) 24px;background:color-mix(in oklab,var(--surface) 94%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.sheet>.foot .btn{min-height:46px}
 
 .toast{border-radius:999px;padding:11px 20px;box-shadow:var(--shadow-lg);animation:pop .18s ease-out}
+.toast.con-accion{display:flex;align-items:center;gap:14px;padding:6px 6px 6px 18px}
+.toast-acc{border:0;background:color-mix(in oklab,var(--bg) 16%,transparent);color:var(--bg);font:inherit;font-weight:700;padding:8px 14px;border-radius:999px;cursor:pointer;min-height:36px;white-space:nowrap}
+.toast-acc:hover{background:color-mix(in oklab,var(--bg) 26%,transparent)}
 #storeNote{text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:10px}
 /* bienvenida: pide el nombre la primera vez */
 .welcome-ov{justify-content:center;align-items:center;padding:16px;z-index:50}
@@ -723,13 +814,16 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .sync[data-s="off"],.sync[data-s="err"]{color:var(--warn)}
 .sync[data-s="off"] i,.sync[data-s="err"] i{background:var(--warn)}
 @keyframes latido{50%{opacity:.3}}
-@media (max-width:560px){.sync span{display:none}.sync{padding:8px}}
-.menu-id{padding:10px 12px 12px;border-bottom:1px solid var(--line);margin-bottom:4px;display:flex;flex-direction:column;gap:2px}
-.menu-id span{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.menu-id b{font-size:17px;letter-spacing:.05em}
-.menu-ver{font-size:11.5px;color:var(--ink-3);margin-top:2px}
-.menu-aviso{color:var(--warn);font-weight:600;line-height:1.4;margin-top:6px}
-#logoutBtn{color:var(--warn);border-top:1px solid var(--line);border-radius:0 0 11px 11px;margin-top:4px}
+.sync svg{display:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sync .ok-v,.sync .off-v{display:none}
+@media (max-width:560px){
+  .sync span{display:none}.sync i{display:none}
+  .sync{padding:0;width:44px;height:44px;justify-content:center;background:none;cursor:pointer}
+  .sync svg{display:block}
+  .sync[data-s="ok"]{color:var(--ok)} .sync[data-s="ok"] .ok-v{display:inline}
+  .sync[data-s="sync"],.sync[data-s="pend"]{color:var(--brass)} .sync[data-s="sync"] svg,.sync[data-s="pend"] svg{animation:latido 1s ease-in-out infinite}
+  .sync[data-s="off"] .off-v{display:inline}
+}
 
 /* cabecera en una sola línea, y "Mi cuenta" como panel desde abajo en el celular */
 .top{flex-wrap:nowrap}
@@ -740,10 +834,11 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 @media (max-width:560px){
   .top h1{font-size:22px}
   .top p{font-size:12.5px}
-  .menu[open]::before{content:"";position:fixed;inset:0;z-index:29;background:rgba(20,14,8,.42);animation:fade .15s ease-out}
-  .menu-pop{position:fixed;left:10px;right:10px;top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));min-width:0;max-height:78vh;overflow-y:auto;border-radius:22px;padding:8px;animation:subir .2s cubic-bezier(.2,.8,.2,1)}
-  .menu-item{padding:13px 14px;font-size:15px}
-  .menu-id{padding:12px 14px 14px}
+  .menu[open]::before{content:"";position:fixed;inset:0;z-index:29;background:rgba(20,14,8,.45);animation:fade .15s ease-out}
+  .menu-pop{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;max-height:88vh;border-radius:22px 22px 0 0;border-bottom:0;padding:6px 10px calc(12px + env(safe-area-inset-bottom,0px));animation:subir .22s cubic-bezier(.2,.8,.2,1)}
+  .menu-pop::before{content:"";display:block;width:40px;height:4px;border-radius:4px;background:var(--line);margin:4px auto 2px;flex:none}
+  .menu-x{display:grid}
+  .menu-item{padding:10px 8px;font-size:15px}
 }
 @keyframes subir{from{transform:translateY(30px);opacity:0}}
 
@@ -767,6 +862,14 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .det a:hover{text-decoration:underline}
 .det .btn.sm{padding:4px 10px;font-size:12.5px;margin-left:4px}
 .det-sigue{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.det .linkbtn{font-size:13px;margin-left:2px}
+.det-form{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.det-form label{font-weight:600;color:var(--ink);font-size:13px}
+.det-fila{display:flex;gap:8px;align-items:center}
+.det-fila input{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:14px}
+.det-fila input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft,rgba(31,77,63,.15))}
+.det-fila .btn.sm{margin-left:0;flex:none}
+.det-form[data-form="total"] .det-fila input{max-width:110px;flex:none}
 @media (max-width:560px){.det .btn.sm{min-height:34px;padding:6px 12px}}
 
 /* ===== ajustes de la revisión visual ===== */
@@ -824,7 +927,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
   .sb-filtros select{flex:0 1 auto}
 }
 /* iPhone y iPad hacen zoom (y la página queda agrandada) al tocar un campo con letra menor a 16 px */
-@media (pointer:coarse){.search,select,.f input:not(.title),.f textarea,.tile .pin{font-size:16px}}
+@media (pointer:coarse){.search,select,.f input:not(.title),.f textarea,.tile .pin,.w-fila input,.det-fila input{font-size:16px}}
 /* celulares con muesca en horizontal: el contenido no queda debajo de la cámara */
 .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 @media (min-width:561px){
@@ -1008,27 +1111,34 @@ a.btn{text-decoration:none;color:inherit}
       </div>
     </div>
     <div class="top-r">
-    <span class="sync" id="syncState" data-s="sync" role="status" aria-live="polite"><i></i><span>Guardando…</span></span>
+    <span class="sync" id="syncState" data-s="sync" role="status" aria-live="polite"><i></i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10.5a4 4 0 00.6-7.95A6 6 0 006.3 9.2 4.4 4.4 0 007 18z"/><path class="ok-v" d="M9.5 13.2l1.8 1.8 3.4-3.6"/><path class="off-v" d="M4 4l16 16"/></svg><span>Guardando…</span></span>
     <details class="menu" id="dataMenu">
-      <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
+      <summary class="cuenta-btn" aria-label="Mi cuenta" title="Mi cuenta"><span class="avatar" data-avatar aria-hidden="true"></span><span class="cuenta-txt">Mi cuenta</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 34</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
-        <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
+        <div class="menu-head">
+          <span class="avatar lg" data-avatar aria-hidden="true"></span>
+          <div class="menu-who"><b id="menuNombre">Mi estante</b>
+            <span class="menu-id">Tu ID <b class="mono" id="menuId">—</b><button class="linkbtn" type="button" id="copyIdBtn">Copiar</button></span>
+            <small class="menu-ver">Tomo · versión 35</small></div>
+          <button class="menu-x" type="button" id="menuX" aria-label="Cerrar el menú"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <small class="menu-aviso" id="menuBuscador" hidden></small>
         <div class="menu-sec">Tu estante</div>
-        <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
-        <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
-        <button class="menu-item" id="temaBtn" type="button">Apariencia<small>Modo claro u oscuro y colores</small></button>
-        <button class="menu-item" id="renameBtn" type="button">Cambiar nombre<small>El que aparece arriba de tu estante</small></button>
+        <button class="menu-item" id="citasBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h5v5c0 2.5-1.3 4.2-4 5M14 8h5v5c0 2.5-1.3 4.2-4 5"/></svg></i><span class="mi-t">Mis citas<small>Las frases que guardaste de tus libros</small></span></button>
+        <button class="menu-item" id="shareBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></i><span class="mi-t">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></span></button>
+        <button class="menu-item" id="temaBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 000-17z" fill="currentColor" stroke="none"/></svg></i><span class="mi-t">Apariencia<small>Modo claro u oscuro y colores</small></span></button>
+        <button class="menu-item" id="renameBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></i><span class="mi-t">Cambiar nombre<small>El que aparece arriba de tu estante</small></span></button>
         <div class="menu-sec">Tus datos</div>
-        <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
-        <button class="menu-item" id="exportCsv" type="button">Exportar CSV<small>Para abrirlo en Excel</small></button>
-        <label class="menu-item" for="importFile">Importar<small>Carga una copia de seguridad o un CSV</small></label>
-        <button class="menu-item" id="grBtn" type="button">Traer desde Goodreads<small>Tus libros, lo que leíste y tus calificaciones</small></button>
+        <button class="menu-item" id="exportJson" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></i><span class="mi-t">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></span></button>
+        <button class="menu-item" id="autoBtn" type="button" hidden><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v4.5h-4.5"/></svg></i><span class="mi-t">Copia automática<small>Guarda una copia en esta computadora cada vez que cambias algo</small></span></button>
+        <button class="menu-item" id="exportCsv" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M4 15h16M10 4v16"/></svg></i><span class="mi-t">Exportar CSV<small>Para abrirlo en Excel</small></span></button>
+        <label class="menu-item" for="importFile"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg></i><span class="mi-t">Importar<small>Carga una copia de seguridad o un CSV</small></span></label>
+        <button class="menu-item" id="grBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.5C10.3 5.2 7.9 4.5 4 4.5v13c3.9 0 6.3.7 8 2 1.7-1.3 4.1-2 8-2v-13c-3.9 0-6.3.7-8 2z"/><path d="M12 6.5v13"/></svg></i><span class="mi-t">Traer desde Goodreads<small>Tus libros, lo que leíste y tus calificaciones</small></span></button>
         <div class="menu-sec">Cuenta</div>
-        <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
-        <button class="menu-item" id="pwBtn" type="button">Cambiar contraseña<small>Elige una nueva</small></button>
-        <button class="menu-item" id="installBtn" type="button" hidden>Instalar Tomo<small>Como app en tu celular o computadora</small></button>
-        <button class="menu-item" id="logoutBtn" type="button">Cerrar sesión</button>
+        <button class="menu-item" id="feedbackBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5z"/></svg></i><span class="mi-t">Enviar comentario<small>Cuéntanos un error o una idea</small></span></button>
+        <button class="menu-item" id="pwBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></i><span class="mi-t">Cambiar contraseña<small>Elige una nueva</small></span></button>
+        <button class="menu-item" id="installBtn" type="button" hidden><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M12 8v6M9.5 11.5L12 14l2.5-2.5"/></svg></i><span class="mi-t">Instalar Tomo<small>Como app en tu celular o computadora</small></span></button>
+        <button class="menu-item salir" id="logoutBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg></i><span class="mi-t">Cerrar sesión</span></button>
       </div>
     </details>
     </div>
@@ -1121,7 +1231,7 @@ a.btn{text-decoration:none;color:inherit}
   <div class="view" id="v-colecciones" hidden></div>
   <div class="view" id="v-deseos" hidden></div>
   <div class="view" id="v-stats" hidden></div>
-  <p class="origin" id="storeNote">Tu estante se guarda en tu cuenta de Tomo.</p>
+  <p class="origin" id="storeNote">Tu estante se guarda solo en tu cuenta de Tomo y lo ves igual en todos tus dispositivos.</p>
 </div>
 
 <div id="sheetRoot"></div>
@@ -1283,7 +1393,10 @@ function avisoVersion(){ if(VER||$("#nuevaVer")) return;
   d.innerHTML=`<span>Nueva versión de Tomo</span><button class="btn sm" type="button">Actualizar</button>`;
   d.querySelector("button").onclick=()=>{ if(persistTimer) escribirLocal(); location.reload(); }; document.body.appendChild(d); }
 window.addEventListener("tomo-nueva-version",avisoVersion); if(window.TOMO.nuevaVersion) avisoVersion();
-function toast(msg){ const r=$("#toastRoot"); r.innerHTML=`<div class="toast">${esc(msg)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>r.innerHTML="",2800); }
+// accion: {texto:"Deshacer", fn} → un botón en el aviso (y el aviso dura un poco más)
+function toast(msg,accion){ const r=$("#toastRoot"); r.innerHTML=`<div class="toast${accion?" con-accion":""}" role="status"><span>${esc(msg)}</span>${accion?`<button type="button" class="toast-acc">${esc(accion.texto||"Deshacer")}</button>`:""}</div>`;
+  if(accion) r.querySelector(".toast-acc").onclick=()=>{ r.innerHTML=""; clearTimeout(toast.t); accion.fn(); };
+  clearTimeout(toast.t); toast.t=setTimeout(()=>r.innerHTML="",accion?5500:2800); }
 function setStatus(msg,kind){ const el=$("#status"); el.className="status"+(kind?" "+kind:""); el.innerHTML=msg||""; }
 
 /* ---------- búsqueda en internet ---------- */
@@ -2193,11 +2306,13 @@ function renderSheet(){
           <input id="f-titulo" class="title" value="${esc(b.titulo)}" placeholder="${busy?"Buscando…":"Título del libro"}">
           <div class="mono" style="font-size:13px;color:var(--ink-2);margin-top:6px">${esc(fmtIsbn(b.isbn))}</div>
           ${o?`<div class="origin">Grupo ISBN ${esc(o.g)} · ${esc(o.name)}</div>`:""}
-          ${!isNew?`<label class="linkbtn" for="ownCover" style="margin-top:6px;cursor:pointer">${b.portadaLocal?"Cambiar foto de portada":"Subir foto de portada"}</label><input type="file" id="ownCover" accept="image/*" class="sr">`:""}
-          ${!isNew&&b.portadaLocal?`<button class="linkbtn" id="rmOwnCover" style="margin-top:6px">Quitar mi foto</button>`:""}
           ${b.portadaOtraEd&&!b.portadaLocal?`<div class="origin">Portada de otra edición</div>`:""}
-          ${!isNew&&b.titulo?`<button class="linkbtn" id="coverBtn" style="margin-top:6px">${b.portadaUrl?"Elegir otra portada":"Buscar portada"}</button>`:""}
-          ${!isNew&&b.isbn?`<button class="linkbtn" id="refetchBtn" style="margin-top:6px" ${busy?"disabled":""}>${busy?'<span class="spin"></span> Buscando…':'Buscar de nuevo por ISBN'}</button>`:""}
+          ${!isNew?`<div class="cov-acts">
+            <label class="linkbtn" for="ownCover">${ICO_FOTO}${b.portadaLocal?"Cambiar foto de portada":"Subir foto de portada"}</label><input type="file" id="ownCover" accept="image/*" class="sr">
+            ${b.portadaLocal?`<button class="linkbtn" id="rmOwnCover" type="button">${ICO_BASURA}Quitar mi foto</button>`:""}
+            ${b.titulo?`<button class="linkbtn" id="coverBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/></svg>${b.portadaUrl?"Elegir otra portada":"Buscar portada"}</button>`:""}
+            ${b.isbn?`<button class="linkbtn" id="refetchBtn" type="button" ${busy?"disabled":""}>${busy?'<span class="spin"></span> Buscando…':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v4.5h-4.5"/></svg>Buscar de nuevo por ISBN'}</button>`:""}
+          </div>`:""}
         </div>
       </div>
       <div class="box" id="coverPick" hidden></div>
@@ -2496,15 +2611,22 @@ async function writeAuto(){
     AUTO.state = (e&&e.name==="NotAllowedError") ? "perm" : "error";
   }finally{ AUTO.busy=false; showAuto(); if(AUTO.again){ AUTO.again=false; scheduleAutoSave(); } }
 }
+// El aviso de abajo solo dice dónde se guarda tu estante; la copia en un archivo se maneja desde Mi cuenta
+const NOTA_GUARDADO="Tu estante se guarda solo en tu cuenta de Tomo y lo ves igual en todos tus dispositivos.";
 function showAuto(){
-  const btn=$("#autoBtn"), note=$("#storeNote");
-  if(!AUTO.supported){ btn.hidden=true; return; }
+  const btn=$("#autoBtn"), note=$("#storeNote"); if(!btn||!note) return;
+  const pon=(t,sm)=>{ const x=btn.querySelector(".mi-t"); if(x) x.innerHTML=`${esc(t)}<small>${sm}</small>`; };
+  const nota=h=>{ if(storageOk) note.innerHTML=h; };
+  if(!AUTO.supported){ btn.hidden=true; nota(NOTA_GUARDADO); return; }
   btn.hidden=false; btn.classList.toggle("warn", AUTO.state==="perm"||AUTO.state==="error");
-  const hora=AUTO.last?AUTO.last.toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit",hour12:false}):"";
-  if(AUTO.state==="on"){ btn.textContent="Copia automática activa"; note.innerHTML=`Copia automática en <b>${esc(AUTO.handle.name)}</b>${hora?` · última vez a las ${hora}`:""}. Si el navegador borra sus datos, recupéralo con “Importar” y ese archivo.`; }
-  else if(AUTO.state==="perm"){ btn.textContent="Reactivar copia automática"; note.innerHTML=`La copia automática en <b>${esc(AUTO.handle.name)}</b> está en pausa: el navegador pide permiso otra vez. Toca “Reactivar copia automática”.`; }
-  else if(AUTO.state==="error"){ btn.textContent="Reactivar copia automática"; note.innerHTML=`No pude escribir en <b>${esc(AUTO.handle?.name||"el archivo")}</b> (¿lo moviste o borraste?). Toca el botón para elegirlo de nuevo.`; }
-  else { btn.textContent="Activar copia automática"; note.innerHTML=`Tu estante se guarda en tu cuenta de Tomo. Si quieres, activa también una <b>copia automática</b> en un archivo de esta computadora.`; }
+  const hora=AUTO.last?AUTO.last.toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit",hour12:false}):"", arch=esc(AUTO.handle?.name||"el archivo");
+  if(AUTO.state==="on"){ pon("Copia automática activada",`En ${arch}${hora?` · la última a las ${hora}`:""}. Toca para cambiarla o apagarla`);
+    nota(`${NOTA_GUARDADO} Además, cada cambio se copia en <b>${arch}</b>, en esta computadora${hora?` (la última vez, a las ${hora})`:""}.`); }
+  else if(AUTO.state==="perm"){ pon("Reactivar la copia automática","Tu navegador pide permiso otra vez para escribir el archivo");
+    nota(`${NOTA_GUARDADO} La copia en <b>${arch}</b> está en pausa: reactívala en <b>Mi cuenta</b>.`); }
+  else if(AUTO.state==="error"){ pon("Reactivar la copia automática","No pude escribir en el archivo: ¿lo moviste o lo borraste?");
+    nota(`${NOTA_GUARDADO} No pude actualizar la copia en <b>${arch}</b>: elígela otra vez en <b>Mi cuenta</b>.`); }
+  else { pon("Copia automática en un archivo","Además de tu cuenta, guarda una copia en esta computadora cada vez que cambias algo"); nota(NOTA_GUARDADO); }
 }
 async function chooseAutoFile(){
   try{
@@ -2518,10 +2640,14 @@ $("#autoBtn").addEventListener("click",async()=>{
     try{ const p=await AUTO.handle.requestPermission({mode:"readwrite"}); if(p==="granted"){ AUTO.state="on"; await writeAuto(); if(AUTO.state==="on"){ toast("Copia automática reactivada"); return; } } }catch(e){}
     return chooseAutoFile();
   }
-  if(AUTO.state==="on"){ // ya activa: ofrecer cambiar de archivo
-    const n=$("#storeNote"); n.innerHTML+=` <button class="linkbtn" id="autoChange">Cambiar archivo</button> <button class="linkbtn" id="autoOff">Desactivar</button>`;
-    $("#autoChange").onclick=chooseAutoFile;
-    $("#autoOff").onclick=async()=>{ await IDB.cfgDel("autoHandle").catch(()=>{}); AUTO.handle=null; AUTO.state="off"; showAuto(); toast("Copia automática desactivada"); };
+  if(AUTO.state==="on"){ // ya activa: cambiar de archivo o apagarla
+    $("#dataMenu").open=false;
+    const cerrar=abrirDlg(`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT"><div class="dlg-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v4.5h-4.5"/></svg></div>
+      <h2 id="dlgT">Copia automática</h2><p>Cada cambio de tu estante se copia en <b>${esc(AUTO.handle?.name||"el archivo")}</b>, en esta computadora. Si algún día el navegador borra sus datos, lo recuperas con <b>Importar</b> y ese archivo.</p>
+      <div class="dlg-acc"><button class="btn primary" type="button" id="autoChange">Elegir otro archivo</button><button class="btn" type="button" id="autoOff">Apagarla</button><button class="btn ghost" type="button" id="autoNo">Cerrar</button></div></div>`);
+    $("#autoChange").onclick=()=>{ cerrar(); chooseAutoFile(); };
+    $("#autoOff").onclick=async()=>{ cerrar(); await IDB.cfgDel("autoHandle").catch(()=>{}); AUTO.handle=null; AUTO.state="off"; showAuto(); toast("Copia automática apagada"); };
+    $("#autoNo").onclick=cerrar;
     return; }
   chooseAutoFile();
 });
@@ -2886,13 +3012,46 @@ S.priceEdit=null; S.pick=null; S.pickQ="";
    Manga, manhwa, manhua y cómics: AniList (base de datos pública de manga). Series de libros: Wikidata.
    AniList cuenta la edición ORIGINAL japonesa/coreana. Si tu edición junta tomos (kanzenban, 2 en 1, deluxe),
    no se toca tu total: se muestra una estimación para que la confirmes. Un total que pusiste tú nunca se cambia solo. */
-const ANI_Q=`query($s:String){Page(perPage:6){media(search:$s,type:MANGA){id siteUrl format status volumes countryOfOrigin genres tags{name rank} title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}}}}`;
-async function buscarAniList(nombre){
-  const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:ANI_Q,variables:{s:nombre}})});
+const ANI_CAMPOS=`id idMal siteUrl format status volumes countryOfOrigin genres tags{name rank} title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}`;
+const ANI_Q=`query($s:String){Page(perPage:10){media(search:$s,type:MANGA){${ANI_CAMPOS}}}}`;
+const ANI_ID=`query($id:Int,$mal:Int){Media(id:$id,idMal:$mal,type:MANGA){${ANI_CAMPOS}}}`;
+async function aniPedir(query,variables){
+  const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query,variables})});
+  if(r.status===404) return null; // Media que no existe
   if(!r.ok) throw new Error("anilist "+r.status);
-  const ms=(await r.json()).data?.Page?.media||[], k=normSerie(nombre);
-  const titulos=m=>[m.title?.romaji,m.title?.english,m.title?.native,...(m.synonyms||[])].filter(Boolean).map(normSerie).filter(Boolean);
-  return ms.find(m=>titulos(m).includes(k)) || ms.find(m=>titulos(m).some(t=>t.startsWith(k+" ")||k.startsWith(t+" "))) || null; }
+  return (await r.json()).data||null; }
+const titulosAni=m=>[m.title?.romaji,m.title?.english,m.title?.native,...(m.synonyms||[])].filter(Boolean).map(normSerie).filter(Boolean);
+const coincideAni=(ms,k)=>ms.find(m=>titulosAni(m).includes(k)) || ms.find(m=>titulosAni(m).some(t=>t.startsWith(k+" ")||k.startsWith(t+" "))) || null;
+// Nombres propios y números del título ("Mi amor por Yamada está al Nv. 999" → yamada, 999): lo que no se traduce
+function palabrasPropias(nombre){ const ws=String(nombre||"").split(/[\s.,:;!?¡¿()"'«»\/–—-]+/).filter(Boolean);
+  const m=new Map(); for(const [i,w] of ws.entries()) if(/^\d{2,}$/.test(w)||(i>0&&/^\p{Lu}/u.test(w)&&w.length>=3&&!/^(nv|lv|vol|tomo|n[º°o])$/i.test(w))){ const n=normSerie(w); if(n&&!m.has(n)) m.set(n,w); }
+  return [...m].map(([n,w])=>({n,w})); }
+// El nombre de tu edición (en español) en Wikidata: sus fichas de manga enlazan con AniList y MyAnimeList
+async function aniPorWikidata(nombre){ const k=normSerie(nombre);
+  const s=await getJson(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(nombre)}&language=es&uselang=es&type=item&limit=5&format=json&origin=*`);
+  const ids=(s.search||[]).filter(x=>normSerie(x.match?.text||x.label)===k).map(x=>x.id).filter(x=>/^Q\d+$/.test(x)); if(!ids.length) return null;
+  const e=await getJson(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids.join("|")}&props=claims&format=json&origin=*`);
+  for(const id of ids){ const c=e.entities?.[id]?.claims||{}, v=p=>c[p]?.[0]?.mainsnak?.datavalue?.value;
+    const ani=parseInt(v("P8731"),10)||0, mal=parseInt(v("P4087"),10)||0; if(!ani&&!mal) continue; // P8731: AniList (manga) · P4087: MyAnimeList (manga)
+    const d=await aniPedir(ANI_ID,ani?{id:ani}:{mal}); if(d?.Media) return d.Media; }
+  return null; }
+// Con los nombres propios: solo si UNA sola serie de AniList los tiene todos (si hay dudas, mejor no decir nada)
+async function aniPorPalabras(nombre){ const ps=palabrasPropias(nombre), letras=ps.filter(p=>/[a-z]/.test(p.n));
+  if(ps.length<2||!letras.length) return null;
+  const ms=(await aniPedir(ANI_Q,{s:letras.map(p=>p.w).join(" ")}))?.Page?.media||[];
+  let c=ms.filter(m=>titulosAni(m).some(t=>ps.every(p=>t.includes(p.n))));
+  if(c.length>1){ const mg=c.filter(m=>m.format!=="NOVEL"&&m.format!=="ONE_SHOT"); if(mg.length) c=mg; }
+  return c.length===1?c[0]:null; }
+// La serie en AniList: con su nombre, y si es el de tu edición en español, por Wikidata o por sus nombres propios.
+// Devuelve null si no está (o no se puede saber cuál es) y lanza un error si no se pudo preguntar.
+async function buscarAniList(nombre){ const k=normSerie(nombre); if(!k) return null;
+  const ms=(await aniPedir(ANI_Q,{s:nombre}))?.Page?.media||[];
+  const m=coincideAni(ms,k); if(m) return m;
+  let fallo=null;
+  for(const [via,f] of [["Wikidata",aniPorWikidata],["nombres",aniPorPalabras]]){
+    try{ const x=await f(nombre); if(x) return {...x,via}; }catch(e){ fallo=e; } }
+  if(fallo) throw fallo; // no es que no exista: no se pudo preguntar (se reintenta en una hora)
+  return null; }
 async function buscarWikidata(nombre){
   const s=await getJson(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(nombre)}&language=es&uselang=es&type=item&limit=6&format=json&origin=*`);
   const ids=(s.search||[]).map(x=>x.id); if(!ids.length) return null;
@@ -2911,23 +3070,30 @@ function edicionAgrupada(c){
   const p=bs.map(b=>+String(b.paginas||"").replace(/\D/g,"")).filter(n=>n>0).sort((a,b)=>a-b);
   return p.length>0 && p[p.length>>1]>=330; }
 async function detectarSerie(c){
-  const q=String(c.nombreBusqueda||c.nombre).trim(), det={consulta:q,fecha:Date.now(),sigue:[]};
+  const q=String(c.nombreBusqueda||c.nombre).trim(), det={consulta:q,fecha:Date.now(),sigue:[],v:DET_V};
   try{
     if(!porTomos(c.tipo)){ const w=await buscarWikidata(q); if(w){ Object.assign(det,w); det.total=w.original; } else det.noEncontrado=true; }
     else{ const m=await buscarAniList(q);
       if(!m) det.noEncontrado=true;
-      else{ det.fuente="AniList"; det.url=m.siteUrl; det.titulo=m.title?.english||m.title?.romaji||q; det.original=+m.volumes||0;
+      else{ det.fuente="AniList"; det.url=m.siteUrl; det.aniId=m.id; det.titulo=m.title?.english||m.title?.romaji||q; det.original=+m.volumes||0;
+        if(m.via) det.via=m.via; if(m.title?.romaji&&m.title.romaji!==det.titulo) det.romaji=m.title.romaji;
         det.estado={FINISHED:"terminada",RELEASING:"sigue saliendo",HIATUS:"en pausa",CANCELLED:"cancelada"}[m.status]||"";
-        det.agrupada=edicionAgrupada(c); det.total=det.agrupada?0:det.original; det.estimado=det.agrupada&&det.original?Math.ceil(det.original/2):0;
+        // si tu edición junta tomos no se adivina cuántos son (Ranma ½: 38 en Japón, 20 en la de Ivrea, no 19): lo dices tú
+        det.agrupada=edicionAgrupada(c); det.total=det.agrupada?0:det.original;
         const REL={SEQUEL:"Continúa en",PREQUEL:"Historia anterior",SIDE_STORY:"Historia paralela",SPIN_OFF:"Spin-off"};
         det.sigue=(m.relations?.edges||[]).filter(x=>REL[x.relationType]&&x.node?.type==="MANGA"&&x.node?.format!=="NOVEL")
           .map(x=>({rel:REL[x.relationType],titulo:x.node.title?.english||x.node.title?.romaji||"",tomos:+x.node.volumes||0,unico:x.node.format==="ONE_SHOT",url:x.node.siteUrl}))
           .sort((a,b)=>(a.rel!=="Continúa en")-(b.rel!=="Continúa en")).slice(0,3); } }
   }catch(e){ det.error=true; }
-  const cur=S.colsCfg[c.id]||{}, patch={det};
-  if(det.total && !cur.totalManual && (!(+cur.total) || cur.totalAuto)){ patch.total=det.total; patch.totalAuto=true; }
+  const cur=S.colsCfg[c.id]||{}, patch={det}, maxH=Math.max(0,...tomosDe(c).keys());
+  // no se pudo preguntar, pero ya se sabía algo de esta serie: se conserva y se vuelve a intentar en una hora
+  if(det.error&&cur.det&&!cur.det.error&&cur.det.consulta===q){ S.colsCfg={...S.colsCfg,[c.id]:{...cur,det:{...cur.det,v:DET_V,fecha:Date.now()-30*864e5+36e5}}}; saveJ(COLS_KEY,S.colsCfg); return; }
+  // un total menor que el tomo más alto que ya tienes no es el de tu edición: no se usa
+  if(det.total && det.total>=maxH && !cur.totalManual && (!(+cur.total) || cur.totalAuto)){ patch.total=det.total; patch.totalAuto=true; }
+  else if(cur.totalAuto && +cur.total && !cur.totalManual) patch.total=0; // el que había puesto Tomo ya no vale
   S.colsCfg={...S.colsCfg,[c.id]:{...cur,...patch}}; saveJ(COLS_KEY,S.colsCfg); }
-const necesitaDet=c=>{ const d=c.det; if(!d) return true; if(d.consulta!==String(c.nombreBusqueda||c.nombre).trim()) return true;
+const DET_V=2; // v2: búsqueda por Wikidata y nombres propios, y sin totales adivinados: lo guardado antes se busca otra vez
+const necesitaDet=c=>{ const d=c.det; if(!d) return true; if(d.consulta!==String(c.nombreBusqueda||c.nombre).trim()) return true; if(d.v!==DET_V&&!d.descartado) return true;
   const edad=Date.now()-(d.fecha||0); return d.error?edad>36e5:edad>30*864e5; };
 let detectando=false;
 // Solo mientras miras Colecciones (lo encontrado queda guardado; si te vas, sigue la próxima vez sin frenar el estante)
@@ -2940,21 +3106,35 @@ let colsTimer=0, colsUltimo=0;
 function colsPronto(){ if(S.view!=="colecciones"||colsTimer) return; const espera=Math.max(0,1500-(Date.now()-colsUltimo));
   colsTimer=setTimeout(()=>{ colsTimer=0; colsUltimo=Date.now(); if(S.view==="colecciones") renderCols(); },espera); }
 function detHtml(c,maxH){ if(c.distribuye) return "";
-  const d=c.det, fuente=!porTomos(c.tipo)?"Wikidata":"AniList";
-  if(!d||necesitaDet(c)&&!d.error) return `<div class="det"><span><span class="spin"></span> Buscando cuántos ${unidad(c)[1]} tiene la serie…</span></div>`;
-  if(d.error) return `<div class="det"><div>No pude buscar cuántos ${unidad(c)[1]} tiene (¿sin conexión?). Lo intentaré de nuevo más tarde.</div></div>`;
-  if(d.noEncontrado) return `<div class="det"><div>No encontré “${esc(d.consulta)}” en ${fuente}. Pon el total en <b>Editar</b>, o escribe ahí su <b>nombre original</b> para buscarla.</div></div>`;
-  const tot=+c.total||0, lin=[];
-  if(d.original) lin.push(`Según <a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${+d.original||0}</b> ${!porTomos(c.tipo)?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
-  else lin.push(`${esc(d.fuente)} tiene la serie${d.estado?` (${esc(d.estado)})`:""}, pero no dice cuántos tomos son todavía.`);
-  if(d.agrupada&&d.estimado) lin.push(`Tu edición junta tomos (2 en 1 o kanzenban), así que serían unos <b>${+d.estimado||0}</b>.${!tot?` <button class="btn sm" type="button" data-act="usarTotal" data-n="${+d.estimado||0}" data-col="${esc(c.id)}">Usar ${+d.estimado||0}</button>`:tot!==d.estimado?` Tú pusiste ${tot}.`:""}`);
-  else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${+d.total||0}" data-col="${esc(c.id)}">Usar ${+d.total||0}</button>`);
-  if(d.estado==="sigue saliendo") lin.push(`Todavía salen tomos nuevos: el total puede subir.`);
+  const d=c.det, fuente=!porTomos(c.tipo)?"Wikidata":"AniList", u=unidad(c), tot=+c.total||0, tag=numTag(c).toLowerCase(), cid=esc(c.id);
+  const pedirTotal=txt=>`<form class="det-form" data-form="total" data-col="${cid}" novalidate><label for="dt-${cid}">${txt}</label>
+    <div class="det-fila"><input id="dt-${cid}" inputmode="numeric" maxlength="4" autocomplete="off" value="${tot||""}" placeholder="${maxH?`Ej.: ${maxH}`:"Ej.: 20"}"><button class="btn sm" type="submit">Guardar</button></div></form>`;
+  const pedirNombre=`<form class="det-form" data-form="orig" data-col="${cid}" novalidate><label for="do-${cid}">Nombre original o en inglés</label>
+    <div class="det-fila"><input id="do-${cid}" autocomplete="off" value="${esc(c.nombreBusqueda||"")}" placeholder="Ej.: Yamada-kun to Lv999 no Koi wo Suru"><button class="btn sm" type="submit">Buscar</button></div></form>`;
+  // mientras se vuelve a buscar, se sigue viendo lo que ya se sabía (solo si cambió el nombre se muestra «Buscando…»)
+  if(!d||d.consulta!==String(c.nombreBusqueda||c.nombre).trim()) return `<div class="det"><span><span class="spin"></span> Buscando cuántos ${u[1]} tiene la serie…</span></div>`;
+  if(d.error) return `<div class="det"><div>No pude buscar cuántos ${u[1]} tiene (¿sin conexión?). Lo intentaré de nuevo más tarde.</div></div>`;
+  if(d.noEncontrado) return `<div class="det"><div>${d.descartado?"Listo, no uso esa serie.":`No encontré “${esc(d.consulta)}” en ${fuente}.`}${porTomos(c.tipo)?" Si tu edición tiene otro nombre (en español, por ejemplo), escribe el original o el de inglés y la busco:":""}</div>
+    ${porTomos(c.tipo)?pedirNombre:""}${!tot?pedirTotal(`O escribe cuántos ${u[1]} tiene tu edición`):""}</div>`;
+  const lin=[], forms=[], k=normSerie(d.consulta), link=`<a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>`;
+  // con otro nombre (la encontró por el original): se dice cuál es, para que confirmes que es la tuya
+  const otroNombre=!!d.via||(!!d.titulo&&![d.titulo,d.romaji].some(x=>x&&normSerie(x)===k));
+  const cual=otroNombre?`<b>${esc(d.titulo)}</b>${d.romaji&&normSerie(d.romaji)!==normSerie(d.titulo)?` (${esc(d.romaji)})`:""}`:"";
+  const estado=d.estado?` ${d.estado==="sigue saliendo"?"Sigue saliendo":d.estado==="terminada"?"Está terminada":d.estado==="en pausa"?"Está en pausa":"Fue cancelada"}.`:"";
+  if(d.original) lin.push(`${otroNombre?`${link} la tiene como ${cual}: `:`Según ${link}: `}<b>${+d.original||0}</b> ${!porTomos(c.tipo)?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}.${estado}`);
+  else lin.push(`${link} ${otroNombre?`la tiene como ${cual}`:"tiene la serie"}, pero todavía no dice cuántos ${u[1]} son.${estado}`);
+  if(otroNombre&&d.fuente==="AniList") lin.push(`¿No es tu serie? <button class="linkbtn" type="button" data-act="noEsSerie" data-col="${cid}">No es esta</button>`);
+  if(d.agrupada){ lin.push(tot?`Tu edición junta tomos (2 en 1, kanzenban…): tiene <b>${tot}</b>, como pusiste.`:`Tu edición junta tomos (2 en 1, kanzenban…), así que tiene menos ${u[1]} que la original. Cuántos depende de la editorial:`);
+    if(!tot) forms.push(pedirTotal(`¿Cuántos ${u[1]} tiene tu edición?`)); }
+  else if(d.original&&maxH>d.original){ lin.push(`Tú ya tienes el ${tag} ${maxH}: tu edición no se numera como la original.${c.totalManual&&tot?` Tiene <b>${tot}</b>, como pusiste.`:""}`);
+    if(!c.totalManual) forms.push(pedirTotal(`¿Cuántos ${u[1]} tiene tu edición?`)); }
+  else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${+d.total||0}" data-col="${cid}">Usar ${+d.total||0}</button>`);
+  if(d.estado==="sigue saliendo"&&d.original) lin.push(`Todavía salen tomos nuevos: el total puede subir.`);
   for(const [i,s] of (d.sigue||[]).entries()){ const tiene=S.books.some(b=>b.serie&&normSerie(b.serie)===normSerie(s.titulo));
     const enDeseos=S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo));
     lin.push(`<span class="det-sigue">${esc(s.rel)}: <a href="${esc(soloHttps(s.url))}" target="_blank" rel="noopener"><b>${esc(s.titulo)}</b></a>${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:s.unico?" · tomo único":""}
-      ${tiene?`<span class="pill leido">La tienes</span>`:enDeseos?`<span class="pill">En tu lista de deseos</span>`:`<button class="btn sm" type="button" data-act="deseoSigue" data-i="${i}" data-col="${esc(c.id)}">A mi lista de deseos</button>`}</span>`); }
-  return `<div class="det">${lin.map(l=>`<div>${l}</div>`).join("")}</div>`; }
+      ${tiene?`<span class="pill leido">La tienes</span>`:enDeseos?`<span class="pill">En tu lista de deseos</span>`:`<button class="btn sm" type="button" data-act="deseoSigue" data-i="${i}" data-col="${cid}">A mi lista de deseos</button>`}</span>`); }
+  return `<div class="det">${lin.map(l=>`<div>${l}</div>`).join("")}${forms.join("")}</div>`; }
 
 function renderCols(){
   const all=colecciones(), vis=all.filter(c=>!c.oculta), ocultas=all.filter(c=>c.oculta);
@@ -2983,9 +3163,13 @@ let seriesObs=null;
 function vigilarSeries(){ seriesObs?.disconnect(); const el=$("#masSeries"); if(!el||!("IntersectionObserver" in window)) return;
   seriesObs=new IntersectionObserver(es=>{ if(es.some(e=>e.isIntersecting)){ seriesObs.disconnect(); requestAnimationFrame(masSeries); } },{rootMargin:"1200px 0px"}); seriesObs.observe(el); }
 function priceInput(b){ return `<input class="pin mono" data-price="${esc(b.id)}" inputmode="decimal" value="${hasPrecio(b)?(+b.precio).toFixed(2):""}" placeholder="S/ precio" aria-label="Precio de ${esc(b.titulo)}">`; }
+const ICO_PRECIO=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/></svg>`;
+const ICO_EDITAR=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`;
+const ICO_OCULTAR=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10 10 0 0112 5c5 0 8.5 4.5 9.5 7a13 13 0 01-2.6 3.8M6.6 6.6C4.6 8 3.2 10 2.5 12c1 2.5 4.5 7 9.5 7 1.8 0 3.4-.6 4.8-1.4M9.9 9.9a3 3 0 004.2 4.2"/></svg>`;
+const ICO_OK=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 function cardHead(c,sub){ const pe=S.priceEdit===c.id;
   return `<div class="phead"><div><h3>${esc(c.nombre)}</h3><div class="sub">${sub}</div></div>
-    <div class="pacts"><button class="btn ${pe?"primary":"ghost"} sm" type="button" data-act="prices" data-col="${esc(c.id)}">${pe?"Listo":c.clase==="grupo"?"Precios y libros":"Precios"}</button><button class="btn ghost sm" type="button" data-act="edit" data-col="${esc(c.id)}">Editar</button><button class="btn ghost sm" type="button" data-act="hide" data-col="${esc(c.id)}">Ocultar</button></div></div>
+    <div class="pacts ch-acts"><button class="btn sm ch-act${pe?" primary":""}" type="button" data-act="prices" data-col="${esc(c.id)}">${pe?ICO_OK:ICO_PRECIO}${pe?"Listo":c.clase==="grupo"?"Precios y libros":"Precios"}</button><button class="btn sm ch-act${S.colEdit===c.id?" on":""}" type="button" data-act="edit" data-col="${esc(c.id)}" aria-expanded="${S.colEdit===c.id}">${ICO_EDITAR}Editar</button><button class="btn sm ch-act" type="button" data-act="hide" data-col="${esc(c.id)}" title="No mostrar esta colección (puedes volver a mostrarla abajo)">${ICO_OCULTAR}Ocultar</button></div></div>
     ${S.colEdit===c.id?colForm(c):""}
     ${pe?`<p class="muted" style="margin:0">Escribe lo que pagaste por cada uno. Se guarda al salir de cada casilla; toca <b>Listo</b> para ver los totales.</p>`:""}`; }
 function serieCard(c){
@@ -3015,7 +3199,7 @@ function serieCard(c){
       <div class="kpi"><b>${total?tiene:tieneTodo}${total?` de ${total}`:""}</b><span>${total?`${pct}% de la colección`:`${tieneTodo===1?w[0]:w[1]} que tienes`}</span></div>
       <div class="kpi"><b>${aprox?"≈ ":""}${soles(gastado)}</b><span>Gastado${aprox?" (con precio de lista)":""}${sinP?` · ${sinP} sin precio`:""}</span></div>
       ${total&&falta?`<div class="kpi"><b>${soles(falta)}</b><span>Para completarla (${total-tiene} ${total-tiene===1?w[0]:w[1]})</span></div>`
-        :!total?`<div class="kpi"><b>?</b><span>¿Cuántos ${w[1]} son? Ponlo en “Editar”</span></div>`:""}
+        :!total?`<button type="button" class="kpi kpi-btn" data-act="pedirTotal" data-col="${esc(c.id)}"><b>?</b><span>¿Cuántos ${w[1]} son? Toca para ponerlo</span></button>`:""}
     </div>
     ${total?`<div class="prog" role="img" aria-label="${pct}% completada"><i style="width:${pct}%"></i></div>`:""}
     ${sinNum.length?`<p class="muted" style="margin:0">${sinNum.length===1?`Un ${w[0]} no tiene número`:`${sinNum.length} ${w[1]} no tienen número`} (Google no lo sabe): escríbelo en la casilla bajo su portada y se ubica solo en la colección.</p>`:""}
@@ -3096,6 +3280,11 @@ $("#v-colecciones").addEventListener("click",e=>{
   else if(act==="more"){ S.colOpen.add(id); renderCols(); }
   else if(act==="less"){ S.colOpen.delete(id); renderCols(); }
   else if(act==="usarTotal"){ setCfg({total:+a.dataset.n,totalManual:true,totalAuto:false}); renderOther(); toast(`Total: ${a.dataset.n}`); }
+  else if(act==="pedirTotal"){ const f=document.querySelector(`#dt-${CSS.escape(id)}`); if(f){ f.scrollIntoView({block:"center",behavior:"smooth"}); f.focus({preventScroll:true}); return; }
+    S.colEdit=id; renderCols(); const t=$("#cf-total"); if(t){ t.scrollIntoView({block:"center"}); t.focus({preventScroll:true}); } }
+  else if(act==="noEsSerie"){ const cf={...(S.colsCfg[id]||{})}, c=colecciones().find(x=>x.id===id);
+    cf.det={consulta:String(c?.nombreBusqueda||c?.nombre||"").trim(),fecha:Date.now(),sigue:[],noEncontrado:true,descartado:true,v:DET_V};
+    if(cf.totalAuto&&!cf.totalManual) cf.total=0; S.colsCfg={...S.colsCfg,[id]:cf}; saveJ(COLS_KEY,S.colsCfg); renderCols(); setTimeout(()=>$(`#do-${CSS.escape(id)}`)?.focus(),30); }
   else if(act==="redet"){ const cf={...(S.colsCfg[id]||{})}; delete cf.det; if(!cf.totalManual) { cf.totalAuto=true; } S.colsCfg={...S.colsCfg,[id]:cf}; saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderCols(); }
   else if(act==="deseoSigue"){ const c=colecciones().find(x=>x.id===id), s=c?.det?.sigue?.[+a.dataset.i]; if(!s) return;
     if(!S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo))){ S.wish.items.unshift({id:"w-"+Date.now().toString(36),titulo:s.titulo,autor:c.autor||"",nota:`${s.rel.replace("Continúa en","Continuación")} de ${c.nombre}${s.tomos?` · ${s.tomos} ${s.tomos===1?"tomo":"tomos"}`:""}`,creado:Date.now()}); saveJ(WISH_KEY,S.wish); }
@@ -3115,6 +3304,16 @@ $("#v-colecciones").addEventListener("keydown",e=>{ const p=e.target.closest("[d
 $("#v-colecciones").addEventListener("input",e=>{ if(e.target.id!=="pk-q") return; S.pickQ=e.target.value; const c=colecciones().find(x=>x.id===S.pick); if(!c) return;
   const tmp=document.createElement("div"); tmp.innerHTML=pickerHtml(c); $("#pk-list").replaceWith(tmp.querySelector("#pk-list")); });
 $("#v-colecciones").addEventListener("submit",e=>{ e.preventDefault();
+  // dentro de la ficha de la serie: el nombre original para buscarla, o cuántos tomos tiene tu edición
+  const df=e.target.closest("form[data-form]");
+  if(df){ const id=df.dataset.col, inp=df.querySelector("input"), val=(inp?.value||"").trim(), c=colecciones().find(x=>x.id===id); if(!c) return;
+    const cf={...(S.colsCfg[id]||{})};
+    if(df.dataset.form==="total"){ const n=+val.replace(/\D/g,"")||0, mx=Math.max(0,...tomosDe(c).keys());
+      if(!n){ toast(`Escribe cuántos ${unidad(c)[1]} son.`); inp?.focus(); return; }
+      if(n<mx){ toast(`Ya tienes el ${numTag(c).toLowerCase()} ${mx}: el total no puede ser menor.`); inp?.focus(); return; }
+      Object.assign(cf,{total:n,totalManual:true,totalAuto:false}); toast(`${c.nombre}: ${n} ${unidad(c)[1]}`); }
+    else { if(!val){ inp?.focus(); return; } cf.nombreBusqueda=val.slice(0,200); delete cf.det; if(!cf.totalManual) cf.totalAuto=true; }
+    S.colsCfg={...S.colsCfg,[id]:cf}; saveJ(COLS_KEY,S.colsCfg); renderOther(); if(df.dataset.form==="orig") detectarPendientes(); return; }
   const v=id=>($("#"+id)?.value||"").trim(); const total=v("cf-total").replace(/\D/g,""), precio=v("cf-precio").replace(/^S\/\s*/i,"").replace(",",".");
   if(precio && isNaN(+precio)){ toast("El precio debe ser un número, por ejemplo 39.90."); return; }
   const patch={total:total?+total:0, precio:precio?+precio:0, frecuencia:v("cf-frec"), nota:v("cf-nota")};
@@ -3143,40 +3342,53 @@ function faltantes(){ const series=new Map();
     out.push({k:s.k,nombre:c?c.nombre:s.nombre,ref,col:c,tiene:nums.size,max,total,gaps,sig,oculta:S.wish.ocultas.includes(s.k)}); }
   return out.sort((a,b)=>a.nombre.localeCompare(b.nombre,"es")); }
 function numTxt(s,n){ return s.col&&nombreEntrega(s.col,n)?`N.º ${n}: ${nombreEntrega(s.col,n)}`:`${numLabel(s.ref)} ${n}`; }
+// miniatura para un deseo (aún no hay portada): el color y las iniciales del título, como en el estante
+function miniDeseo(t){ const h=hue(t||""), ini=String(t||"").replace(/^(el|la|los|las|un|una|the)\s+/i,"").trim().slice(0,1).toUpperCase();
+  return `<span class="wmini" aria-hidden="true" style="background:linear-gradient(160deg,hsl(${h} 32% 36%),hsl(${(h+30)%360} 36% 22%))">${esc(ini)}</span>`; }
+const ICO_BASURA=`<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>`;
 function renderWish(){ const F=faltantes(), vis=F.filter(s=>!s.oculta), hid=VER?[]:F.filter(s=>s.oculta), W=S.wish.items, quien=nombreDueno()||"este lector";
+  const nTomos=vis.reduce((n,s)=>n+s.gaps.length+(s.sig?1:0),0);
+  const resumen=[W.length?`${W.length} ${W.length===1?"libro":"libros"}`:"",nTomos?`${nTomos} ${nTomos===1?"tomo":"tomos"} de ${vis.length} ${vis.length===1?"serie":"series"}`:""].filter(Boolean);
   $("#v-deseos").innerHTML=`
-    <div class="vhead"><div><h2>Lista de deseos</h2><p>${VER?`Lo que ${esc(quien)} quiere comprar y los tomos que le faltan de sus series.`:"Lo que quieres comprar y los tomos que te faltan de tus series. Cuando lo compres, tócalo y pasa a tu estante."}</p></div>
-      ${W.length||vis.length?`<button class="btn" type="button" data-act="copy">Copiar lista</button>`:""}</div>
-    <section class="panel">
-      <h3>${VER?"Libros que quiere":"Libros que quieres"}</h3>
-      ${VER?"":`<form id="wishForm" class="formgrid" autocomplete="off">
-        <div class="f"><label for="w-t">Título</label><input id="w-t" placeholder="Ej.: Cien años de soledad"></div>
-        <div class="f"><label for="w-a">Autor</label><input id="w-a" placeholder="Opcional"></div>
-        <div class="f"><label for="w-n">Nota</label><input id="w-n" placeholder="Dónde lo viste, precio…"></div>
-        <button class="btn primary" type="submit">Agregar</button>
+    <div class="vhead"><div><h2>Lista de deseos</h2><p>${VER?`Lo que ${esc(quien)} quiere comprar y los tomos que le faltan de sus series.`:"Lo que quieres comprar y los tomos que te faltan de tus series. Cuando lo compres, tócalo y pasa a tu estante."}</p>
+      ${resumen.length?`<div class="w-resumen">${resumen.map(x=>`<span>${x}</span>`).join("")}</div>`:""}</div>
+      ${W.length||vis.length?`<button class="btn" type="button" data-act="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/></svg>Copiar lista</button>`:""}</div>
+    <section class="panel w-panel">
+      <div class="w-h"><h3>${VER?"Libros que quiere":"Libros que quieres"}</h3>${W.length?`<span class="w-n">${W.length}</span>`:""}</div>
+      ${VER?"":`<form id="wishForm" class="w-form" autocomplete="off">
+        <div class="w-fila"><label for="w-t" class="sr">Título</label><input id="w-t" placeholder="Título del libro que quieres" enterkeyhint="done"><button class="btn primary" type="submit">Agregar</button></div>
+        <details class="w-mas"><summary>Agregar autor o una nota</summary>
+          <div class="w-fila2"><div class="f"><label for="w-a">Autor</label><input id="w-a" placeholder="Opcional"></div>
+          <div class="f"><label for="w-n">Nota</label><input id="w-n" placeholder="Dónde lo viste, precio…"></div></div></details>
       </form>`}
-      ${W.length?`<ul class="wl">${W.map(w=>`<li><div class="wt"><b>${esc(w.titulo)}</b>${w.autor||w.nota?`<div>${esc(w.autor||"")}${w.autor&&w.nota?" · ":""}${esc(w.nota||"")}</div>`:""}</div>
-        ${VER?"":`<div class="pacts"><button class="btn sm" type="button" data-wbuy="${esc(w.id)}">Ya lo compré</button><button class="btn ghost sm" type="button" data-wdel="${esc(w.id)}">Quitar</button></div>`}</li>`).join("")}</ul>`
-        :`<p class="muted" style="margin:0">${VER?"No hay libros en su lista.":"Aún no anotas ninguno. Escribe arriba el título de un libro que quieras comprar."}</p>`}
+      ${W.length?`<ul class="wl w-libros">${W.map(w=>`<li>${miniDeseo(w.titulo)}<div class="wt"><b>${esc(w.titulo)}</b>${w.autor?`<div>${esc(w.autor)}</div>`:""}${w.nota?`<div class="w-nota">${esc(w.nota)}</div>`:""}</div>
+        ${VER?"":`<div class="pacts"><button class="btn sm primary" type="button" data-wbuy="${esc(w.id)}">Ya lo compré</button><button class="btn ghost sm w-quitar" type="button" data-wdel="${esc(w.id)}" aria-label="Quitar “${esc(w.titulo)}” de la lista" title="Quitar de la lista">${ICO_BASURA}<span>Quitar</span></button></div>`}</li>`).join("")}</ul>`
+        :`<div class="w-vacio">${VER?"No hay libros en su lista.":"Aún no anotas ninguno. Escribe arriba el título de un libro que quieras comprar."}</div>`}
     </section>
-    <section class="panel">
-      <h3>${VER?"Le faltan de sus series":"Te faltan de tus series"}</h3>
-      ${vis.length?`<ul class="wl">${vis.map(s=>`<li><div class="wt"><b>${esc(s.nombre)}</b><div>${VER?"Tiene":"Tienes"} ${s.tiene}${s.total?` de ${s.total}`:` · hasta el ${s.max}`}</div></div>
-        <div class="chips">${s.gaps.map(n=>`<button class="chip want" type="button" data-sk="${esc(s.k)}" data-n="${n}" ${VER?"":`title="Te falta de antes. Tocar cuando lo compres"`}>Falta · ${esc(numTxt(s,n))}</button>`).join("")}${s.sig?`<button class="chip want sig" type="button" data-sk="${esc(s.k)}" data-n="${s.sig}" ${VER?"":`title="El siguiente de la serie. Tocar cuando lo compres"`}>Siguiente · ${esc(numTxt(s,s.sig))}</button>`:""}</div>
-        ${VER?"":`<button class="linkbtn" type="button" data-hide="${esc(s.k)}">No seguir</button>`}</li>`).join("")}</ul>`
-        :`<p class="muted" style="margin:0">${VER?"No le falta nada de sus series.":"No te falta nada de tus series."}</p>`}
-      ${hid.length?`<p class="muted" style="margin:0">${hid.length} serie${hid.length>1?"s":""} que no sigues: ${hid.map(s=>esc(s.nombre)).join(", ")}. <button class="linkbtn" type="button" data-act="unhideall">Volver a seguirlas</button></p>`:""}
+    <section class="panel w-panel">
+      <div class="w-h"><h3>${VER?"Le faltan de sus series":"Te faltan de tus series"}</h3>${nTomos?`<span class="w-n">${nTomos}</span>`:""}</div>
+      ${vis.length?`<ul class="wl w-series">${vis.map(s=>{ const tope=s.total||Math.max(s.max,s.sig||0), pct=tope?Math.min(100,Math.round(s.tiene/tope*100)):0;
+        return `<li><div class="w-sr">${coverHtml(s.ref)}</div><div class="wt"><b>${esc(s.nombre)}</b><div>${VER?"Tiene":"Tienes"} ${s.tiene}${s.total?` de ${s.total}`:` · hasta el ${s.max}`}</div>
+          ${s.total?`<div class="w-prog" role="img" aria-label="${pct}% de la colección"><i style="width:${pct}%"></i></div>`:""}</div>
+        <div class="chips">${s.gaps.map(n=>`<button class="chip want" type="button" data-sk="${esc(s.k)}" data-n="${n}" ${VER?"":`title="Te falta de antes. Tócalo cuando lo compres"`}>Falta · ${esc(numTxt(s,n))}</button>`).join("")}${s.sig?`<button class="chip want sig" type="button" data-sk="${esc(s.k)}" data-n="${s.sig}" ${VER?"":`title="El siguiente de la serie. Tócalo cuando lo compres"`}>Siguiente · ${esc(numTxt(s,s.sig))}</button>`:""}</div>
+        ${VER?"":`<button class="linkbtn w-nosigo" type="button" data-hide="${esc(s.k)}" title="Ya no mostrar esta serie aquí">No seguir</button>`}</li>`; }).join("")}</ul>`
+        :`<div class="w-vacio">${VER?"No le falta nada de sus series.":"No te falta nada de tus series."}</div>`}
+      ${hid.length?`<p class="muted w-ocultas">${hid.length} serie${hid.length>1?"s":""} que no sigues: ${hid.map(s=>esc(s.nombre)).join(", ")}. <button class="linkbtn" type="button" data-act="unhideall">Volver a seguirlas</button></p>`:""}
     </section>`; }
 $("#v-deseos").addEventListener("submit",e=>{ e.preventDefault(); const t=$("#w-t").value.trim(); if(!t){ toast("Escribe el título."); $("#w-t").focus(); return; }
   S.wish.items.unshift({id:"w-"+Date.now().toString(36),titulo:t,autor:$("#w-a").value.trim(),nota:$("#w-n").value.trim(),creado:Date.now()});
-  saveJ(WISH_KEY,S.wish); renderOther(); $("#w-t").focus(); });
+  saveJ(WISH_KEY,S.wish); renderOther(); toast(`“${t}” está en tu lista de deseos`); $("#w-t").focus(); });
 $("#v-deseos").addEventListener("click",e=>{
   if(VER){ if(e.target.closest('[data-act="copy"]')) copyText(wishText()); return; }
   const t=e.target.closest("[data-sk]"); if(t){ const s=faltantes().find(x=>x.k===t.dataset.sk); if(s) draftTomo(s.ref,+t.dataset.n); return; }
   const wb=e.target.closest("[data-wbuy]"); if(wb){ const w=S.wish.items.find(x=>x.id===wb.dataset.wbuy); if(!w) return;
     S.openId=null; S.draft={...blankBook(""),titulo:w.titulo,autor:w.autor||"",notas:w.nota||"",_wish:w.id}; renderSheet(); return; }
-  const wd=e.target.closest("[data-wdel]"); if(wd){ S.wish.items=S.wish.items.filter(x=>x.id!==wd.dataset.wdel); saveJ(WISH_KEY,S.wish); renderOther(); return; }
-  const h=e.target.closest("[data-hide]"); if(h){ S.wish.ocultas=[...new Set([...S.wish.ocultas,h.dataset.hide])]; saveJ(WISH_KEY,S.wish); renderOther(); return; }
+  const wd=e.target.closest("[data-wdel]"); if(wd){ const i=S.wish.items.findIndex(x=>x.id===wd.dataset.wdel), w=S.wish.items[i]; if(!w) return;
+    S.wish.items=S.wish.items.filter(x=>x.id!==w.id); saveJ(WISH_KEY,S.wish); renderOther();
+    toast(`Quitaste “${w.titulo}”`,{texto:"Deshacer",fn:()=>{ if(!S.wish.items.some(x=>x.id===w.id)){ S.wish.items.splice(Math.min(i,S.wish.items.length),0,w); saveJ(WISH_KEY,S.wish); renderOther(); } }}); return; }
+  const h=e.target.closest("[data-hide]"); if(h){ const k=h.dataset.hide, nom=faltantes().find(x=>x.k===k)?.nombre||"la serie";
+    S.wish.ocultas=[...new Set([...S.wish.ocultas,k])]; saveJ(WISH_KEY,S.wish); renderOther();
+    toast(`Ya no sigues ${nom}`,{texto:"Deshacer",fn:()=>{ S.wish.ocultas=S.wish.ocultas.filter(x=>x!==k); saveJ(WISH_KEY,S.wish); renderOther(); }}); return; }
   const a=e.target.closest("[data-act]"); if(!a) return;
   if(a.dataset.act==="unhideall"){ S.wish.ocultas=[]; saveJ(WISH_KEY,S.wish); renderOther(); }
   if(a.dataset.act==="copy") copyText(wishText()); });
@@ -3196,7 +3408,10 @@ $("#viewMode").addEventListener("click",e=>{ const b=e.target.closest("[data-vm]
 applyVm();
 document.addEventListener("click",e=>{ const m=$("#dataMenu"); if(!m.open) return;
   if(!m.contains(e.target)||e.target===m) m.open=false; /* e.target===m: tocaste el fondo oscuro del panel */ else if(e.target.closest("button.menu-item,label.menu-item")&&e.target.closest("#autoBtn")===null) setTimeout(()=>m.open=false,0); });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#dataMenu").open=false; });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("#dataMenu").open){ $("#dataMenu").open=false; $("#dataMenu > summary").focus({preventScroll:true}); } });
+$("#menuX").addEventListener("click",()=>{ $("#dataMenu").open=false; });
+$("#syncState").addEventListener("click",()=>{ const t=$("#syncState").title; if(t) toast(t); }); // en el celular solo se ve la nube: al tocarla dice qué pasa
+$("#copyIdBtn").addEventListener("click",e=>{ e.stopPropagation(); const id=$("#menuId").textContent.trim(); if(id&&id!=="—") copyText(id,`ID copiado: ${id}`); });
 
 /* ---------- leyendo ahora: en qué página vas, racha y meta del año ---------- */
 const ICO_LIBRO=`<svg viewBox="0 0 24 24"><path d="M12 6.5C10.3 5.2 7.9 4.5 4 4.5v13c3.9 0 6.3.7 8 2 1.7-1.3 4.1-2 8-2v-13c-3.9 0-6.3.7-8 2z"/><path d="M12 6.5v13"/></svg>`;
@@ -3687,7 +3902,11 @@ $("#v-stats").addEventListener("click",e=>{ if(e.target.closest('[data-st="meta"
 const NAME_KEY=NS+"nombre";
 function nombreDueno(){ return String(window.TOMO.perfil?.nombre||"").trim(); }
 function tituloEstante(){ const n=nombreDueno(); return n?`Estante de ${n}`:"Mi estante"; }
-function applyNombre(){ const t=tituloEstante(); $("#estTitle").textContent=t; document.title=t+" · Tomo"; }
+const ICO_PERSONA=`<svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg>`;
+function applyNombre(){ const t=tituloEstante(), n=nombreDueno(); $("#estTitle").textContent=t; document.title=t+" · Tomo";
+  if($("#menuNombre")) $("#menuNombre").textContent=t;
+  const ini=[...n.normalize("NFC")].find(ch=>/\p{L}|\p{N}/u.test(ch))||""; // la primera letra de tu nombre (o un ícono si no hay)
+  for(const el of document.querySelectorAll("[data-avatar]")){ if(ini) el.textContent=ini.toUpperCase(); else el.innerHTML=ICO_PERSONA; } }
 function askNombre(first){ const n=nombreDueno();
   $("#welcomeRoot").innerHTML=`<div class="overlay welcome-ov"><form class="welcome" id="welcomeForm" autocomplete="off" role="dialog" aria-modal="true" aria-labelledby="welcomeT">
     <span class="logo" aria-hidden="true">${document.querySelector(".top .logo").innerHTML}</span>
