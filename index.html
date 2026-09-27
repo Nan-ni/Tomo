@@ -821,7 +821,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 17</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 18</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
@@ -1038,12 +1038,17 @@ function coverSrc(u){ if(!u) return ""; u=String(u);
   if(/books\.google|googleusercontent|books\/content/.test(u) && !/fife=/.test(u)) return u+(u.includes("?")?"&":"?")+"fife=w400-h600";
   return u.replace(/(covers\.openlibrary\.org\/b\/(?:id|isbn)\/[^-]+)-[SM]\.jpg/,"$1-L.jpg"); }
 // Géneros clásicos, como en una librería. Los temas académicos (derecho, política, economía…) van a "Ensayo".
-const GENEROS_FIC=["Novela","Romance","Fantasía","Ciencia ficción","Misterio y suspenso","Terror","Aventura","Drama","Humor","Deportes","Novela histórica","Clásicos","Cuento","Poesía","Teatro","Juvenil","Infantil"];
+const GENEROS_FIC=["Novela","Romance","BL","GL","LGBTQ+","Fantasía","Ciencia ficción","Misterio y suspenso","Terror","Aventura","Drama","Humor","Deportes","Novela histórica","Clásicos","Cuento","Poesía","Teatro","Juvenil","Infantil"];
 const GENEROS_NOFIC=["Historia","Biografía","Ensayo","Autoayuda","Ciencia","Religión","Arte"];
 const GENEROS=GENEROS_FIC.concat(GENEROS_NOFIC);
+// BL, GL y LGBTQ+: más específicos que "Romance" o "Drama", así que ganan cuando AniList o Google los reconocen
+const DIVERSOS=new Set(["BL","GL","LGBTQ+"]);
+const GENERO_NOMBRE={"BL":"BL (boys' love)","GL":"GL (girls' love / yuri)"};
 // Categorías de Google Books y temas de Open Library → género. El orden importa: primero lo más específico.
+const GENRE_BL=/yaoi|boys'? ?love|sh[oō]u?nen[- ]?ai|danmei/i, GENRE_GL=/(^|[|/] *|manga +)yuri\b|yuri +manga|girls'? ?love|sh[oō]u?jo[- ]?ai/i;
 const GENRE_RULES=[
   [/poetry|poes[ií]a/i,"Poesía"],[/(^|[|/] *)drama\b|teatro|\bplays\b/i,"Teatro"],[/short stor|cuentos?\b|relatos/i,"Cuento"],
+  [t=>/lgbt|\bgays?\b|lesbian|queer|transg[eé]ner|bisexual|homosexual/i.test(t) && !/social science|ciencias sociales|history|historia\b|biograph|memoir|memorias|psycholog|psicolog|educat|health|salud|family & relationships|self-help|autoayuda|religi|political|pol[ií]tic/i.test(t),"LGBTQ+"],
   [/historical fiction|novela hist[oó]rica|fiction \/ historical/i,"Novela histórica"],[/magic(al)? realism|realismo m[aá]gico/i,"Novela"],
   [/romance|love stor|rom[aá]ntic/i,"Romance"],[/horror|terror|ghost/i,"Terror"],
   [/myster|thriller|suspens|detective|crime|policiac|noir|misterio|crimen/i,"Misterio y suspenso"],
@@ -1059,12 +1064,17 @@ const GENRE_RULES=[
   [/young adult|\bjuvenil\b/i,"Juvenil"],[/juvenile|children|infantil|picture book/i,"Infantil"],
   [/fiction|novel|ficci|literatura|literary/i,"Novela"]];
 // Géneros de antes que ya no están en la lista: se pasan al más parecido
-const GENERO_VIEJO={"Ciencia política":"Ensayo","Relaciones internacionales":"Ensayo","Economía y negocios":"Ensayo","Ciencias sociales":"Ensayo","Filosofía":"Ensayo","Derecho":"Ensayo","Educación":"Ensayo","Idiomas":"Ensayo","Viajes":"Ensayo","Psicología":"Ensayo","Tecnología":"Ciencia","Acción y aventura":"Aventura","Shōnen":"Aventura","Shonen":"Aventura","Seinen":"Drama","Shōjo":"Romance","Shojo":"Romance","Josei":"Romance","Kodomo":"Infantil"};
+const GENERO_VIEJO={"Yaoi":"BL","Boys' Love":"BL","Boys Love":"BL","Shōnen-ai":"BL","Shonen-ai":"BL","Shonen ai":"BL","Yuri":"GL","Girls' Love":"GL","Girls Love":"GL","Shōjo-ai":"GL","Shojo-ai":"GL","Shoujo ai":"GL","LGBT":"LGBTQ+","LGBTQ":"LGBTQ+","LGBTQIA+":"LGBTQ+","Ciencia política":"Ensayo","Relaciones internacionales":"Ensayo","Economía y negocios":"Ensayo","Ciencias sociales":"Ensayo","Filosofía":"Ensayo","Derecho":"Ensayo","Educación":"Ensayo","Idiomas":"Ensayo","Viajes":"Ensayo","Psicología":"Ensayo","Tecnología":"Ciencia","Acción y aventura":"Aventura","Shōnen":"Aventura","Shonen":"Aventura","Seinen":"Drama","Shōjo":"Romance","Shojo":"Romance","Josei":"Romance","Kodomo":"Infantil"};
 const normalizarGenero=g=>g&&GENERO_VIEJO[g]!==undefined?GENERO_VIEJO[g]:(g||"");
-// AniList (manga, manhwa, cómic): de sus géneros se elige el más característico
+// AniList (manga, manhwa, cómic): primero sus etiquetas BL / yuri / LGBTQ+; si no, de sus géneros el más característico
+const ANI_ETIQUETAS=[[/boys'? ?love|sh[oō]u?nen[- ]?ai|yaoi/i,"BL"],[/^yuri$|girls'? ?love|sh[oō]u?jo[- ]?ai/i,"GL"],[/lgbt/i,"LGBTQ+"]];
 const ANI_GENEROS=[["Romance","Romance"],["Horror","Terror"],["Mystery","Misterio y suspenso"],["Thriller","Misterio y suspenso"],["Psychological","Misterio y suspenso"],["Sci-Fi","Ciencia ficción"],["Mecha","Ciencia ficción"],["Sports","Deportes"],["Fantasy","Fantasía"],["Supernatural","Fantasía"],["Mahou Shoujo","Fantasía"],["Adventure","Aventura"],["Action","Aventura"],["Comedy","Humor"],["Drama","Drama"],["Slice of Life","Drama"]];
-const generoDeAniList=gs=>(ANI_GENEROS.find(([a])=>(gs||[]).includes(a))||[])[1]||"";
-function mapGenre(list){ const txt=(list||[]).join(" | ").replace(/comics?\s*&\s*graphic novels?|graphic novels?|comics?|manga|historietas?/gi,""); if(!txt.replace(/[\s|/]/g,"")) return ""; for(const [re,g] of GENRE_RULES) if(re.test(txt)) return g; return ""; }
+function generoDeAniList(m){ if(!m) return "";
+  for(const [re,g] of ANI_ETIQUETAS) if((m.tags||[]).some(t=>re.test(t?.name||"") && (t.rank??100)>=50)) return g;
+  return (ANI_GENEROS.find(([a])=>(m.genres||[]).includes(a))||[])[1]||""; }
+function mapGenre(list){ const raw=(list||[]).join(" | "); if(GENRE_BL.test(raw)) return "BL"; if(GENRE_GL.test(raw)) return "GL";
+  const txt=raw.replace(/comics?\s*&\s*graphic novels?|graphic novels?|comics?|manga|historietas?/gi,""); if(!txt.replace(/[\s|/]/g,"")) return "";
+  for(const [re,g] of GENRE_RULES) if(typeof re==="function"?re(txt):re.test(txt)) return g; return ""; }
 const MANGA_PUB=/ivrea|panini|norma|planeta c[oó]mic|kodansha|viz media|shueisha|shogakukan|yen press|seven seas|milky way|distrito manga|ecc|kamite|arechi|ovni press|tokyopop|square enix|kadokawa|dark horse manga|la calabaza|kitsune|fandogamia|tomodomo|moztros|ooso|gl[eé]nat|planeta deagostini|babylon|satori|hidra|mangaline/i;
 function detectTipo(d){ const cats=(d.categorias||[]).join(" "); const t=`${cats} ${d.editorial||""}`;
   if(/manhwa|webtoon/i.test(`${cats} ${d.titulo||""}`) || MANHWAS.test(d.titulo||"")) return "manhwa";
@@ -1318,7 +1328,7 @@ function unifySerie(upd){
   upd.serie=sib.serie;
   if(sib.tipo && !upd.tipoFijado) upd.tipo=sib.tipo;
   if(sib.autor && (!upd.autor || (nonLatin.test(upd.autor) && !nonLatin.test(sib.autor)))) upd.autor=sib.autor;
-  for(const k of ["editorial","genero"]) if(!upd[k] && sib[k]) upd[k]=sib[k];
+  for(const k of ["editorial","genero"]) if(!upd[k] && sib[k]){ upd[k]=sib[k]; if(k==="genero" && sib.generoManual) upd.generoManual=true; }
   // Tomo que falta: las editoriales numeran los tomos seguidos, así que el ISBN delata el número
   if(!upd.tomo && /^97[89]\d{10}$/.test(upd.isbn||"")){
     const base=x=>+x.slice(3,12);
@@ -1341,20 +1351,22 @@ async function fillGenre(id){
   let r=null;
   if(b.isbn){ try{ r=await lookup(b.isbn); }catch(e){} if(!r||(!r.found&&!r.googleOk)) return; } // sin respuesta: se intenta otro día
   let genero=r?.data?.genero||"";
-  if(!genero && tipoOf(b)!=="libro" && b.serie) genero=await generoPorSerie(b.serie);
+  if(tipoOf(b)!=="libro" && b.serie && !DIVERSOS.has(genero)){ const g=await generoPorSerie(b.serie); if(g && (!genero || DIVERSOS.has(g))) genero=g; }
   const cur=byId(id); if(!cur||cur.genero) return;
   const upd={...cur, generoBuscado:true, generoRevisado:true}; if(genero) upd.genero=genero;
   if(r) applyTipo(upd, r.data);
   upsert(upd);
   if(genero && upd.serie) generoASerie(upd.serie, genero);
 }
+// null = AniList no respondió (se vuelve a intentar otro día); "" = no hay género
 const generoSerieCache=new Map();
 async function generoPorSerie(serie){ const k=normSerie(serie); if(!k) return "";
-  if(!generoSerieCache.has(k)) generoSerieCache.set(k, buscarAniList(serie).then(m=>generoDeAniList(m?.genres)).catch(()=>""));
+  if(!generoSerieCache.has(k)) generoSerieCache.set(k, buscarAniList(serie).then(generoDeAniList).catch(()=>{ generoSerieCache.delete(k); return null; }));
   return generoSerieCache.get(k); }
-// Los demás tomos de la misma serie que aún no tienen género toman el mismo
-function generoASerie(serie,genero){ const k=normSerie(serie);
-  for(const x of S.books.filter(x=>!x.genero&&x.serie&&normSerie(x.serie)===k)) upsert({...x,genero,generoRevisado:true}); }
+// Los demás tomos de la misma serie que aún no tienen género toman el mismo.
+// BL, GL y LGBTQ+ también reemplazan el que Tomo puso solo (nunca el que elegiste tú).
+function generoASerie(serie,genero){ const k=normSerie(serie), gana=DIVERSOS.has(genero);
+  for(const x of S.books.filter(x=>x.serie&&normSerie(x.serie)===k&&x.genero!==genero&&(!x.genero||(gana&&!x.generoManual&&!DIVERSOS.has(x.genero))))) upsert({...x,genero,generoRevisado:true}); }
 async function fillFromWeb(id, quiet){
   const b=byId(id); if(!b?.isbn) return;
   if(!quiet) marcarAccion();
@@ -1382,8 +1394,8 @@ async function fillFromWeb(id, quiet){
         const tp = MANHWAS.test(u.titulo) ? "manhwa" : (h.tipo || (numberedTitle(u.titulo)||MANGA_PUB.test(u.editorial||"") ? "manga" : ""));
         if(tp){ r.data.categorias=(r.data.categorias||[]).concat(tp==="manhwa"?["Manhwa"]:tp==="manga"?["Manga"]:["Comics"]); applyTipo(u, r.data); } }
       if(JSON.stringify(u)!==JSON.stringify(c)) upsert(u); } }
-  { const c=byId(id); if(c && !c.genero && tipoOf(c)!=="libro" && c.serie){ const g=await generoPorSerie(c.serie), c2=byId(id);
-      if(g && c2 && !c2.genero){ upsert({...c2,genero:g,generoRevisado:true}); generoASerie(c2.serie,g); } } }
+  { const c=byId(id); if(c && tipoOf(c)!=="libro" && c.serie && !c.generoManual && !DIVERSOS.has(c.genero||"")) generoPorSerie(c.serie).then(g=>{ const c2=byId(id);
+      if(g && c2 && !c2.generoManual && (!c2.genero || (DIVERSOS.has(g) && !DIVERSOS.has(c2.genero)))){ upsert({...c2,genero:g,generoRevisado:true}); generoASerie(c2.serie,g); } }); }
   if(upd.isbn) await upgradeCover(id);
   if(byId(id)?.titulo && !byId(id)?.portadaUrl) await fillCover(id);
   return r;
@@ -1778,7 +1790,7 @@ function renderSheet(){
   $("#titleSearch").hidden = !!b.titulo && !isNew;
   wireSheet();
 }
-function opcionesGenero(actual){ const op=g=>`<option value="${esc(g)}"${g===actual?" selected":""}>${esc(g)}</option>`;
+function opcionesGenero(actual){ const op=g=>`<option value="${esc(g)}"${g===actual?" selected":""}>${esc(GENERO_NOMBRE[g]||g)}</option>`;
   return `<option value="">${actual?"Sin género":"Sin género (Tomo lo elige solo)"}</option>`
     +(actual&&!GENEROS.includes(actual)?op(actual):"")
     +`<optgroup label="Ficción">${GENEROS_FIC.map(op).join("")}</optgroup><optgroup label="No ficción">${GENEROS_NOFIC.map(op).join("")}</optgroup>`; }
@@ -1805,6 +1817,7 @@ function readForm(){
   const out={titulo:v("f-titulo"),autor:v("f-autor"),editorial:v("f-editorial"),anio:v("f-anio"),paginas:v("f-paginas"),portadaUrl:v("f-portadaUrl"),notas:$("#f-notas").value,
     genero:v("f-genero"), tipo:tp, serie:v("f-serie"), tomo:v("f-tomo").replace(/\D/g,""), precio:v("f-precio").replace(/^S\/\s*/i,"").replace(",","."), leidoEn:v("f-leidoEn")};
   if($("#tipoSeg").dataset.v) out.tipoFijado=true;
+  if($("#f-genero")?.dataset.tocado) out.generoManual=!!out.genero;
   if(out.precio && !/^\d+(\.\d{1,2})?$/.test(out.precio)) return {error:"El precio debe ser un número, por ejemplo 45.90."};
   if(out.portadaUrl && !/^https:\/\//.test(out.portadaUrl)) return {error:"El enlace de portada debe empezar con https://"};
   if(out.anio && !/^\d{3,4}$/.test(out.anio)) return {error:"El año debe ser un número, por ejemplo 1963."};
@@ -1813,6 +1826,7 @@ function readForm(){
 }
 function wireSheet(){
   $("#ov").addEventListener("click",e=>{ if(e.target.id==="ov") closeSheet(); });
+  $("#f-genero")?.addEventListener("change",e=>{ e.target.dataset.tocado="1"; });
   $("#closeBtn").onclick=closeSheet;
   document.removeEventListener("keydown",escClose); document.addEventListener("keydown",escClose);
   $("#f-portadaUrl")?.addEventListener("input",e=>{ e.target.dataset.dirty="1"; });
@@ -2111,7 +2125,7 @@ S.priceEdit=null; S.pick=null; S.pickQ="";
    Manga, manhwa y cómics: AniList (base de datos pública de manga). Series de libros: Wikidata.
    AniList cuenta la edición ORIGINAL japonesa/coreana. Si tu edición junta tomos (kanzenban, 2 en 1, deluxe),
    no se toca tu total: se muestra una estimación para que la confirmes. Un total que pusiste tú nunca se cambia solo. */
-const ANI_Q=`query($s:String){Page(perPage:6){media(search:$s,type:MANGA){id siteUrl format status volumes genres title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}}}}`;
+const ANI_Q=`query($s:String){Page(perPage:6){media(search:$s,type:MANGA){id siteUrl format status volumes genres tags{name rank} title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}}}}`;
 async function buscarAniList(nombre){
   const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:ANI_Q,variables:{s:nombre}})});
   if(!r.ok) throw new Error("anilist "+r.status);
@@ -2736,7 +2750,14 @@ if(!VER) (async()=>{ await dormir(3000);
   for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoRevisado).slice(0,20)){ await esperarTurno(); await buscarTomo(b.id); }
   // unificar series escritas distinto (p. ej. "nv." y "Nv.")
   { let ch=false; for(const b of S.books){ if(!b.serie) continue; const before=JSON.stringify(b); const u={...b}; unifySerie(u); if(JSON.stringify(u)!==before){ Object.assign(b,u); ch=true; } } if(ch){ persist(); render(); } }
-  for(const b of S.books.filter(b=>b.titulo&&!b.genero&&!b.generoRevisado&&(b.isbn||(tipoOf(b)!=="libro"&&b.serie))).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); } })();
+  for(const b of S.books.filter(b=>b.titulo&&!b.genero&&!b.generoRevisado&&(b.isbn||(tipoOf(b)!=="libro"&&b.serie))).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); }
+  // BL, GL y LGBTQ+ son nuevos: los mangas y manhwas que ya tenías se revisan una vez en AniList (sin tocar el género que elegiste tú)
+  { const vistas=new Set();
+    for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&!b.generoDiv&&!b.generoManual&&!DIVERSOS.has(b.genero||""))){
+      const k=normSerie(b.serie); if(!k||vistas.has(k)) continue; if(vistas.size>=15) break; vistas.add(k);
+      await esperarTurno(); const g=await generoPorSerie(b.serie); if(g===null) continue; // sin respuesta: otro día
+      for(const x of S.books.filter(x=>x.serie&&normSerie(x.serie)===k&&!x.generoDiv))
+        upsert({...x,generoDiv:true,...(DIVERSOS.has(g)&&!x.generoManual&&!DIVERSOS.has(x.genero||"")?{genero:g,generoRevisado:true}:{})}); } } })();
 };
 </script>
 <!-- crossorigin: así la app instalada puede guardar la librería y abrir sin internet -->

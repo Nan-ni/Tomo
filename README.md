@@ -19,7 +19,7 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 - **Estadísticas:** libros leídos por mes, por género, por tipo y por autor.
 - **Compartir tu estante:** un enlace para que cualquiera vea tu estante y tu lista de deseos sin crear cuenta. No se muestran tus notas, préstamos ni precios.
 - **Tu cuenta en la nube:** se guarda solo, se sincroniza entre tus dispositivos y funciona sin internet.
-- **Géneros automáticos:** cada libro recibe un género clásico (romance, fantasía, historia…) según lo que dicen Google Books, Open Library y, en mangas, AniList.
+- **Géneros automáticos:** cada libro recibe un género clásico (romance, fantasía, historia…), además de **BL**, **GL (yuri)** y **LGBTQ+**, según lo que dicen Google Books, Open Library y, en mangas, AniList.
 - **Copias de seguridad:** exporta a JSON o CSV (para Excel) e importa cuando quieras.
 - **Enviar comentario:** desde *Mi cuenta* puedes reportar un error o proponer una idea; le llega por correo al administrador.
 
