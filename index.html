@@ -1012,7 +1012,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 33</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 34</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
@@ -2216,9 +2216,9 @@ function renderSheet(){
         <form id="tsForm" style="display:flex;gap:8px"><label for="ts-q" class="sr">Título y autor</label><input id="ts-q" class="search" style="max-width:none" placeholder="Ej.: La ciudad y los perros Vargas Llosa" value="${esc(b.titulo?"":"")}"><button class="btn" type="submit">Buscar</button></form>
         <div id="tsRes" class="hist"></div>
         ${LIBRERIAS.falta?"":`<div class="pega" id="pegaBox">
-          <h4>¿Lo viste en una tienda? Pega el enlace</h4>
-          <p class="origin" style="margin:0">${b.isbn?`Abre <a class="linkbtn" href="https://www.google.com/search?q=${encodeURIComponent(b.isbn)}" target="_blank" rel="noopener" id="googleIsbn">el ISBN en Google ↗</a>${agenciaDe(b.isbn)?` o <a class="linkbtn" href="${agenciaDe(b.isbn).web}/catalogo.php?mode=resultados_rapidos&amp;palabra=${encodeURIComponent(isbnConGuiones(b.isbn)||b.isbn)}" target="_blank" rel="noopener" id="agenciaIsbn">en la Agencia del ISBN de ${agenciaDe(b.isbn).pais} ↗</a>`:""}, entra`:"Entra"} a la página del libro (Crisol, Buscalibre, la editorial${agenciaDe(b.isbn)?", la agencia":""}…), copia el enlace y pégalo aquí: Tomo trae el título, el autor y la portada.</p>
-          <form id="urlForm" novalidate style="display:flex;gap:8px"><label for="url-q" class="sr">Enlace de la página del libro</label><input id="url-q" class="search" type="url" inputmode="url" autocomplete="off" style="max-width:none" placeholder="https://…"><button class="btn" type="submit" id="urlBtn">Traer datos</button></form>
+          <h4>¿Lo viste en otra página? Pega el enlace o el texto</h4>
+          <p class="origin" style="margin:0">${b.isbn?`Abre <a class="linkbtn" href="https://www.google.com/search?q=${encodeURIComponent(b.isbn)}" target="_blank" rel="noopener" id="googleIsbn">el ISBN en Google ↗</a>${agenciaDe(b.isbn)?` o <a class="linkbtn" href="${agenciaDe(b.isbn).web}/catalogo.php?mode=resultados_rapidos&amp;palabra=${encodeURIComponent(isbnConGuiones(b.isbn)||b.isbn)}" target="_blank" rel="noopener" id="agenciaIsbn">en la Agencia del ISBN de ${agenciaDe(b.isbn).pais} ↗</a>`:""}, entra`:"Entra"} a la página del libro (Crisol, Buscalibre, la editorial${agenciaDe(b.isbn)?", la agencia":""}…), copia el enlace y pégalo aquí: Tomo trae el título, el autor y la portada. Si la página no deja, copia su texto (Seleccionar todo → Copiar) y pégalo.</p>
+          <form id="urlForm" novalidate style="display:flex;gap:8px"><label for="url-q" class="sr">Enlace de la página del libro</label><input id="url-q" class="search" type="url" inputmode="url" autocomplete="off" style="max-width:none" placeholder="Enlace o texto de la ficha"><button class="btn" type="submit" id="urlBtn">Traer datos</button></form>
           <p class="origin" id="urlMsg" role="status" style="margin:0"></p>
         </div>`}
       </div>
@@ -2360,11 +2360,25 @@ function wireSheet(){
       box.innerHTML=res.length?res.map((r,i)=>`<li class="ts-it">${r.portadaUrl?`<img src="${esc(coverSrc(r.portadaUrl))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">`:`<i class="ts-sin" aria-hidden="true"></i>`}<span><b style="color:var(--ink)">${esc(r.titulo)}</b><br>${esc(r.autor||"")}${r.editorial?" · "+esc(r.editorial):""}${r.anio?" · "+esc(r.anio):""}</span><button class="btn" data-pick="${i}" type="button">Usar</button></li>`).join(""):`<li>Sin resultados. Escribe los datos a mano.</li>`;
     }catch(err){ box.innerHTML=`<li>No hay conexión con Google Books. Intenta más tarde.</li>`; } };
   // Enlace de una tienda: la función "librerias" lee la página y se copian los datos a la ficha (como "Usar" en la búsqueda por título)
+  // el texto de una ficha pegado en la casilla perdería sus saltos de línea: se guarda entero
+  $("#url-q")&&$("#url-q").addEventListener("paste",e=>{ const t=e.clipboardData?.getData("text")||""; if(!/\n/.test(t.trim())) return;
+    e.preventDefault(); const corto=t.replace(/\s+/g," ").trim().slice(0,400); e.target.value=corto; S.textoPegado={t,corto}; });
   $("#urlForm")&&($("#urlForm").onsubmit=async e=>{ e.preventDefault(); const inp=$("#url-q"); let msg=$("#urlMsg"), btn=$("#urlBtn"), u=inp.value.trim();
     if(!u&&navigator.clipboard?.readText){ try{ u=String(await Promise.race([navigator.clipboard.readText(),dormir(8000).then(()=>"")])).trim(); }catch(err){} } // si no hay respuesta, se sigue
+    if(S.textoPegado&&S.textoPegado.corto===u) u=S.textoPegado.t;
+    const b=current(), guardar=S.draft?"Guardar en el estante":"Guardar cambios";
+    // ¿es el texto de una ficha? se lee aquí mismo, sin ir a internet
+    const tx=datosDeTexto(u);
+    if(tx.n>=2&&(tx.titulo||tx.autor||tx.editorial)){ marcarAccion();
+      for(const k of ["titulo","autor","editorial","anio","paginas"]){ const el=$("#f-"+k); if(el&&tx[k]) el.value=tx[k]; }
+      const otro=tx.isbn&&b?.isbn&&tx.isbn!==b.isbn;
+      msg.textContent=otro?`Ojo: ese texto es de otro ISBN (${fmtIsbn(tx.isbn)}). Revisa los datos antes de guardar.`
+        :!tx.titulo?`Copié ${["autor","editorial","anio","paginas"].filter(k=>tx[k]).map(k=>({autor:"el autor",editorial:"la editorial",anio:"el año",paginas:"las páginas"})[k]).join(", ")}; el título escríbelo arriba. Luego toca “${guardar}”.`
+        :`Listo: datos del texto que pegaste. Revisa y toca “${guardar}”.`;
+      inp.value=""; S.textoPegado=null; toast("Datos copiados. Revisa y guarda."); if(!tx.titulo) $("#f-titulo")?.focus(); return; }
     const m=u.match(/https?:\/\/[^\s<>"']+/i);
-    if(!m){ msg.textContent="Pega el enlace completo de la página del libro (empieza con https://)."; inp.focus(); return; }
-    u=m[0]; inp.value=u; const b=current(), guardar=S.draft?"Guardar en el estante":"Guardar cambios";
+    if(!m){ msg.textContent="Pega el enlace completo de la página del libro (empieza con https://) o el texto de su ficha."; inp.focus(); return; }
+    u=m[0]; inp.value=u;
     marcarAccion(); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Leyendo…'; msg.textContent=""; S.urlLeyendo=true;
     let j=null; try{ j=await librerias(`url=${encodeURIComponent(u)}${b?.isbn?`&isbn=${b.isbn}`:""}`,15000); }catch(err){}
     S.urlLeyendo=false;
@@ -2372,7 +2386,9 @@ function wireSheet(){
     // la ficha pudo redibujarse mientras tanto (llegó una portada): se usan los elementos de ahora
     msg=$("#urlMsg"); btn=$("#urlBtn"); btn.disabled=false; btn.textContent="Traer datos";
     if(!j){ msg.textContent=LIBRERIAS.falta?"Esta opción todavía no está activa.":navigator.onLine===false?"Sin conexión. Intenta cuando tengas internet.":"No pude leer esa página ahora. Intenta de nuevo en un rato."; return; }
-    if(!j.encontrado){ msg.textContent=j.error||"No encontré los datos del libro en esa página."; return; }
+    if(!j.encontrado){ const e=String(j.error||""), bloq=j.bloqueada||/respondi[oó] (401|403|429|503)|No se pudo abrir/.test(e);
+      msg.textContent=bloq&&!/pégalo aquí/.test(e)?`Esa página no deja que Tomo la lea${(e.match(/respondi[oó] \d+/)||[""])[0]?` (${e.match(/respondi[oó] \d+/)[0]})`:""}. Ábrela, copia el texto de la ficha del libro (Seleccionar todo → Copiar) y pégalo aquí.`
+        :e||"No encontré los datos del libro en esa página. Prueba copiando el texto de la ficha y pegándolo aquí."; return; }
     const d=j.datos||{};
     for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl"]){ const el=$("#f-"+k); if(el&&d[k]) el.value=d[k]; }
     msg.textContent=j.coincide===false?`Ojo: esa página no menciona tu ISBN, puede ser otra edición. Revisa los datos y toca “${guardar}”.`:`Listo: datos de ${d.fuente||"la tienda"}. Revisa y toca “${guardar}”.`;
@@ -2678,6 +2694,40 @@ function datosDePortadilla(lineas,texto){
   let autor=au?au.t:"";
   if(mayus(titulo)) titulo=oracion(titulo); if(autor&&mayus(autor)) autor=nombrePropio(autor);
   return {titulo:titulo.slice(0,200),autor:autor.slice(0,120),editorial:ed}; }
+// Texto copiado de la ficha de un libro (la de la agencia del ISBN, una librería…), para cuando la página no deja que Tomo
+// la lea: «Autor: Pérez, Ana», «Editorial: …», «Número de páginas: 320». En la agencia el título va arriba, sin etiqueta.
+const ETQ_TXT=[["titulo",/^(t[ií]tulo|title)$/i],["autor",/^(autor(es|\(es\)|a|as)?|author|escrito por)$/i],
+  ["editorial",/^(editorial|sello( editorial)?|editor(es|a)?|publisher|casa editora)$/i],
+  ["anio",/^(a[ñn]o( de (edici[oó]n|publicaci[oó]n))?|fecha( de (edici[oó]n|publicaci[oó]n|aparici[oó]n|lanzamiento))?|publicado|publicaci[oó]n|publication date|published)$/i],
+  ["paginas",/^((n[°ºo.]*|nro\.?|n[uú]mero( de)?|cantidad( de)?)\s*(de )?p[aá]ginas|p[aá]ginas|pages)$/i],["isbn",/^(isbn(-?1[03])?|isbn\/uid)$/i],
+  ["otro",/^(n[uú]mero de edici[oó]n|edici[oó]n|materia|tama[ñn]o|encuadernaci[oó]n|soporte|idioma|colecci[oó]n|p[uú]blico objetivo|traducci[oó]n|traductor(es|a)?|ilustrador(es|a)?|colaborador(es)?|precio|formato?|language|coedici[oó]n|g[ée]nero|dimensiones|peso)$/i]];
+const ETQ_PARTIR=["número de páginas","numero de paginas","n° de páginas","nº de páginas","número de edición","numero de edicion","fecha de publicación","fecha de aparición","fecha de edición",
+  "año de edición","año de publicación","público objetivo","publication date","sello editorial","título","titulo","autor\\(es\\)","autores","autora","autor","editorial","páginas","paginas",
+  "publicado","edición","materia","tamaño","encuadernación","soporte","idioma","colección","isbn","publisher","pages","language","format"];
+const etqDe=x=>{ x=String(x||"").replace(/[:：]\s*$/,"").trim(); if(x.length>40) return null; for(const [k,re] of ETQ_TXT) if(re.test(x)) return k; return null; };
+const sinRazonSocial=e=>String(e||"").replace(/[\s,.;-]+(S\.?\s?A\.?\s?S|S\.?\s?A\.?\s?C|S\.?\s?A\.?\s?de\s?C\.?\s?V|S\.?\s?de\s?R\.?\s?L\.?(\s?de\s?C\.?\s?V)?|S\.?\s?R\.?\s?L|S\.?\s?A\.?\s?U|S\.?\s?L\.?\s?U|E\.?\s?I\.?\s?R\.?\s?L|S\.?\s?p\.?\s?A|Ltda|Limitada|S\.?\s?A|SpA)\.?\s*$/i,"").trim()||String(e||"");
+const esMayusTxt=t=>/\p{L}{2}/u.test(t)&&t===t.toUpperCase()&&t!==t.toLowerCase();
+const NO_ES_TITULO=/^(detalles?|details|ficha( t[eé]cnica)?|edition info|informaci[oó]n( de la edici[oó]n)?|ver m[aá]s|volver|imprimir|compartir|inicio|men[uú]|portada|consultar libros|cat[aá]logo( isbn)?|buscar|b[uú]squeda.*|(>>\s*)?agencias? (del )?isbn(\s*<<)?|biblioteca nacional.*|isbn\b.*|[\d\s-]+)$|\b\d+\s*(pages|p[aá]ginas)\b/i;
+function datosDeTexto(texto){
+  let t=String(texto||"").replace(/\r/g,"").replace(/[:：]?[ \t]*\t[ \t]*/g,": ");
+  t=t.replace(new RegExp(`(^|[^\\p{L}])(${ETQ_PARTIR.join("|")})\\s*[:：]`,"giu"),(m,a,b)=>a+"\n"+b+":"); // pegado en una casilla, llega todo en una línea
+  const L=t.split("\n").map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean), out={}; let primera=-1;
+  for(let i=0;i<L.length;i++){ const m=L[i].match(/^([^:：]{2,40}?)\s*[:：]\s*(.*)$/); let k=m?etqDe(m[1]):null, v=m?m[2]:"", ini=i;
+    if(!k){ k=etqDe(L[i]); if(!k) continue; v=""; }
+    if(!v&&L[i+1]&&!etqDe(L[i+1].split(/[:：]/)[0])){ v=L[i+1]; i++; }
+    v=v.replace(/^[:：|]\s*/,"").trim(); if(primera<0) primera=ini; if(k!=="otro"&&v&&!(k in out)) out[k]=v; if(k==="otro") out.n=(out.n||0)+1; }
+  const r={n:Object.keys(out).filter(k=>k!=="n").length+(out.n||0)};
+  // sin «Título:»: la línea que va justo antes de los datos (así es la ficha de la agencia)
+  let tit=out.titulo||""; if(!tit&&primera>0) for(let i=primera-1;i>=Math.max(0,primera-2);i--){ const x=L[i].replace(/\s*[-|–—]\s*(>>\s*)?agencias? (del )?isbn(\s*<<)?$/i,"").trim(); if(x.length>=2&&x.length<=150&&/\p{L}{2}/u.test(x)&&!NO_ES_TITULO.test(x)&&!etqDe(x)){ tit=x; break; } }
+  tit=tit.replace(/\s*[-|–—]\s*(>>\s*)?agencias? (del )?isbn(\s*<<)?$/i,"").trim();
+  if(tit) r.titulo=esMayusTxt(tit)?tit.charAt(0)+tit.slice(1).toLowerCase():tit;
+  if(out.autor) r.autor=out.autor.split(/\s*;\s*|\s+\/\s+/).map(a=>{ const m=a.match(/^([^,]+),\s*([^,]+)$/); if(m&&m[2].split(/\s+/).length<=3) a=`${m[2]} ${m[1]}`; return esMayusTxt(a)?nombrePropio(a):a; }).filter(Boolean).join(", ").slice(0,200);
+  if(out.editorial) r.editorial=sinRazonSocial(out.editorial).slice(0,120);
+  const an=(out.anio||"").match(/\b(1[5-9]\d\d|20\d\d)\b/); if(an) r.anio=an[1];
+  const pg=+(((out.paginas||"").match(/\d{1,5}/)||[])[0]||(t.match(/\b(\d{2,5})\s*(pages|p[aá]ginas)\b/i)||[])[1]||0); if(pg>0&&pg<20000) r.paginas=String(pg);
+  if(!r.autor){ const by=L.find(x=>/^by\s+\p{Lu}/u.test(x)); if(by&&by.length<120) r.autor=by.replace(/^by\s+/,""); }
+  const ni=out.isbn?normalizeIsbn(out.isbn.replace(/[^\dXx]/g,"").slice(0,13)):{}; if(ni.isbn&&!ni.notBook) r.isbn=ni.isbn;
+  return r; }
 async function leerPrimeraPagina(file){ const msg=t=>{ const m=$("#ppMsg"); if(m) m.textContent=t; };
   const btn=$("#ppBtn"); if(btn) btn.classList.add("ocupado");
   let foto; try{ foto=await fotoACanvas(file); }catch(e){ msg("No pude abrir esa imagen. Prueba con otra foto."); btn?.classList.remove("ocupado"); return; }

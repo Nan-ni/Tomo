@@ -94,11 +94,16 @@ async function leer(r: Response, max = 2_000_000) {
   if (!cs) { const m = t.slice(0, 4000).match(/<meta[^>]+charset=["']?([\w-]+)/i); if (m && !/utf-?8/i.test(m[1])) { try { t = new TextDecoder(m[1]).decode(buf); } catch { /* se queda en utf-8 */ } } }
   return t;
 }
+// Algunos sitios del Estado tienen el certificado incompleto: el navegador lo tolera, el servidor no. Entonces se reintenta por http.
+const esCertificado = (e: unknown) => /certificate|UnknownIssuer|invalid peer|tls|ssl|handshake/i.test(String((e as Error)?.message || e));
 async function traer(url: string, ms = 7000): Promise<Pagina> {
-  let u = new URL(url);
-  for (let i = 0; i < 5; i++) {
+  let u = new URL(url), sinTls = false;
+  for (let i = 0; i < 6; i++) {
     if (!permitido(u)) throw new Error("dirección no permitida");
-    const r = await fetch(u.href, { headers: NAVEGADOR, redirect: "manual", signal: AbortSignal.timeout(ms) });
+    if (sinTls && u.protocol === "https:") u.protocol = "http:";
+    let r: Response;
+    try { r = await fetch(u.href, { headers: NAVEGADOR, redirect: "manual", signal: AbortSignal.timeout(ms) }); }
+    catch (e) { if (!sinTls && u.protocol === "https:" && esCertificado(e)) { sinTls = true; continue; } throw e; }
     const loc = r.headers.get("location");
     if (r.status >= 300 && r.status < 400 && loc) { await r.body?.cancel().catch(() => {}); u = new URL(loc, u); continue; }
     return { url: u.href, status: r.status, tipo: r.headers.get("content-type") || "", texto: await leer(r) };
@@ -175,7 +180,7 @@ const isbnsDe = (o: Record<string, unknown>) => ["isbn", "gtin13", "gtin", "gtin
 const ETIQUETAS: [keyof Datos | "isbn", RegExp][] = [
   ["autor", /^(autor(es|\(es\)|a|as)?|escrito por|author|autor\/es)$/i],
   ["editorial", /^(editorial|sello( editorial)?|editor(es)?|publisher|casa editora)$/i],
-  ["anio", /^(a[ñn]o( de (edici[oó]n|publicaci[oó]n))?|fecha de (edici[oó]n|publicaci[oó]n|lanzamiento)|publicaci[oó]n|publicado|publication date|release date)$/i],
+  ["anio", /^(a[ñn]o( de (edici[oó]n|publicaci[oó]n))?|fecha de (edici[oó]n|publicaci[oó]n|aparici[oó]n|lanzamiento)|publicaci[oó]n|publicado|publication date|release date)$/i],
   ["paginas", /^((n[°ºo.]*|nro\.?|n[uú]mero( de)?|cantidad( de)?|num\.?)\s*(de )?p[aá]g(inas|s|\.)?|p[aá]ginas|pages|extensi[oó]n)$/i],
   ["titulo", /^(t[ií]tulo|title|nombre del libro)$/i],
   ["isbn", /^(isbn(-?1[03])?|ean(-?13)?|c[oó]digo( de barras)?)$/i],
@@ -210,7 +215,8 @@ function arreglarAutor(a: string) {
   }).filter(Boolean).join(", ");
 }
 function arreglarTitulo(t: string, autor = "") {
-  t = limpio(t); if (!t) return "";
+  t = limpio(t).replace(/\s*[-|–—]?\s*(>>\s*)?agencias? (del )?isbn(\s*<<)?\s*$/i, "").replace(/^(>>\s*)?agencias? (del )?isbn(\s*<<)?$/i, "").trim();
+  if (!t || /^isbn[\s:]*[\d-]+x?$/i.test(t)) return ""; // la agencia a veces solo muestra "ISBN 978-…" (sin título público)
   // "Rayuela | JULIO CORTAZAR | Comprar libro en Crisol" → "Rayuela" (pero "Harry Potter - La piedra filosofal" se queda entero)
   const partes = t.split(/\s+[|–—]\s+|\s+-\s+/).map((x) => x.trim()).filter(Boolean);
   const na = autor.toLowerCase(), sobra = (x: string) => TIENDAS.test(x) || (!!na && x.toLowerCase() === na);
@@ -242,9 +248,10 @@ function leerFicha(html: string, url: string, isbn = "") {
   const autor = arreglarAutor(nombre(ld.author) || mi.author || prop(/^autor/) || et.autor || me["book:author"] || "");
   const marca = nombre(ld.brand); const editorial = limpio(nombre(ld.publisher) || mi.publisher || prop(/editorial|sello/) || et.editorial || (marca && !TIENDAS.test(marca) ? marca : "") || me["product:brand"] || "");
   const d: Datos = {
-    titulo: arreglarTitulo(nombre(ld.name) || mi.name || et.titulo || me["og:title"] || h1 || titleTag, autor),
+    // el primero que quede con algo (el encabezado de la agencia es ">> Agencias ISBN <<": ese no cuenta)
+    titulo: [nombre(ld.name), mi.name, et.titulo, me["og:title"], h1, titleTag].map((x) => x ? arreglarTitulo(x, autor) : "").find(Boolean) || "",
     autor,
-    editorial: editorial.length <= 100 && !TIENDAS.test(editorial) ? editorial : "",
+    editorial: editorial.length <= 100 && !TIENDAS.test(editorial) ? sinRazonSocial(editorial) : "",
     anio: anioDe(nombre(ld.datePublished) || nombre(ld.copyrightYear) || mi.datepublished || prop(/a[ñn]o|fecha|publica/) || et.anio || me["book:release_date"]),
     paginas: paginasDe(nombre(ld.numberOfPages) || mi.numberofpages || prop(/p[aá]gina/) || et.paginas),
     portadaUrl: portada(imagen(ld.image) || me["og:image"] || me["og:image:secure_url"] || mi.image || me["twitter:image"] || "", url),
@@ -312,8 +319,11 @@ async function probar(url: string, isbn: string, fuente: string, motivos: string
     }));
     if (!r) motivos.push("no lo tiene");
     return r;
-  } catch (e) { motivos.push(/abort|timeout/i.test(String(e)) ? "no respondió a tiempo" : "no se pudo conectar"); return null; }
+  } catch (e) { motivos.push(porQueFallo(e)); return null; }
 }
+// Por qué no se pudo abrir una página (se ve en «Dónde busqué»)
+const porQueFallo = (e: unknown) => /abort|timeout/i.test(String(e)) ? "no respondió a tiempo" : esCertificado(e) ? "certificado no válido"
+  : /dns|lookup|resolve/i.test(String(e)) ? "no se encontró el sitio" : "no se pudo conectar";
 // Todas las direcciones de una librería a la vez (solo una suele ser la buena): gana la primera que trae el libro
 async function buscarEn(f: (typeof FUENTES)[number], isbn: string, intentos: Intento[]): Promise<Datos | null> {
   const motivos: string[] = [];
@@ -365,6 +375,7 @@ Deno.serve(async (req) => {
     if (!permitido(u2)) return json({ encontrado: false, error: "Ese enlace no es válido." });
     try {
       const p = await traer(u2.href, 9000);
+      if (p.status === 401 || p.status === 403 || p.status === 429 || p.status === 503) return json({ encontrado: false, bloqueada: true, error: `Esa página no deja que Tomo la lea (respondió ${p.status}). Ábrela, copia el texto de la ficha del libro y pégalo aquí.` });
       if (p.status >= 400) return json({ encontrado: false, error: `La página respondió ${p.status}. Prueba con otro enlace.` });
       const r = leerFicha(p.texto, p.url, valido ? isbn : "");
       if (!r.d.titulo) return json({ encontrado: false, error: "No encontré los datos del libro en esa página." });
@@ -372,7 +383,8 @@ Deno.serve(async (req) => {
       if (valido && r.menciona) await guardar(isbn, datos); // solo si la página es de ese ISBN, para no confundir a otros lectores
       return json({ encontrado: true, datos, coincide: valido ? r.menciona : null });
     } catch (e) {
-      return json({ encontrado: false, error: /abort|timeout/i.test(String(e)) ? "La página tardó demasiado. Intenta otra vez." : "No se pudo abrir esa página." });
+      return json({ encontrado: false, bloqueada: true, error: /abort|timeout/i.test(String(e)) ? "La página tardó demasiado. Intenta otra vez, o copia el texto de la ficha del libro y pégalo aquí."
+        : `No pude abrir esa página (${porQueFallo(e)}). Ábrela, copia el texto de la ficha del libro y pégalo aquí.` });
     }
   }
 
