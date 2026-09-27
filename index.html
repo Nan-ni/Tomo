@@ -205,7 +205,11 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:10px
 .card .cover{width:72px}
 .cover img{image-rendering:auto}
 
-#tipoSeg{grid-template-columns:repeat(4,1fr)}
+/* 5 tipos: en una fila si caben; en celulares, 3 arriba y 2 abajo */
+#tipoSeg{grid-template-columns:repeat(5,1fr)}
+#tipoSeg button{white-space:nowrap}
+@media (max-width:560px){ #tipoSeg{grid-template-columns:repeat(6,1fr)} #tipoSeg button{grid-column:span 2;padding-left:2px;padding-right:2px} #tipoSeg button:nth-child(n+4){grid-column:span 3} }
+@media (max-width:300px){ #tipoSeg button{font-size:12.5px} }
 .nextbtn{margin-left:auto;padding:6px 12px;font-size:13px}
 
 .btn.warn{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
@@ -696,7 +700,6 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
   .kpis{grid-template-columns:minmax(0,1fr)}
   .kpis .kpi:last-child:nth-child(odd){grid-column:auto}
   .form{grid-template-columns:minmax(0,1fr)}
-  #tipoSeg{grid-template-columns:repeat(2,1fr)}
 }
 
 /* resultados de "Búscalo por título" con su portada */
@@ -826,7 +829,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 20</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 21</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
@@ -1052,10 +1055,12 @@ const olCover=id=>id?`https://covers.openlibrary.org/b/id/${id}-L.jpg`:"";
 function coverSrc(u){ if(!u) return ""; u=String(u);
   if(/books\.google|googleusercontent|books\/content/.test(u) && !/fife=/.test(u)) return u+(u.includes("?")?"&":"?")+"fife=w400-h600";
   return u.replace(/(covers\.openlibrary\.org\/b\/(?:id|isbn)\/[^-]+)-[SM]\.jpg/,"$1-L.jpg"); }
-// Géneros clásicos, como en una librería. Los temas académicos (derecho, política, economía…) van a "Ensayo".
+// Géneros clásicos, como en una librería. Los libros de estudio (derecho, economía, medicina…) son del tipo "Académico" y tienen su área.
 const GENEROS_FIC=["Novela","Romance","BL","GL","LGBTQ+","Fantasía","Ciencia ficción","Misterio y suspenso","Terror","Aventura","Drama","Humor","Deportes","Novela histórica","Clásicos","Cuento","Poesía","Teatro","Juvenil","Infantil"];
 const GENEROS_NOFIC=["Historia","Biografía","Ensayo","Autoayuda","Ciencia","Religión","Arte"];
 const GENEROS=GENEROS_FIC.concat(GENEROS_NOFIC);
+const GENEROS_ACAD=["Derecho","Economía y negocios","Ciencia política y RR. II.","Ciencias sociales","Educación","Psicología","Filosofía","Historia","Medicina y salud","Ingeniería y tecnología","Ciencias y matemáticas","Lenguaje y literatura","Arte y arquitectura"];
+const generosDe=tipo=>tipo==="academico"?GENEROS_ACAD:GENEROS;
 // BL, GL y LGBTQ+: más específicos que "Romance" o "Drama", así que ganan cuando AniList o Google los reconocen
 const DIVERSOS=new Set(["BL","GL","LGBTQ+"]);
 const GENERO_NOMBRE={"BL":"BL (boys' love)","GL":"GL (girls' love / yuri)"};
@@ -1078,9 +1083,14 @@ const GENRE_RULES=[
   [/science|ciencia|nature|naturaleza|mathemat|matem[aá]t|computer|technolog|tecnolog|medic/i,"Ciencia"],
   [/young adult|\bjuvenil\b/i,"Juvenil"],[/juvenile|children|infantil|picture book/i,"Infantil"],
   [/fiction|novel|ficci|literatura|literary/i,"Novela"]];
-// Géneros de antes que ya no están en la lista: se pasan al más parecido
+// Géneros de antes que ya no están en la lista: se pasan al más parecido.
+// Los que eran de estudio (Derecho, Economía…) hacen que el libro pase a "Académico" con esa área.
+const AREA_VIEJA={"Derecho":"Derecho","Relaciones internacionales":"Ciencia política y RR. II.","Ciencia política":"Ciencia política y RR. II.","Economía y negocios":"Economía y negocios","Ciencias sociales":"Ciencias sociales","Educación":"Educación","Idiomas":"Lenguaje y literatura","Psicología":"Psicología","Tecnología":"Ingeniería y tecnología"};
 const GENERO_VIEJO={"Yaoi":"BL","Boys' Love":"BL","Boys Love":"BL","Shōnen-ai":"BL","Shonen-ai":"BL","Shonen ai":"BL","Yuri":"GL","Girls' Love":"GL","Girls Love":"GL","Shōjo-ai":"GL","Shojo-ai":"GL","Shoujo ai":"GL","LGBT":"LGBTQ+","LGBTQ":"LGBTQ+","LGBTQIA+":"LGBTQ+","Ciencia política":"Ensayo","Relaciones internacionales":"Ensayo","Economía y negocios":"Ensayo","Ciencias sociales":"Ensayo","Filosofía":"Ensayo","Derecho":"Ensayo","Educación":"Ensayo","Idiomas":"Ensayo","Viajes":"Ensayo","Psicología":"Ensayo","Tecnología":"Ciencia","Acción y aventura":"Aventura","Shōnen":"Aventura","Shonen":"Aventura","Seinen":"Drama","Shōjo":"Romance","Shojo":"Romance","Josei":"Romance","Kodomo":"Infantil"};
-const normalizarGenero=g=>g&&GENERO_VIEJO[g]!==undefined?GENERO_VIEJO[g]:(g||"");
+function normalizarGenero(b){ const g=b.genero||""; if(!g) return b;
+  if(AREA_VIEJA[g]!==undefined && (tipoOf(b)==="academico" || (tipoOf(b)==="libro" && !b.tipoFijado))) return tipoOf(b)==="academico"&&AREA_VIEJA[g]===g ? b : {...b,tipo:"academico",genero:AREA_VIEJA[g]};
+  if(tipoOf(b)==="academico") return b;
+  return GENERO_VIEJO[g]!==undefined ? {...b,genero:GENERO_VIEJO[g]} : b; }
 // AniList (manga, manhwa, cómic): primero sus etiquetas BL / yuri / LGBTQ+; si no, de sus géneros el más característico
 const ANI_ETIQUETAS=[[/boys'? ?love|sh[oō]u?nen[- ]?ai|yaoi/i,"BL"],[/^yuri$|girls'? ?love|sh[oō]u?jo[- ]?ai/i,"GL"],[/lgbt/i,"LGBTQ+"]];
 const ANI_GENEROS=[["Romance","Romance"],["Horror","Terror"],["Mystery","Misterio y suspenso"],["Thriller","Misterio y suspenso"],["Psychological","Misterio y suspenso"],["Sci-Fi","Ciencia ficción"],["Mecha","Ciencia ficción"],["Sports","Deportes"],["Fantasy","Fantasía"],["Supernatural","Fantasía"],["Mahou Shoujo","Fantasía"],["Adventure","Aventura"],["Action","Aventura"],["Comedy","Humor"],["Drama","Drama"],["Slice of Life","Drama"]];
@@ -1090,6 +1100,33 @@ function generoDeAniList(m){ if(!m) return "";
 function mapGenre(list){ const raw=(list||[]).join(" | "); if(GENRE_BL.test(raw)) return "BL"; if(GENRE_GL.test(raw)) return "GL";
   const txt=raw.replace(/comics?\s*&\s*graphic novels?|graphic novels?|comics?|manga|historietas?/gi,""); if(!txt.replace(/[\s|/]/g,"")) return "";
   for(const [re,g] of GENRE_RULES) if(typeof re==="function"?re(txt):re.test(txt)) return g; return ""; }
+// ¿Libro de estudio? Derecho, economía, medicina, ingeniería, manuales universitarios o preuniversitarios…
+// Los de divulgación (historia, ciencia o filosofía para todos) siguen siendo "Libro".
+const ACAD_TEMAS=/\blaw\b|derecho|jur[ií]dic|legislaci|study aids|textbooks?|libros? de texto|\beducation\b|educaci[oó]n|pedagog|did[aá]ctic|medical|medicina|nursing|enfermer|health sciences|technology & engineering|ingenier[ií]a|computers|computaci[oó]n|inform[aá]tica|programaci[oó]n|mathemat|matem[aá]tic|[aá]lgebra|c[aá]lculo|estad[ií]stica|statistics|accounting|contabilidad|auditor[ií]a|management|administraci[oó]n|marketing|mercadotecnia|business & economics|\beconom[ií]a|\beconomics|finanzas|political science|ciencias? pol[ií]tica|international relations|relaciones internacionales|social science|ciencias sociales|sociolog|anthropolog|antropolog|language arts & disciplines|linguistic|ling[uü][ií]stica|foreign language study|gram[aá]tica|psychology \/ (clinical|developmental|cognitive|experimental|research|psychopathology|educational|social|industrial|physiological|neuropsychology)|psicolog[ií]a (cl[ií]nica|del desarrollo|educativa|social|cognitiva|experimental)|reference \/ (dictionaries|handbooks)/i;
+const NO_ACAD=/personal finance|finanzas personales|self-help|autoayuda|motivational|success|superaci[oó]n|popular culture|humor|fiction|ficci[oó]n|novel|juvenile|children|infantil|comics|biograph|memoir|true crime|cooking|cocina|travel|viajes|crafts|games|sports|deportes/i;
+const ACAD_EDIT=/universidad|university press|fondo editorial|pucp|pearson|mcgraw|cengage|thomson|reuters|tirant|palestra|gaceta jur[ií]dica|grijley|jurista editores|ediciones legales|instituto pac[ií]fico|editorial san marcos|lumbreras|rubi[ñn]os|aranzadi|civitas|dykinson|marcial pons|elsevier|m[eé]dica panamericana|springer|wiley|oxford university|cambridge university|routledge|alfaomega|limusa|trillas|prentice|revert[eé]|\becoe\b/i;
+const ACAD_TITULO=/^(manual|tratado|curso|lecciones|fundamentos|principios|compendio|nociones) de\b|^introducci[oó]n (a|al) |^teor[ií]a general\b|\b(c[oó]digo (civil|penal|procesal|tributario|de comercio)|derecho (civil|penal|procesal|constitucional|administrativo|laboral|tributario|comercial|internacional|romano)|contabilidad|macroeconom|microeconom|anatom[ií]a|fisiolog[ií]a|farmacolog|bioqu[ií]mica|[aá]lgebra lineal|c[aá]lculo (diferencial|integral)|ecuaciones diferenciales|termodin[aá]mica|estad[ií]stica (aplicada|descriptiva|inferencial))\b/i;
+function esAcademico(d){ const temas=[...(d.temas||[]),...(d.categorias||[])].join(" | ");
+  if(NO_ACAD.test(temas) && !/study aids|textbook|\blaw\b|derecho/i.test(temas)) return false;
+  return ACAD_TEMAS.test(temas) || ACAD_EDIT.test(d.editorial||"") || ACAD_TITULO.test(d.titulo||""); }
+// Área de un libro académico (su "género"): primero lo más específico
+const AREA_RULES=[
+  [/\blaw\b|derecho|jur[ií]dic|legislaci|c[oó]digo (civil|penal|procesal|tributario)/i,"Derecho"],
+  [/medical|medicina|nursing|enfermer|anatom|fisiolog|farmacolog|health sciences|odontolog|veterinari|bioqu[ií]mica/i,"Medicina y salud"],
+  [/political science|ciencias? pol[ií]tica|international relations|relaciones internacionales|geopol[ií]tic|diplomac/i,"Ciencia política y RR. II."],
+  [/accounting|contabil|auditor|management|administraci|marketing|mercadotecnia|business|negocios|econom|finanz|finance/i,"Economía y negocios"],
+  [/education|educaci|pedagog|did[aá]ctic|teaching|ense[ñn]anza/i,"Educación"],
+  [/psycholog|psicolog/i,"Psicología"],
+  [/philosoph|filosof|[eé]tica\b|l[oó]gica\b/i,"Filosofía"],
+  [/technology & engineering|ingenier|computers|computaci|inform[aá]tic|programaci|software|electr[oó]nic|mec[aá]nic/i,"Ingeniería y tecnología"],
+  [/social science|ciencias sociales|sociolog|anthropolog|antropolog/i,"Ciencias sociales"],
+  [/mathemat|matem[aá]tic|[aá]lgebra|c[aá]lculo|estad[ií]stic|statistics|physics|f[ií]sica|chemistry|qu[ií]mica|biolog|\bscience|ciencias naturales/i,"Ciencias y matemáticas"],
+  [/language|ling[uü][ií]stic|linguistic|idioma|gram[aá]tica|english|ingl[eé]s|literary criticism|teor[ií]a literaria|redacci[oó]n/i,"Lenguaje y literatura"],
+  [/(^|[|/] *)history|historia/i,"Historia"],
+  [/architect|arquitect|\bart\b|\barte\b|design|dise[ñn]o|music|m[uú]sica/i,"Arte y arquitectura"],
+  [/comunicaci|periodismo|journalism|geograf/i,"Ciencias sociales"]];
+function areaAcademica(d){ const txt=[...(d.temas||[]),...(d.categorias||[]),d.titulo||""].join(" | ");
+  for(const [re,a] of AREA_RULES) if(re.test(txt)) return a; return ""; }
 const MANGA_PUB=/ivrea|panini|norma|planeta c[oó]mic|kodansha|viz media|shueisha|shogakukan|yen press|seven seas|milky way|distrito manga|ecc|kamite|arechi|ovni press|tokyopop|square enix|kadokawa|dark horse manga|la calabaza|kitsune|fandogamia|tomodomo|moztros|ooso|gl[eé]nat|planeta deagostini|babylon|satori|hidra|mangaline/i;
 function detectTipo(d){ const cats=(d.categorias||[]).join(" "); const t=`${cats} ${d.editorial||""}`;
   if(/manhwa|webtoon/i.test(`${cats} ${d.titulo||""}`) || MANHWAS.test(d.titulo||"")) return "manhwa";
@@ -1100,7 +1137,7 @@ function parseTomo(titulo){ const m=String(titulo||"").match(/^(.*?)[\s,.:#-]*(?
   if(/(?:\bnv|\blv|level|nivel|lvl)\.?\s*$/i.test(m[1]) || /^\d{4}$/.test(m[2])) return null; // "nv. 999", años, etc. no son tomos
   return {serie:m[1].replace(/[\s,.:#-]+$/,"").trim(), tomo:m[2].replace(/^0+(?=\d)/,"")}; }
 function fromGoogle(v){ if(!v) return {}; const t=v.title?(v.subtitle?`${v.title}: ${v.subtitle}`:v.title):"";
-  return {titulo:t, autor:(v.authors||[]).join(", "), editorial:v.publisher||"", anio:yearOf(v.publishedDate), paginas:v.pageCount||"", portadaUrl:httpsify(v.imageLinks?.thumbnail||v.imageLinks?.smallThumbnail), categorias:v.categories||[], genero:mapGenre(v.categories), baseTitle:v.title||"", numero:String(v.seriesInfo?.bookDisplayNumber||v.seriesInfo?.volumeSeries?.[0]?.orderNumber||"").replace(/\D/g,"")}; }
+  return {titulo:t, autor:(v.authors||[]).join(", "), editorial:v.publisher||"", anio:yearOf(v.publishedDate), paginas:v.pageCount||"", portadaUrl:httpsify(v.imageLinks?.thumbnail||v.imageLinks?.smallThumbnail), categorias:v.categories||[], temas:v.categories||[], genero:mapGenre(v.categories), baseTitle:v.title||"", numero:String(v.seriesInfo?.bookDisplayNumber||v.seriesInfo?.volumeSeries?.[0]?.orderNumber||"").replace(/\D/g,"")}; }
 async function openLibrary(isbn){
   const ed=await getJson(`https://openlibrary.org/isbn/${isbn}.json`);
   if(ed.__notFound||!ed.title) return null;
@@ -1109,7 +1146,7 @@ async function openLibrary(isbn){
   const names=(await Promise.all(keys.slice(0,4).map(k=>getJson(`https://openlibrary.org${k}.json`).then(a=>a.name||"").catch(()=>"")))).filter(Boolean);
   return {titulo:ed.subtitle?`${ed.title}: ${ed.subtitle}`:ed.title, autor:names.join(", "), editorial:ed.publishers?.[0]||"", anio:yearOf(ed.publish_date),
     paginas:ed.number_of_pages||(String(ed.pagination||"").match(/\d+/)||[""])[0], portadaUrl:olCover((ed.covers||[]).find(c=>c>0)),
-    categorias:subjects.filter(x=>/manga|comic|graphic/i.test(x)).slice(0,3), genero:mapGenre(subjects), baseTitle:ed.title};
+    categorias:subjects.filter(x=>/manga|comic|graphic/i.test(x)).slice(0,3), temas:subjects.slice(0,40), genero:mapGenre(subjects), baseTitle:ed.title};
 }
 async function google(isbn){
   const k=gKey(); if(!k) return {skipped:true};
@@ -1152,7 +1189,7 @@ async function lookup(isbn, conLibrerias){
   const out={}; let reached=false, googleOk=false, googleProblem="";
   if(g.status==="fulfilled"){ if(!g.value.skipped){ reached=googleOk=true; Object.assign(out,g.value); } }
   else { const st=g.reason?.status; googleProblem=(st===429?"Google Books llegó a su límite de hoy":"Google Books no respondió")+(g.reason?.detalle?` (${g.reason.detalle})`:""); }
-  if(o.status==="fulfilled"){ reached=true; const ol=o.value||{}; const gc=out.categorias||[]; for(const k in ol) if(!out[k]&&ol[k]) out[k]=ol[k]; out.categorias=gc.concat(ol.categorias||[]); }
+  if(o.status==="fulfilled"){ reached=true; const ol=o.value||{}; const gc=out.categorias||[], gt=out.temas||[]; for(const k in ol) if(!out[k]&&ol[k]) out[k]=ol[k]; out.categorias=gc.concat(ol.categorias||[]); out.temas=gt.concat(ol.temas||[]); }
   else if(o.reason?.status) reached=true;
   let lib=null, fuente="";
   if(!out.titulo&&lP){ lib=await lP; if(lib) reached=true;
@@ -1195,7 +1232,7 @@ const hasTomo=(title,n)=>new RegExp(`(^|[^0-9])0*${+n}([^0-9]|$)`).test(String(t
 async function findCover(b){
   if(b.isbn){ const u=await portadaPorIsbn(b.isbn); if(u) return u; }
   const k=gKey(), t=(b.serie||(b.titulo||"").split(":")[0]).trim(), a=(b.autor||"").split(",")[0].trim();
-  const serial=tipoOf(b)!=="libro";
+  const serial=porTomos(tipoOf(b));
   if(serial && !b.tomo) return "";
   if(k && t){
     const base=`intitle:"${t}"`+(serial?` ${b.tomo}`:""), nt=normSerie(t), vistos=new Set();
@@ -1286,7 +1323,7 @@ async function coverCandidates(b){
   }
   await Promise.all(jobs);
   // otras ediciones (mismo tomo si es manga/cómic)
-  const k=gKey(), t=(b.serie||(b.titulo||"").split(":")[0]).trim(), serial=tipoOf(b)!=="libro";
+  const k=gKey(), t=(b.serie||(b.titulo||"").split(":")[0]).trim(), serial=porTomos(tipoOf(b));
   if(k&&t&&(!serial||b.tomo)){
     try{ const j=await gb(`q=${encodeURIComponent(`intitle:"${t}"`+(serial?` ${b.tomo}`:""))}&maxResults=20&printType=books`);
       let vs=(j.items||[]).map(x=>x.volumeInfo).filter(v=>v?.imageLinks?.thumbnail);
@@ -1336,17 +1373,17 @@ async function revisarPortada(id){
   upsert({...cur2,portadaUrl:nueva,portadaOtraEd:!!nueva&&!/amazon\.com\/images\/P\/|waterstones\.com/.test(nueva),portadaAmazon:/amazon/.test(nueva),portadaRevisada:true,actualizado:Date.now()});
 }
 function applyTipo(upd, data){
-  if(!upd.tipoFijado){ const t=detectTipo(data); if(t) upd.tipo=t; }
+  if(!upd.tipoFijado){ const t=detectTipo(data)||(esAcademico({...data,titulo:data.titulo||upd.titulo,editorial:data.editorial||upd.editorial})?"academico":""); if(t) upd.tipo=t; }
   const num=/^\d{1,3}$/.test(data.numero||"")&&+data.numero>0?String(+data.numero):"";
   // ¿Es otro tomo de una serie que ya tienes? (mismo título que la serie)
   if(!upd.serie && upd.titulo){ const p=parseTomo(upd.titulo); const cand=normSerie(p?p.serie:upd.titulo.split(":")[0]);
     const sib=S.books.find(b=>b.id!==upd.id && b.serie && normSerie(b.serie)===cand);
     if(sib){ upd.serie=sib.serie; if(!upd.tipoFijado) upd.tipo=tipoOf(sib); if(!upd.tomo) upd.tomo=p?.tomo||num; } }
   // Manga, manhwa o cómic: la serie sale del título; el número, del final del título, del subtítulo ("Frieren: … 1") o del que da Google
-  if(tipoOf(upd)!=="libro" && !upd.serie){ const pb=parseTomo(data.baseTitle||upd.titulo), pt=pb?null:parseTomo(upd.titulo);
+  if(porTomos(tipoOf(upd)) && !upd.serie){ const pb=parseTomo(data.baseTitle||upd.titulo), pt=pb?null:parseTomo(upd.titulo);
     upd.serie=pb?pb.serie:(data.baseTitle||upd.titulo||"").split(":")[0].trim();
     if(!upd.tomo) upd.tomo=(pb||pt)?.tomo||num; }
-  if(tipoOf(upd)!=="libro" && upd.serie && !upd.tomo && num) upd.tomo=num;
+  if(porTomos(tipoOf(upd)) && upd.serie && !upd.tomo && num) upd.tomo=num;
   unifySerie(upd);
 }
 // Usa el mismo nombre de serie que ya tienes (sin importar mayúsculas o tildes) y completa datos desde los otros tomos
@@ -1373,13 +1410,15 @@ function editorialPorIsbn(isbn){
   for(const b of S.books){ if(!b.editorial||!b.isbn||b.isbn===isbn) continue; let k=0; while(k<12&&b.isbn[k]===isbn[k]) k++; if(k>bestLen){ bestLen=k; best=b.editorial; } }
   return bestLen>=10?best:"";
 }
-// Género automático: con lo que dicen Google Books y Open Library del libro; en mangas, manhwas y cómics, también con AniList
+// Género automático: con lo que dicen Google Books y Open Library del libro; en mangas, manhwas y cómics, también con AniList.
+// Si es académico, su área (Derecho, Economía…).
 async function fillGenre(id){
   const b=byId(id); if(!b||b.genero) return;
   let r=null;
   if(b.isbn){ try{ r=await lookup(b.isbn); }catch(e){} if(!r||(!r.found&&!r.googleOk)) return; } // sin respuesta: se intenta otro día
-  let genero=r?.data?.genero||"";
-  if(tipoOf(b)!=="libro" && b.serie && !DIVERSOS.has(genero)){ const g=await generoPorSerie(b.serie); if(g && (!genero || DIVERSOS.has(g))) genero=g; }
+  const tp={...b}; if(r) applyTipo(tp, r.data);
+  let genero=tipoOf(tp)==="academico" ? areaAcademica({...(r?.data||{}),titulo:b.titulo}) : (r?.data?.genero||"");
+  if(porTomos(tipoOf(tp)) && b.serie && !DIVERSOS.has(genero)){ const g=await generoPorSerie(b.serie); if(g && (!genero || DIVERSOS.has(g))) genero=g; }
   const cur=byId(id); if(!cur||cur.genero) return;
   const upd={...cur, generoBuscado:true, generoRevisado:true}; if(genero) upd.genero=genero;
   if(r) applyTipo(upd, r.data);
@@ -1407,11 +1446,12 @@ async function fillFromWeb(id, quiet){
     if(r.librerias?.intentos?.length) S.diagLib[id]=r.librerias.intentos; }
   S.pending.delete(id);
   const cur=byId(id); if(!cur){ render(); return; }
-  const upd={...cur, actualizado:Date.now()}; if(r.reached) upd.buscado=true;
+  const upd={...cur, actualizado:Date.now()}; if(r.reached) upd.buscado=true; if(r.found) upd.acadRevisado=true;
   for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl","genero"]) if(!cur[k] && r.data[k]) upd[k]=r.data[k];
   if(!upd.editorial){ const pe=pubByPrefix(upd.isbn); if(pe) upd.editorial=r.data.editorial=pe; }
   const conPista=r.found && ((!upd.tipoFijado && tipoOf(upd)==="libro" && !detectTipo(r.data)) || !upd.autor || nonLatin.test(upd.autor||""));
   applyTipo(upd, r.data);
+  if(tipoOf(upd)==="academico" && !cur.genero) upd.genero=areaAcademica({...r.data,titulo:upd.titulo});
   if(!upd.editorial){ const ed=editorialPorIsbn(upd.isbn); if(ed){ upd.editorial=ed; } }
   upsert(upd);
   if(!quiet) avisarBusqueda(id,b,upd,r);
@@ -1424,7 +1464,7 @@ async function fillFromWeb(id, quiet){
         const tp = MANHWAS.test(u.titulo) ? "manhwa" : (h.tipo || (numberedTitle(u.titulo)||MANGA_PUB.test(u.editorial||"") ? "manga" : ""));
         if(tp){ r.data.categorias=(r.data.categorias||[]).concat(tp==="manhwa"?["Manhwa"]:tp==="manga"?["Manga"]:["Comics"]); applyTipo(u, r.data); } }
       if(JSON.stringify(u)!==JSON.stringify(c)) upsert(u); } }
-  { const c=byId(id); if(c && tipoOf(c)!=="libro" && c.serie && !c.generoManual && !DIVERSOS.has(c.genero||"")) generoPorSerie(c.serie).then(g=>{ const c2=byId(id);
+  { const c=byId(id); if(c && porTomos(tipoOf(c)) && c.serie && !c.generoManual && !DIVERSOS.has(c.genero||"")) generoPorSerie(c.serie).then(g=>{ const c2=byId(id);
       if(g && c2 && !c2.generoManual && (!c2.genero || (DIVERSOS.has(g) && !DIVERSOS.has(c2.genero)))){ upsert({...c2,genero:g,generoRevisado:true}); generoASerie(c2.serie,g); } }); }
   if(upd.isbn) await upgradeCover(id);
   if(byId(id)?.titulo && !byId(id)?.portadaUrl) await fillCover(id);
@@ -1531,11 +1571,13 @@ function render(){
   const qs=sinTildes(S.q).split(/\s+/).filter(Boolean);
   // pestañas de tipo
   const tc={todo:S.books.length}; for(const b of S.books){ tc[tipoOf(b)]=(tc[tipoOf(b)]||0)+1; }
-  const T=[["todo","Todo"],["libro","Libros"],["manga","Mangas"]]; if(tc.manhwa) T.push(["manhwa","Manhwas"]); if(tc.comic) T.push(["comic","Cómics"]);
+  const T=[["todo","Todo"],["libro","Libros"]]; if(tc.academico) T.push(["academico","Académicos"]); T.push(["manga","Mangas"]); if(tc.manhwa) T.push(["manhwa","Manhwas"]); if(tc.comic) T.push(["comic","Cómics"]);
   if(!T.some(t=>t[0]===S.tipo)) S.tipo="todo";
   $("#tipos").innerHTML=T.map(([k,l])=>`<button type="button" data-t="${k}" aria-pressed="${S.tipo===k}">${l}<span class="n">${tc[k]||0}</span></button>`).join("");
-  const gens=[...new Set(S.books.map(b=>b.genero).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
-  $("#genero").innerHTML=`<option value="">Todos los géneros</option>`+gens.map(g=>`<option ${S.genero===g?"selected":""}>${esc(g)}</option>`).join("")+(S.books.some(b=>!b.genero)?`<option value="__sin" ${S.genero==="__sin"?"selected":""}>Sin género</option>`:"");
+  const delTipo=S.tipo==="todo"?S.books:S.books.filter(b=>tipoOf(b)===S.tipo), acadF=S.tipo==="academico";
+  const gens=[...new Set(delTipo.map(b=>b.genero).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  if(S.genero&&S.genero!=="__sin"&&!gens.includes(S.genero)) S.genero="";
+  $("#genero").innerHTML=`<option value="">${acadF?"Todas las áreas":"Todos los géneros"}</option>`+gens.map(g=>`<option ${S.genero===g?"selected":""}>${esc(g)}</option>`).join("")+(delTipo.some(b=>!b.genero)?`<option value="__sin" ${S.genero==="__sin"?"selected":""}>${acadF?"Sin área":"Sin género"}</option>`:"");
   let arr=S.books.filter(b=>{
     if(S.tipo!=="todo"&&tipoOf(b)!==S.tipo) return false;
     if(S.genero==="__sin"?!!b.genero:(S.genero&&b.genero!==S.genero)) return false;
@@ -1569,7 +1611,7 @@ function render(){
   if(g==="none"){ list.innerHTML=grid(arr); return; }
   const keyOf = g==="genero" ? b=>b.genero||"Sin género"
     : g==="autor" ? b=>(b.autor||"Autor desconocido").split(",")[0].trim()
-    : b=> b.serie ? (S.books.find(x=>x.serie&&normSerie(x.serie)===normSerie(b.serie))?.serie||b.serie) : (tipoOf(b)!=="libro" ? "Sin serie" : "Libros sueltos");
+    : b=> b.serie ? (S.books.find(x=>x.serie&&normSerie(x.serie)===normSerie(b.serie))?.serie||b.serie) : (porTomos(tipoOf(b)) ? "Sin serie" : "Libros sueltos");
   const groups=new Map(); for(const b of arr){ const k=keyOf(b); if(!groups.has(k)) groups.set(k,[]); groups.get(k).push(b); }
   const last=new Set(["Sin género","Autor desconocido","Sin serie","Libros sueltos"]);
   const keys=[...groups.keys()].sort((a,b)=>(last.has(a)-last.has(b))||coll.compare(a,b));
@@ -1605,9 +1647,11 @@ function draftTomo(ref,n){
 
 /* ---------- escaneo ---------- */
 function blankBook(isbn){ return {isbn, tipo:"libro", titulo:"", autor:"", editorial:"", anio:"", paginas:"", portadaUrl:"", genero:"", serie:"", tomo:"", estado:"por-leer", calificacion:0, notas:"", prestamo:null, historial:[]}; }
-const TIPOS=[["libro","Libro"],["manga","Manga"],["manhwa","Manhwa"],["comic","Cómic"]];
-const TIPO_PLURAL={libro:"Libros",manga:"Mangas",manhwa:"Manhwas",comic:"Cómics"};
-const numLabel=b=>({libro:"Vol.",comic:"N.º"}[tipoOf(b)]||"Tomo");
+const TIPOS=[["libro","Libro"],["academico","Académico"],["manga","Manga"],["manhwa","Manhwa"],["comic","Cómic"]];
+// Manga, manhwa y cómic van por tomos (serie, número, AniList). Libro y Académico, no.
+const porTomos=t=>t==="manga"||t==="manhwa"||t==="comic";
+const TIPO_PLURAL={libro:"Libros",academico:"Académicos",manga:"Mangas",manhwa:"Manhwas",comic:"Cómics"};
+const numLabel=b=>({libro:"Vol.",academico:"Vol.",comic:"N.º"}[tipoOf(b)]||"Tomo");
 const tipoOf=b=>b.tipo||"libro";
 function handleIsbn(raw){
   marcarAccion();
@@ -1753,7 +1797,7 @@ function fichaVer(b){
         </div>
       </div>
       <dl class="ver-datos">
-        ${dato("Tipo",(TIPOS.find(t=>t[0]===tipoOf(b))||[])[1])}${dato("Serie o colección",b.serie)}${dato("Género",b.genero)}
+        ${dato("Tipo",(TIPOS.find(t=>t[0]===tipoOf(b))||[])[1])}${dato("Serie o colección",b.serie)}${dato(tipoOf(b)==="academico"?"Área":"Género",b.genero)}
         ${dato("Editorial",b.editorial)}${dato("Año",b.anio)}${dato("Páginas",b.paginas)}${dato("ISBN",b.isbn?fmtIsbn(b.isbn):"")}
       </dl>
     </div>
@@ -1799,10 +1843,10 @@ function renderSheet(){
       </div>
       <div class="form">
         <div class="f full"><label>Tipo</label><div class="seg" id="tipoSeg">${TIPOS.map(([k,l])=>`<button type="button" data-tp="${k}" aria-pressed="${tipoOf(b)===k}">${l}</button>`).join("")}</div></div>
-        <div class="f"><label for="f-serie">Serie o colección</label><input id="f-serie" value="${esc(b.serie)}" placeholder="${tipoOf(b)==="libro"?"Ej.: Perú global":"Ej.: One Piece"}" list="dl-series"></div>
+        <div class="f"><label for="f-serie">Serie o colección</label><input id="f-serie" value="${esc(b.serie)}" placeholder="${porTomos(tipoOf(b))?"Ej.: One Piece":"Ej.: Perú global"}" list="dl-series"></div>
         <div class="f"><label for="f-tomo">Tomo, volumen o número</label><input id="f-tomo" inputmode="numeric" value="${esc(b.tomo)}" placeholder="Ej.: 2"></div>
         <div class="f full"><label for="f-autor">Autor</label><input id="f-autor" value="${esc(b.autor)}"></div>
-        <div class="f full"><label for="f-genero">Género</label><select id="f-genero">${opcionesGenero(b.genero)}</select></div>
+        <div class="f full"><label for="f-genero">Género o área</label><select id="f-genero">${opcionesGenero(b.genero,tipoOf(b))}</select></div>
         <datalist id="dl-series">${[...new Set(S.books.map(x=>x.serie).filter(Boolean))].map(g=>`<option value="${esc(g)}">`).join("")}</datalist>
         <div class="f"><label for="f-editorial">Editorial</label><input id="f-editorial" value="${esc(b.editorial)}"></div>
         <div class="f"><label for="f-anio">Año</label><input id="f-anio" inputmode="numeric" maxlength="4" value="${esc(b.anio)}"></div>
@@ -1826,10 +1870,12 @@ function renderSheet(){
   $("#titleSearch").hidden = !!b.titulo && !isNew;
   wireSheet();
 }
-function opcionesGenero(actual){ const op=g=>`<option value="${esc(g)}"${g===actual?" selected":""}>${esc(GENERO_NOMBRE[g]||g)}</option>`;
-  return `<option value="">${actual?"Sin género":"Sin género (Tomo lo elige solo)"}</option>`
-    +(actual&&!GENEROS.includes(actual)?op(actual):"")
-    +`<optgroup label="Ficción">${GENEROS_FIC.map(op).join("")}</optgroup><optgroup label="No ficción">${GENEROS_NOFIC.map(op).join("")}</optgroup>`; }
+function opcionesGenero(actual,tipo){ const op=g=>`<option value="${esc(g)}"${g===actual?" selected":""}>${esc(GENERO_NOMBRE[g]||g)}</option>`;
+  const acad=tipo==="academico", sin=acad?"Sin área":"Sin género";
+  return `<option value="">${actual?sin:`${sin} (Tomo lo elige solo)`}</option>`
+    +(actual&&!generosDe(tipo).includes(actual)?op(actual):"")
+    +(acad?`<optgroup label="Áreas de estudio">${GENEROS_ACAD.map(op).join("")}</optgroup>`
+      :`<optgroup label="Ficción">${GENEROS_FIC.map(op).join("")}</optgroup><optgroup label="No ficción">${GENEROS_NOFIC.map(op).join("")}</optgroup>`); }
 function loanBox(b){ const hist=(b.historial||[]).slice().reverse();
   return `<div class="box"><h4>Préstamo</h4>
     ${b.prestamo?`<div class="loan-now"><span>Lo tiene ${esc(b.prestamo.a)} desde el ${fmtDate(b.prestamo.desde)} · ${daysSince(b.prestamo.desde)} días</span><button class="btn" id="returnBtn">Ya lo devolvió</button></div>`
@@ -1867,7 +1913,8 @@ function wireSheet(){
   document.removeEventListener("keydown",escClose); document.addEventListener("keydown",escClose);
   $("#f-portadaUrl")?.addEventListener("input",e=>{ e.target.dataset.dirty="1"; });
   $("#tipoSeg").onclick=e=>{ const k=e.target.closest("[data-tp]"); if(!k) return; [...$("#tipoSeg").children].forEach(x=>x.setAttribute("aria-pressed",x===k)); $("#tipoSeg").dataset.v=k.dataset.tp;
-    if(k.dataset.tp!=="libro" && !$("#f-serie").value){ const t=$("#f-titulo").value.trim(), p=parseTomo(t); if(p){ $("#f-serie").value=p.serie; if(!$("#f-tomo").value) $("#f-tomo").value=p.tomo; } else if(t) $("#f-serie").value=t.split(":")[0].trim(); } };
+    const sel=$("#f-genero"); if(sel){ const v=sel.value; sel.innerHTML=opcionesGenero(generosDe(k.dataset.tp).includes(v)?v:"",k.dataset.tp); }
+    if(porTomos(k.dataset.tp) && !$("#f-serie").value){ const t=$("#f-titulo").value.trim(), p=parseTomo(t); if(p){ $("#f-serie").value=p.serie; if(!$("#f-tomo").value) $("#f-tomo").value=p.tomo; } else if(t) $("#f-serie").value=t.split(":")[0].trim(); } };
   $("#seg").onclick=e=>{ const k=e.target.closest("[data-e]"); if(!k) return; [...$("#seg").children].forEach(x=>x.setAttribute("aria-pressed",x===k)); $("#seg").dataset.v=k.dataset.e;
     $("#leidoBox").hidden=k.dataset.e!=="leido"; if(k.dataset.e==="leido"&&!$("#f-leidoEn").value) $("#f-leidoEn").value=today(); };
   $("#rate").onclick=e=>{ const k=e.target.closest("[data-r]"); if(!k) return; let n=+k.dataset.r; const curr=+($("#rate").dataset.v ?? current().calificacion ?? 0); if(n===curr) n=0; $("#rate").dataset.v=n; [...$("#rate").children].forEach((x,i)=>x.classList.toggle("on",i<n)); };
@@ -1920,12 +1967,13 @@ function wireSheet(){
     toast("Datos copiados. Revisa y guarda."); });
   $("#tsRes").onclick=e=>{ const p=e.target.closest("[data-pick]"); if(!p) return; const r=S.tsRes[+p.dataset.pick];
     for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl","genero"]){ const el=$("#f-"+k); if(el && r[k] && (k!=="genero"||!el.value)) el.value=r[k]; }
-    const t=detectTipo(r); if(t && !$("#tipoSeg").dataset.v){ $("#tipoSeg").querySelector(`[data-tp="${t}"]`)?.click(); }
+    const t=detectTipo(r)||(esAcademico(r)?"academico":""); if(t && !$("#tipoSeg").dataset.v){ $("#tipoSeg").querySelector(`[data-tp="${t}"]`)?.click(); }
+    if(t==="academico"&&!$("#f-genero").value){ const a=areaAcademica(r); if(a) $("#f-genero").value=a; }
     toast("Datos copiados. Revisa y guarda."); };
 }
 function save(){
   const f=readForm(); if(f.error){ toast(f.error); return; }
-  if(f.tipo!=="libro" && !f.serie && f.titulo){ const p=parseTomo(f.titulo);
+  if(porTomos(f.tipo) && !f.serie && f.titulo){ const p=parseTomo(f.titulo);
     if(p && (!f.tomo || p.tomo===f.tomo)){ f.serie=p.serie; f.tomo=f.tomo||p.tomo; } else f.serie=f.titulo.split(":")[0].trim(); }
   const b=current(); const estado=$("#seg").dataset.v||b.estado||"por-leer"; const cal=+($("#rate").dataset.v ?? b.calificacion ?? 0);
   // fechas de lectura para las estadísticas
@@ -1944,14 +1992,14 @@ function save(){
     toast(`“${f.titulo||"Libro"}” guardado`); closeSheet();
     // buscar datos y portada al tiro: con ISBN, por ISBN; sin ISBN (p. ej. "Ya compré el tomo 2"), por título y tomo
     if(isbn) fillFromWeb(id, !!f.titulo);
-    else if(!cat && !f.portadaUrl && f.titulo) (tipoOf(nuevo)!=="libro"&&nuevo.serie&&nuevo.tomo?completarTomo(id):fillCover(id)).then(ok=>{ if(ok) toast(`Portada de “${nuevo.titulo}” encontrada`); });
+    else if(!cat && !f.portadaUrl && f.titulo) (porTomos(tipoOf(nuevo))&&nuevo.serie&&nuevo.tomo?completarTomo(id):fillCover(id)).then(ok=>{ if(ok) toast(`Portada de “${nuevo.titulo}” encontrada`); });
   } else {
     const upd={...b,...f,estado,calificacion:cal,actualizado:Date.now()};
     if(f.portadaUrl!==b.portadaUrl){ upd.portadaOtraEd=false; upd.portadaManual=!!f.portadaUrl; }
     if((+f.precio||0)!==(+b.precio||0)) upd.precioFuente=""; // lo cambiaste tú: ya no es el de Crisol
     if(upd.serie!==b.serie || upd.tipo!==b.tipo) unifySerie(upd);
     if(f.isbn && f.isbn!==b.isbn && S.books.some(x=>x.isbn===f.isbn)){ toast("Ese ISBN ya está en tu estante."); return; }
-    const refetch = tipoOf(upd)!=="libro" && upd.tomo && !upd.portadaLocal && (upd.portadaOtraEd || !upd.portadaUrl) && f.portadaUrl===b.portadaUrl
+    const refetch = porTomos(tipoOf(upd)) && upd.tomo && !upd.portadaLocal && (upd.portadaOtraEd || !upd.portadaUrl) && f.portadaUrl===b.portadaUrl
       && (upd.tomo!==b.tomo || tipoOf(upd)!==tipoOf(b) || upd.serie!==b.serie);
     if(refetch){ upd.portadaUrl=""; upd.portadaOtraEd=false; }
     upsert(upd); toast("Cambios guardados"); closeSheet();
@@ -2063,11 +2111,11 @@ $("#importFile").addEventListener("change",async e=>{
     } else {
       const rows=parseCsv(text); const head=rows.shift().map(h=>h.trim().toLowerCase()); const ix=k=>head.indexOf(k);
       incoming=rows.map(r=>{ const g=k=>ix(k)>=0?(r[ix(k)]||"").trim():""; const raw=g("isbn"); const n=raw?normalizeIsbn(raw):{};
-        return {...blankBook(n.isbn||""), tipo:["manga","manhwa","comic"].includes(g("tipo"))?g("tipo"):"libro", genero:g("genero"), serie:g("serie"), tomo:g("tomo"), titulo:g("titulo"), autor:g("autor"), editorial:g("editorial"), anio:g("anio"), estado:estadoKey(g("estado")), calificacion:+g("calificacion")||0, notas:g("notas"), precio:g("precio"), leidoEn:g("terminado"), prestamo:g("prestado_a")?{a:g("prestado_a"),desde:g("prestado_desde")||today()}:null}; });
+        return {...blankBook(n.isbn||""), tipo:["academico","manga","manhwa","comic"].includes(g("tipo"))?g("tipo"):"libro", genero:g("genero"), serie:g("serie"), tomo:g("tomo"), titulo:g("titulo"), autor:g("autor"), editorial:g("editorial"), anio:g("anio"), estado:estadoKey(g("estado")), calificacion:+g("calificacion")||0, notas:g("notas"), precio:g("precio"), leidoEn:g("terminado"), prestamo:g("prestado_a")?{a:g("prestado_a"),desde:g("prestado_desde")||today()}:null}; });
     }
   }catch(err){ toast("No pude leer ese archivo. Usa una copia de seguridad (.json) o un CSV exportado del estante."); return; }
   let added=0, updated=0;
-  for(const raw of incoming){ if(raw.genero) raw.genero=normalizarGenero(raw.genero);
+  for(const raw of incoming){ if(raw.genero) Object.assign(raw,normalizarGenero(raw));
     const b={...blankBook(raw.isbn||""),...raw}; b.id=b.id||(b.isbn?"isbn-"+b.isbn:"l-"+Math.random().toString(36).slice(2,10)); b.creado=b.creado||Date.now(); b.actualizado=Date.now();
     const i=S.books.findIndex(x=>x.id===b.id||(b.isbn&&x.isbn===b.isbn));
     if(i<0){ S.books.push(b); added++; } else { S.books[i]={...S.books[i],...Object.fromEntries(Object.entries(b).filter(([k,v])=>v!==""&&v!=null&&k!=="id"))}; updated++; }
@@ -2123,7 +2171,7 @@ window.addEventListener("storage",e=>{ if(e.key===COLS_KEY){ S.colsCfg=loadJ(COL
 const moda=a=>{ const c={}; let best="",n=0; for(const x of a){ c[x]=(c[x]||0)+1; if(c[x]>n){ n=c[x]; best=x; } } return best; };
 function autoSeries(cfg,known){ // series del estante sin colección propia: aparecen solas
   const m=new Map();
-  for(const b of S.books){ if(!b.serie||!(+b.tomo>0||tipoOf(b)!=="libro")) continue; const k=normSerie(b.serie); if(!k||known.has(k)) continue; if(!m.has(k)) m.set(k,[]); m.get(k).push(b); }
+  for(const b of S.books){ if(!b.serie||!(+b.tomo>0||porTomos(tipoOf(b)))) continue; const k=normSerie(b.serie); if(!k||known.has(k)) continue; if(!m.has(k)) m.set(k,[]); m.get(k).push(b); }
   return [...m.entries()].map(([k,bs])=>{ const id="auto-"+k.replace(/ /g,"-"), ref=bs.slice().sort((a,b)=>(+a.tomo||999)-(+b.tomo||999))[0];
     return {id,auto:true,clase:"serie",nombre:ref.serie,editorial:moda(bs.map(b=>b.editorial).filter(Boolean)),tipo:tipoOf(ref),autor:ref.autor||"",genero:ref.genero||"",total:0,precio:0,...(cfg[id]||{})}; }); }
 // Se calcula una sola vez y se reutiliza hasta que cambie algo (libros o colecciones)
@@ -2145,7 +2193,7 @@ const grupos=()=>colecciones().filter(c=>c.clase==="grupo"&&!c.oculta);
 function toggleGrupo(gid,bid){ const g=S.colsCfg[gid]; if(!g) return false; const L=new Set(g.libros||[]); const on=!L.has(bid); if(on) L.add(bid); else L.delete(bid);
   S.colsCfg={...S.colsCfg,[gid]:{...g,libros:[...L]}}; saveJ(COLS_KEY,S.colsCfg); return on; }
 const hasPrecio=b=>b&&b.precio!==undefined&&b.precio!==null&&b.precio!==""&&!isNaN(+b.precio);
-const unidad=c=>c.tipo==="libro"?["libro","libros"]:(c.distribuye||c.tipo==="comic")?["entrega","entregas"]:["tomo","tomos"];
+const unidad=c=>!porTomos(c.tipo)?["libro","libros"]:(c.distribuye||c.tipo==="comic")?["entrega","entregas"]:["tomo","tomos"];
 const numTag=c=>c.tipo==="manga"||c.tipo==="manhwa"?"Tomo":"N.º";
 const precioDe=(c,n)=>+((c.precios||{})[n])||+c.precio||0;
 const tituloEntrega=(c,n)=>{ const t=(c.entregas||[])[n-1]; return t?(c.prefijo?`${c.nombre} ${n}: ${t}`:t):`${c.nombre} ${n}`; };
@@ -2204,7 +2252,7 @@ function edicionAgrupada(c){
 async function detectarSerie(c){
   const q=String(c.nombreBusqueda||c.nombre).trim(), det={consulta:q,fecha:Date.now(),sigue:[]};
   try{
-    if(c.tipo==="libro"){ const w=await buscarWikidata(q); if(w){ Object.assign(det,w); det.total=w.original; } else det.noEncontrado=true; }
+    if(!porTomos(c.tipo)){ const w=await buscarWikidata(q); if(w){ Object.assign(det,w); det.total=w.original; } else det.noEncontrado=true; }
     else{ const m=await buscarAniList(q);
       if(!m) det.noEncontrado=true;
       else{ det.fuente="AniList"; det.url=m.siteUrl; det.titulo=m.title?.english||m.title?.romaji||q; det.original=+m.volumes||0;
@@ -2226,12 +2274,12 @@ async function detectarPendientes(){ if(detectando||!navigator.onLine) return; d
       await detectarSerie(c); if(S.view==="colecciones") renderCols(); await new Promise(r=>setTimeout(r,900)); } }
   finally{ detectando=false; } }
 function detHtml(c,maxH){ if(c.distribuye) return "";
-  const d=c.det, fuente=c.tipo==="libro"?"Wikidata":"AniList";
+  const d=c.det, fuente=!porTomos(c.tipo)?"Wikidata":"AniList";
   if(!d||necesitaDet(c)&&!d.error) return `<div class="det"><span><span class="spin"></span> Buscando cuántos ${unidad(c)[1]} tiene la serie…</span></div>`;
   if(d.error) return `<div class="det"><div>No pude buscar cuántos ${unidad(c)[1]} tiene (¿sin conexión?). Lo intentaré de nuevo más tarde.</div></div>`;
   if(d.noEncontrado) return `<div class="det"><div>No encontré “${esc(d.consulta)}” en ${fuente}. Pon el total en <b>Editar</b>, o escribe ahí su <b>nombre original</b> para buscarla.</div></div>`;
   const tot=+c.total||0, lin=[];
-  if(d.original) lin.push(`Según <a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${d.original}</b> ${c.tipo==="libro"?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
+  if(d.original) lin.push(`Según <a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${d.original}</b> ${!porTomos(c.tipo)?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
   else lin.push(`${esc(d.fuente)} tiene la serie${d.estado?` (${esc(d.estado)})`:""}, pero no dice cuántos tomos son todavía.`);
   if(d.agrupada&&d.estimado) lin.push(`Tu edición junta tomos (2 en 1 o kanzenban), así que serían unos <b>${d.estimado}</b>.${!tot?` <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.estimado}" data-col="${esc(c.id)}">Usar ${d.estimado}</button>`:tot!==d.estimado?` Tú pusiste ${tot}.`:""}`);
   else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.total}" data-col="${esc(c.id)}">Usar ${d.total}</button>`);
@@ -2478,7 +2526,7 @@ S.rn={modo:"parati",i:0,min:false}; try{ S.rn.modo=localStorage.getItem(NS+"rn.m
 function azarDelDia(id){ let h=2166136261; for(const ch of String(id)+today()) h=Math.imul(h^ch.charCodeAt(0),16777619); return (h>>>0)/4294967296; }
 const paginasDe=b=>+String(b.paginas||"").replace(/\D/g,"")||0;
 function sugerencias(modo){
-  const pend=S.books.filter(b=>(b.estado||"por-leer")==="por-leer"&&!b.prestamo&&b.titulo);
+  const pend=S.books.filter(b=>(b.estado||"por-leer")==="por-leer"&&!b.prestamo&&b.titulo&&tipoOf(b)!=="academico"); // los académicos son para estudiar
   const leidos=S.books.filter(b=>b.estado==="leido");
   const lastGen={}; for(const b of leidos) if(b.genero){ const d=b.leidoEn||"0000"; if(!lastGen[b.genero]||d>lastGen[b.genero]) lastGen[b.genero]=d; }
   const ultimo=leidos.filter(b=>b.leidoEn).sort((a,b)=>b.leidoEn.localeCompare(a.leidoEn))[0];
@@ -2517,7 +2565,7 @@ function sugerencias(modo){
     .sort((p,q)=>q.score-p.score); }
 function renderReadNext(){ const el=$("#readNext"); if(!el||!S.rn) return;
   if(VER){ el.hidden=true; return; }
-  const pendientes=S.books.filter(b=>(b.estado||"por-leer")==="por-leer"&&b.titulo).length;
+  const pendientes=S.books.filter(b=>(b.estado||"por-leer")==="por-leer"&&b.titulo&&tipoOf(b)!=="academico").length;
   if(!pendientes){ el.hidden=true; return; } el.hidden=false;
   if(S.rn.min){ el.className="panel min"; el.innerHTML=`<span><b style="font-family:var(--serif)">¿Qué leo ahora?</b> <span class="muted">· ${pendientes} por leer</span></span><button class="btn sm" type="button" data-rn="show">Sugerirme uno</button>`; return; }
   el.className="panel";
@@ -2560,7 +2608,10 @@ function renderStats(){ const B=S.books;
   let sinFecha=0; for(const b of leidos){ if(!b.leidoEn){ sinFecha++; continue; } const m=months.find(x=>x.k===b.leidoEn.slice(0,7)); if(m) m.n++; }
   const maxM=Math.max(1,...months.map(m=>m.n)), anio=leidos.filter(b=>(b.leidoEn||"").startsWith(String(now.getFullYear()))).length;
   const grp=(keyf)=>{ const m=new Map(); for(const b of B){ const k=keyf(b); if(!m.has(k)) m.set(k,{label:k,total:0,read:0}); const r=m.get(k); r.total++; if(b.estado==="leido") r.read++; } return [...m.values()].sort((a,b)=>b.total-a.total||a.label.localeCompare(b.label,"es")); };
-  const gen=grp(b=>b.genero||"Sin género").sort((a,b)=>(a.label==="Sin género")-(b.label==="Sin género")), genTop=gen.slice(0,10);
+  const grpDe=(lista,keyf)=>{ const m=new Map(); for(const b of lista){ const k=keyf(b); if(!m.has(k)) m.set(k,{label:k,total:0,read:0}); const r=m.get(k); r.total++; if(b.estado==="leido") r.read++; } return [...m.values()].sort((a,b)=>b.total-a.total||a.label.localeCompare(b.label,"es")); };
+  const noAcad=B.filter(b=>tipoOf(b)!=="academico"), acad=B.filter(b=>tipoOf(b)==="academico");
+  const gen=grpDe(noAcad,b=>b.genero||"Sin género").sort((a,b)=>(a.label==="Sin género")-(b.label==="Sin género")), genTop=gen.slice(0,10);
+  const areas=grpDe(acad,b=>b.genero||"Sin área").sort((a,b)=>(a.label==="Sin área")-(b.label==="Sin área"));
   const tipos=grp(b=>TIPO_PLURAL[tipoOf(b)]||"Libros");
   const aut=grp(b=>(b.autor||"Autor desconocido").split(",")[0].trim()).filter(r=>r.label!=="Autor desconocido"&&r.label!=="Varios autores").slice(0,6);
   const legend=`<div class="legend"><span><i style="background:var(--accent)"></i>Leídos</span><span><i style="background:color-mix(in oklab,var(--accent) 28%,var(--surface))"></i>En el estante</span></div>`;
@@ -2581,7 +2632,8 @@ function renderStats(){ const B=S.books;
           :`<p class="muted" style="margin:0">Todavía no hay lecturas con fecha. Cuando termines un libro, ábrelo y márcalo como <b>Leído</b>: aparecerá aquí.</p>`}
         ${sinFecha?`<p class="muted" style="margin:0">${sinFecha} leído${sinFecha>1?"s":""} sin fecha de término. Puedes ponerla en su ficha.</p>`:""}
       </section>
-      <section class="panel"><div><h3>Por género</h3><div class="sub">${gen.length} género${gen.length===1?"":"s"}${gen.length>10?" · los 10 con más libros":""}</div></div>${legend}${hbarList(genTop,Math.max(...genTop.map(r=>r.total)))}</section>
+      ${gen.length?`<section class="panel"><div><h3>Por género</h3><div class="sub">${gen.length} género${gen.length===1?"":"s"}${gen.length>10?" · los 10 con más libros":""}${acad.length?" · sin los académicos":""}</div></div>${legend}${hbarList(genTop,Math.max(...genTop.map(r=>r.total)))}</section>`:""}
+      ${areas.length?`<section class="panel"><div><h3>Académicos por área</h3><div class="sub">${acad.length} libro${acad.length===1?"":"s"} de estudio</div></div>${legend}${hbarList(areas,areas[0].total)}</section>`:""}
       <section class="panel"><div><h3>Por tipo</h3></div>${legend}${hbarList(tipos,tipos[0].total)}</section>
       ${aut.length?`<section class="panel"><div><h3>Autores con más libros</h3></div>${legend}${hbarList(aut,aut[0].total)}</section>`:""}
     </div>`; }
@@ -2784,7 +2836,7 @@ if(VER){ // encabezado y pie del estante compartido
   $("#storeNote").innerHTML=`Estás viendo el estante de ${esc(nombreDueno()||"un lector")}. <a href="./">¿Quieres el tuyo? Pide una cuenta de Tomo</a>`; }
 // Completar libros que quedaron sin datos (por ejemplo, sin internet al escanear)
 // Géneros de antes (Derecho, Relaciones internacionales, Shōnen…) pasan a la lista clásica
-if(!VER){ let ch=false; S.books=S.books.map(b=>{ const g=normalizarGenero(b.genero); if(g===(b.genero||"")) return b; ch=true; return {...b,genero:g,actualizado:Date.now()}; }); if(ch){ persist(); render(); } }
+if(!VER){ let ch=false; S.books=S.books.map(b=>{ const n=normalizarGenero(b); if(n===b) return b; ch=true; return {...n,actualizado:Date.now()}; }); if(ch){ persist(); render(); } }
 if(!VER){ setTimeout(despertarLibrerias,1500); $("#isbnInput").addEventListener("focus",despertarLibrerias); }
 if(!VER) (async()=>{ await dormir(3000);
   for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0,40)){ await esperarTurno(); await fillFromWeb(b.id,true); }
@@ -2800,13 +2852,26 @@ if(!VER) (async()=>{ await dormir(3000);
     applyTipo(u,{titulo:u.titulo,baseTitle:u.titulo,categorias:[MANHWAS.test(u.titulo)?"Manhwa":"Manga"],editorial:u.editorial});
     upsert(u); }
   // mangas sin número de tomo: se pregunta a Google una vez (antes de deducirlo por el ISBN, que es menos seguro)
-  for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoRevisado).slice(0,20)){ await esperarTurno(); await buscarTomo(b.id); }
+  for(const b of S.books.filter(b=>porTomos(tipoOf(b))&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoRevisado).slice(0,20)){ await esperarTurno(); await buscarTomo(b.id); }
   // unificar series escritas distinto (p. ej. "nv." y "Nv.")
   { let ch=false; for(const b of S.books){ if(!b.serie) continue; const before=JSON.stringify(b); const u={...b}; unifySerie(u); if(JSON.stringify(u)!==before){ Object.assign(b,u); ch=true; } } if(ch){ persist(); render(); } }
-  for(const b of S.books.filter(b=>b.titulo&&!b.genero&&!b.generoRevisado&&(b.isbn||(tipoOf(b)!=="libro"&&b.serie))).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); }
+  // Libros de estudio que ya tenías: pasan a "Académico" con su área (una revisión por libro; nunca si elegiste el tipo tú)
+  { const cand=b=>tipoOf(b)==="libro"&&!b.tipoFijado&&!b.acadRevisado&&b.titulo;
+    const aAcad=(b,d)=>({...b,tipo:"academico",acadRevisado:true,actualizado:Date.now(),...(b.generoManual?{}:{genero:areaAcademica(d),generoRevisado:true})});
+    // sin internet: por la editorial o el título (Palestra, Pearson, "Manual de…", "Derecho civil"…)
+    let ch=false; S.books=S.books.map(b=>{ if(!cand(b)) return b; const d={titulo:b.titulo,editorial:b.editorial}; if(!esAcademico(d)) return b; ch=true; return aAcad(b,d); });
+    if(ch){ persist(); render(); }
+    // los de no ficción: con las categorías de Google y Open Library
+    const NOFIC=new Set(["","Ensayo","Ciencia","Historia","Arte"]);
+    for(const b of S.books.filter(b=>cand(b)&&b.isbn&&NOFIC.has(b.genero||"")).slice(0,25)){ await esperarTurno();
+      let r=null; try{ r=await lookup(b.isbn); }catch(e){} if(!r||(!r.found&&!r.googleOk)) continue; // sin respuesta: otro día
+      const cur=byId(b.id); if(!cur||!cand(cur)) continue;
+      const d={...r.data,titulo:cur.titulo,editorial:cur.editorial||r.data.editorial};
+      upsert(esAcademico(d)&&!detectTipo(r.data)?aAcad(cur,d):{...cur,acadRevisado:true}); } }
+  for(const b of S.books.filter(b=>b.titulo&&!b.genero&&!b.generoRevisado&&(b.isbn||(porTomos(tipoOf(b))&&b.serie))).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); }
   // BL, GL y LGBTQ+ son nuevos: los mangas y manhwas que ya tenías se revisan una vez en AniList (sin tocar el género que elegiste tú)
   { const vistas=new Set();
-    for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&!b.generoDiv&&!b.generoManual&&!DIVERSOS.has(b.genero||""))){
+    for(const b of S.books.filter(b=>porTomos(tipoOf(b))&&b.serie&&!b.generoDiv&&!b.generoManual&&!DIVERSOS.has(b.genero||""))){
       const k=normSerie(b.serie); if(!k||vistas.has(k)) continue; if(vistas.size>=15) break; vistas.add(k);
       await esperarTurno(); const g=await generoPorSerie(b.serie); if(g===null) continue; // sin respuesta: otro día
       for(const x of S.books.filter(x=>x.serie&&normSerie(x.serie)===k&&!x.generoDiv))
