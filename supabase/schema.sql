@@ -153,3 +153,55 @@ create table if not exists public.libros_extra (
 );
 alter table public.libros_extra enable row level security;
 revoke all on public.libros_extra from anon, authenticated;
+
+-- ---------------------------------------------------------------------
+--  Seguridad (versión 24)
+-- ---------------------------------------------------------------------
+-- "Olvidé mi contraseña": un enlace de un solo uso que vence en 30 minutos.
+-- Aquí se guarda solo su huella (hash), nunca el enlace. Solo la función "olvide" la usa.
+create table if not exists public.restablecer (
+  user_id uuid primary key references auth.users on delete cascade,
+  hash    text not null unique,
+  vence   timestamptz not null,
+  creado  timestamptz not null default now()
+);
+alter table public.restablecer enable row level security;
+revoke all on public.restablecer from anon, authenticated;
+
+-- Correos que mandan las funciones: sirve para poner límites (y no gastar los 300 diarios de Brevo)
+create table if not exists public.envios (
+  id      bigint generated always as identity primary key,
+  tipo    text not null,              -- olvide, recordatorio, solicitud, comentario, aprobada
+  destino text not null,              -- a quién (correo en minúsculas o id del lector)
+  creado  timestamptz not null default now()
+);
+create index if not exists envios_tipo_idx on public.envios (tipo, destino, creado desc);
+create index if not exists envios_creado_idx on public.envios (creado desc);
+alter table public.envios enable row level security;
+revoke all on public.envios from anon, authenticated;
+
+-- Al crear una contraseña nueva con el enlace, se cierran las sesiones abiertas en otros dispositivos
+create or replace function public.cerrar_sesiones(uid uuid) returns void
+  language sql security definer set search_path = '' as $$ delete from auth.sessions where user_id = uid; $$;
+revoke all on function public.cerrar_sesiones(uuid) from public, anon, authenticated;
+
+-- Tamaños máximos: un estante (unos 25 MB, decenas de miles de libros) y el contexto de un comentario
+do $$ begin
+  alter table public.estantes add constraint estantes_tamano check (octet_length(datos::text) < 25000000) not valid;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter table public.comentarios add constraint comentarios_contexto_tamano check (octet_length(contexto::text) <= 4000) not valid;
+exception when duplicate_object then null; end $$;
+
+-- Comentarios: como mucho 30 por hora por lector, aunque se envíen sin pasar por la función
+create or replace function public.limitar_comentarios() returns trigger
+  language plpgsql security definer set search_path = '' as $$
+begin
+  if (select count(*) from public.comentarios where user_id = new.user_id and creado > now() - interval '1 hour') >= 30 then
+    raise exception 'Demasiados comentarios seguidos. Intenta en un rato.' using errcode = 'P0001';
+  end if;
+  return new;
+end $$;
+revoke all on function public.limitar_comentarios() from public, anon, authenticated;
+drop trigger if exists limitar_comentarios on public.comentarios;
+create trigger limitar_comentarios before insert on public.comentarios for each row execute function public.limitar_comentarios();

@@ -72,6 +72,11 @@ Deno.serve(async (req) => {
     }
     if (accion !== "aprobar") return json({ error: "Acción no válida." }, 400);
 
+    // Se "toma" la solicitud antes de crear la cuenta: si tocas Aprobar dos veces seguidas, no se crean dos cuentas
+    const { data: tomada } = await db.from("solicitudes").update({ resuelto: new Date().toISOString() }).eq("id", sol.id).eq("estado", "pendiente").is("resuelto", null).select("id");
+    if (!tomada?.length) return json({ error: "Esta solicitud ya se está procesando.", solicitud: resumen }, 409);
+    const soltar = () => db.from("solicitudes").update({ resuelto: null }).eq("id", sol.id).eq("estado", "pendiente");
+
     // Si mientras tanto ya se le creó una cuenta con ese correo, solo le recordamos su ID
     const { data: ya } = await db.from("perfiles").select("codigo,user_id").eq("email", sol.email).maybeSingle();
     if (ya) {
@@ -86,7 +91,7 @@ Deno.serve(async (req) => {
       const { data: choca } = await db.from("perfiles").select("user_id").eq("codigo", c).maybeSingle();
       if (!choca) codigo = c;
     }
-    if (!codigo) throw new Error("No se pudo generar un ID único");
+    if (!codigo) { await soltar(); throw new Error("No se pudo generar un ID único"); }
 
     const clave = nuevaClave();
     const { data: creado, error: e1 } = await db.auth.admin.createUser({
@@ -95,13 +100,14 @@ Deno.serve(async (req) => {
       email_confirm: true,
       user_metadata: { codigo, nombre: sol.nombre },
     });
-    if (e1 || !creado?.user) throw e1 || new Error("No se creó el usuario");
+    if (e1 || !creado?.user) { await soltar(); throw e1 || new Error("No se creó el usuario"); }
     const uid = creado.user.id;
 
     const { error: e2 } = await db.from("perfiles").insert({ user_id: uid, codigo, email: sol.email, nombre: sol.nombre, debe_cambiar: true });
-    if (e2) { await db.auth.admin.deleteUser(uid); throw e2; }
+    if (e2) { await db.auth.admin.deleteUser(uid); await soltar(); throw e2; }
     await db.from("solicitudes").update({ estado: "aprobada", user_id: uid, resuelto: new Date().toISOString() }).eq("id", sol.id);
 
+    await db.from("envios").insert({ tipo: "aprobada", destino: String(sol.email).toLowerCase() }).then(() => {}, () => {});
     await enviarCorreo(sol.email, "¡Tu cuenta de Tomo está lista!", plantilla(`¡Bienvenido, ${esc(sol.nombre || "lector")}!`,
       `Tu cuenta fue aprobada. Estos son tus datos para entrar:` +
       datoGrande("Tu ID", codigo) + datoGrande("Contraseña temporal", clave) +

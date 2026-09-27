@@ -189,6 +189,26 @@
     finally { ocupado(f, false); }
   });
 
+  // ---------- crear una contraseña nueva desde el enlace del correo (?r=…) ----------
+  // El enlace se saca de la barra de direcciones al abrirlo (no queda en el historial ni se comparte por error)
+  const tokenR = (() => { const u = new URL(location.href), t = u.searchParams.get("r") || "";
+    if (t) { u.searchParams.delete("r"); history.replaceState(null, "", u.pathname + (u.search || "") + u.hash); }
+    return /^[A-Za-z0-9_-]{40,64}$/.test(t) ? t : ""; })();
+  $("#fRes").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget, a = $("#rs1").value, b = $("#rs2").value;
+    if (a.length < 8) return msg("#rErr", "Usa al menos 8 caracteres.");
+    if (a !== b) return msg("#rErr", "Las dos contraseñas no coinciden.");
+    msg("#rErr", ""); ocupado(f, true);
+    try {
+      const j = await fn("olvide", { token: tokenR, clave: a });
+      await sb.auth.signOut({ scope: "local" }).catch(() => {}); // si en este dispositivo había otra sesión abierta, se cierra
+      f.reset(); if (j.codigo) $("#lId").value = j.codigo;
+      pag("login"); msg("#lMsg", "¡Listo! Ya puedes ingresar con tu contraseña nueva.", true);
+    } catch (err) { msg("#rErr", err.message); }
+    finally { ocupado(f, false); }
+  });
+
   // ---------- crear / cambiar contraseña ----------
   let cambioForzado = false;
   function abrirCambio(forzado) {
@@ -341,6 +361,7 @@
   };
   const perfilDe = (uid) => { try { return JSON.parse(localStorage.getItem("tomo.perfil." + uid) || "null"); } catch (e) { return null; } };
   (async () => {
+    if (tokenR) return pag("restablecer"); // vienes del enlace de "¿Olvidaste tu contraseña?"
     pag("boot");
     const guardada = sesionGuardada();
     // Sin internet no se puede renovar la sesión (vence cada hora): se abre con la guardada y se renueva sola al volver la conexión
