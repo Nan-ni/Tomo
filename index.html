@@ -350,6 +350,17 @@ html{background:var(--bg)}
 .dev-t .pacts .btn{white-space:normal;text-align:left}
 .dlg-acc.dlg-acc3{flex-direction:column}
 .dlg-acc.dlg-acc3 .btn{width:100%;flex:none}
+/* sin código de barras */
+.sin-cod{display:flex;flex-direction:column;gap:8px;padding-bottom:14px;margin-bottom:2px;border-bottom:1px solid var(--line)}
+.sin-cod .btn{display:inline-flex;align-items:center;gap:7px}
+.sin-cod .btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn.ocupado{opacity:.55;pointer-events:none}
+.ls-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-self:stretch}
+@media (max-width:400px){.ls-2{grid-template-columns:1fr}}
+.dlg-lista select{width:100%}
+.ls-chk{align-self:stretch;text-align:left;display:flex;gap:8px;align-items:center;font-size:14px;color:var(--ink-2)}
+.ls-chk input{accent-color:var(--accent)}
+.ls-chk small{color:var(--ink-3)}
 /* traer desde Goodreads */
 .gr-pasos,.gr-res{align-self:stretch;text-align:left;margin:2px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:7px;font-size:14px;color:var(--ink-2)}
 .gr-pasos a{color:var(--accent);font-weight:600;overflow-wrap:anywhere}
@@ -1001,7 +1012,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 29</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 30</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
@@ -2150,7 +2161,11 @@ function renderSheet(){
       </div>
       <div class="box" id="coverPick" hidden></div>
       <div class="box" id="titleSearch">
-        <h4>¿No aparece? Búscalo por título</h4>
+        ${isNew&&!b.isbn?`<div class="sin-cod"><h4>¿No tiene código de barras?</h4>
+          <div class="pacts"><label class="btn sm" for="ppFile" id="ppBtn">${ICO_FOTO} Foto de la primera página</label><button class="btn sm" type="button" id="lsBtn">Agregar varios en lista</button></div>
+          <input type="file" id="ppFile" accept="image/*" class="sr">
+          <p class="origin" id="ppMsg" role="status" style="margin:0">La página con el título o la de créditos: si trae el ISBN impreso, lo encuentro.</p></div>`:""}
+        <h4>${isNew&&!b.isbn?"O búscalo por título":"¿No aparece? Búscalo por título"}</h4>
         ${!isNew&&S.diag?.[b.id]?`<p class="origin" id="tsDiag" style="margin:0">${esc(S.diag[b.id])}</p>`:""}
         ${!isNew&&S.diagLib?.[b.id]?`<details class="origin" id="tsLib"><summary>Dónde busqué</summary><ul class="lib-list">${S.diagLib[b.id].map(i=>`<li>${esc(i.fuente)}: ${esc(i.resultado)}</li>`).join("")}</ul></details>`:""}
         <form id="tsForm" style="display:flex;gap:8px"><label for="ts-q" class="sr">Título y autor</label><input id="ts-q" class="search" style="max-width:none" placeholder="Ej.: La ciudad y los perros Vargas Llosa" value="${esc(b.titulo?"":"")}"><button class="btn" type="submit">Buscar</button></form>
@@ -2275,6 +2290,8 @@ function wireSheet(){
   $("#ajCal")&&($("#ajCal").onclick=()=>icsAjeno(current()));
   $("#ajDevolvi")&&($("#ajDevolvi").onclick=()=>devolverAjeno(S.openId));
   $("#citasBox")&&($("#citasBox").onclick=e=>clickCitas(e,S.openId));
+  $("#ppFile")&&$("#ppFile").addEventListener("change",e=>{ const f=e.target.files[0]; e.target.value=""; if(f) leerPrimeraPagina(f); });
+  $("#lsBtn")&&($("#lsBtn").onclick=abrirLista);
   $("#returnBtn")&&($("#returnBtn").onclick=giveBack);
   $("#refetchBtn")&&($("#refetchBtn").onclick=()=>fillFromWeb(S.openId,false));
   $("#ownCover")&&$("#ownCover").addEventListener("change",async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; const id=S.openId;
@@ -2574,6 +2591,91 @@ function abrirGoodreads(textoInicial){
 // portadas de los que llegaron sin ISBN: se buscan por título de a poco, sin apurar a nadie
 async function despuesDeGoodreads(){ for(const b of S.books.filter(b=>b.deGoodreads&&b.titulo&&!b.portadaUrl&&!b.portadaBuscada).slice(0,40)){ await esperarTurno(); await fillCover(b.id); } }
 $("#grBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirGoodreads(); });
+
+/* ---------- libros sin código de barras (ediciones de colección, de cuero, antiguas…) ----------
+   1) Foto de la primera página: se lee con el mismo lector de las citas. Si en la foto hay un ISBN (la página
+      de créditos suele traerlo impreso), se busca como si lo hubieras escaneado; si no, se toman el título
+      (la letra más grande), el autor y la editorial, y se busca por título para que elijas la edición.
+   2) Agregar varios en lista: un libro por línea, con la misma editorial y colección para todos. */
+const EDITORIALES=[["gredos","Gredos"],["rba","RBA"],["alianza","Alianza Editorial"],["catedra","Cátedra"],["tecnos","Tecnos"],["akal","Akal"],["trotta","Trotta"],["taurus","Taurus"],["siruela","Siruela"],["losada","Losada"],["porrua","Porrúa"],["fondo de cultura economica","Fondo de Cultura Económica"],["anagrama","Anagrama"],["planeta","Planeta"],["penguin","Penguin"],["debolsillo","Debolsillo"],["austral","Austral"],["espasa","Espasa"],["sintesis","Síntesis"],["herder","Herder"],["paidos","Paidós"],["tusquets","Tusquets"],["valdemar","Valdemar"],["edaf","Edaf"],["biblioteca nueva","Biblioteca Nueva"],["istmo","Istmo"],["pre-textos","Pre-Textos"],["salvat","Salvat"],["sudamericana","Sudamericana"],["peisa","Peisa"],["alfaguara","Alfaguara"],["emece","Emecé"],["seix barral","Seix Barral"],["cantaro","Cántaro"],["colihue","Colihue"],["eudeba","Eudeba"]];
+const NO_TITULO=/traducci[oó]n|traducido|introducci[oó]n|pr[oó]logo|\bnotas?\b|\bedici[oó]n|editorial|ediciones|biblioteca|colecci[oó]n|isbn|dep[oó]sito|impres|©|copyright|derechos|reservados|madrid|barcelona|buenos aires|m[eé]xico|lima|santiago|bogot[aá]|\bvolumen\b|\btomo\b/i;
+const mayus=t=>t===t.toUpperCase()&&/[A-ZÁÉÍÓÚÑ]{3}/.test(t);
+const oracion=t=>{ t=t.toLowerCase(); return t.charAt(0).toUpperCase()+t.slice(1); };
+const nombrePropio=t=>t.toLowerCase().replace(/(^|[\s.'-])([a-záéíóúüñ])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(De|Del|La|Las|Los|Y|Von|Van|Da|Di)\b/g,m=>m.toLowerCase());
+// ISBN impreso: el que no diga "obra completa" (en las colecciones viene el de la colección y el del tomo)
+function isbnEnTexto(texto){ const hallados=[];
+  for(const linea of String(texto||"").split(/\n/)){ const re=/((?:97[89][\s.-]?)?(?:\d[\s.-]?){9}[\dXx])/g; let m;
+    while((m=re.exec(linea))){ const n=normalizeIsbn(m[1]); if(n.isbn&&!n.notBook) hallados.push({isbn:n.isbn,obra:/obra completa|o\.\s?c\.|colecci[oó]n/i.test(linea)}); } }
+  return (hallados.find(h=>!h.obra)||hallados[0]||{}).isbn||""; }
+function datosDePortadilla(lineas,texto){
+  const L=lineas.map(l=>({t:l.t.replace(/^[^\p{L}\d]+|[^\p{L}\d.)]+$/gu,"").replace(/\s+/g," ").trim(),h:l.h,y:l.y,c:l.c})).filter(l=>l.t.length>=2&&l.c>=50&&/\p{L}{2}/u.test(l.t));
+  const cand=L.filter(l=>!NO_TITULO.test(l.t));
+  const plano=sinTildes(texto);
+  const ed=(EDITORIALES.find(([k])=>new RegExp(`\\b${k}\\b`).test(plano))||[])[1]||"";
+  if(!cand.length) return {titulo:"",autor:"",editorial:ed};
+  const max=Math.max(...cand.map(l=>l.h)); const orden=[...cand].sort((a,b)=>a.y-b.y);
+  // el título: la línea más grande y las que siguen pegadas del mismo tamaño
+  const i0=orden.findIndex(l=>l.h===max); const tit=[orden[i0]];
+  for(let i=i0+1;i<orden.length&&orden[i].h>=max*.75&&orden[i].y-tit[tit.length-1].y<max*3;i++) tit.push(orden[i]);
+  for(let i=i0-1;i>=0&&orden[i].h>=max*.75&&tit[0].y-orden[i].y<max*3;i--) tit.unshift(orden[i]);
+  let titulo=tit.map(l=>l.t).join(" ");
+  // el autor: un nombre corto (una a cinco palabras, solo letras) que no sea el título
+  const au=cand.filter(l=>!tit.includes(l)&&/^[\p{L}.'’\s-]+$/u.test(l.t)&&l.t.split(/\s+/).length<=5&&l.h>=max*.3).sort((a,b)=>b.h-a.h)[0];
+  let autor=au?au.t:"";
+  if(mayus(titulo)) titulo=oracion(titulo); if(autor&&mayus(autor)) autor=nombrePropio(autor);
+  return {titulo:titulo.slice(0,200),autor:autor.slice(0,120),editorial:ed}; }
+async function leerPrimeraPagina(file){ const msg=t=>{ const m=$("#ppMsg"); if(m) m.textContent=t; };
+  const btn=$("#ppBtn"); if(btn) btn.classList.add("ocupado");
+  let foto; try{ foto=await fotoACanvas(file); }catch(e){ msg("No pude abrir esa imagen. Prueba con otra foto."); btn?.classList.remove("ocupado"); return; }
+  ocrAvance=m=>{ const st=String(m.status||""); if(st==="recognizing text") msg(`Leyendo la página… ${Math.round((m.progress||0)*100)}%`); else msg("Preparando el lector… (solo la primera vez tarda un poco)"); };
+  msg("Preparando el lector… (solo la primera vez tarda un poco)");
+  let r=null; try{ const w=await Promise.race([cargarOCR(),dormir(120000).then(()=>{ throw new Error("tiempo"); })]); r=await w.recognize(foto,{},{text:true,blocks:true}); }
+  catch(e){ msg(navigator.onLine===false?"Para leer fotos, la primera vez necesitas internet.":"No pude leer la foto. Intenta de nuevo o escribe los datos."); }
+  finally{ ocrAvance=null; btn?.classList.remove("ocupado"); soltarOCR(); }
+  if(!r||!$("#ppMsg")) return; // se cerró la ficha mientras leía
+  const texto=r.data?.text||"";
+  const isbn=isbnEnTexto(texto);
+  if(isbn){ closeSheet(); toast(`Encontré el ISBN en la foto: ${fmtIsbn(isbn)}`); handleIsbn(isbn); return; }
+  const lineas=[]; for(const bl of r.data?.blocks||[]) for(const pa of bl.paragraphs||[]) for(const li of pa.lines||[]) lineas.push({t:li.text||"",h:li.bbox.y1-li.bbox.y0,y:li.bbox.y0,c:li.confidence||0});
+  const d=datosDePortadilla(lineas,texto);
+  if(!d.titulo){ msg("No encontré el título. Prueba con la página que tiene el título en grande, bien derecha y con luz."); return; }
+  for(const k of ["titulo","autor","editorial"]){ const el=$("#f-"+k); if(el&&d[k]&&!el.value.trim()) el.value=d[k]; }
+  msg("Listo: revisa el título y el autor. Abajo están las ediciones que encontré; toca una si coincide.");
+  const q=$("#ts-q"); if(q){ q.value=[d.titulo,d.autor].filter(Boolean).join(" "); $("#tsForm").requestSubmit(); } }
+// Agregar varios en lista
+function lineasDeLista(txt){ return String(txt||"").split(/\n/).map(l=>l.replace(/^[\s•·*-]+/,"").trim()).filter(l=>l&&/\p{L}/u.test(l)).slice(0,300).map(l=>{
+  let tomo=""; const n=l.match(/^(\d{1,4})\s*[.)\-–—:]\s*(.+)$/); if(n){ tomo=String(+n[1]); l=n[2].trim(); }
+  const p=l.split(/\s+[—–-]\s+/); const [autor,titulo]=p.length>=2?[p[0].trim(),p.slice(1).join(" - ").trim()]:["",l];
+  return {titulo:titulo.slice(0,200),autor:autor.slice(0,120),tomo}; }); }
+function abrirLista(){ const eds=[...new Set(S.books.map(b=>b.editorial).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es")), series=[...new Set(S.books.map(b=>b.serie).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+  const cerrar=abrirDlg(`<form class="dlg dlg-cita dlg-lista" id="lsForm" role="dialog" aria-modal="true" aria-labelledby="dlgT" novalidate>
+    <h2 id="dlgT">Agregar varios en lista</h2>
+    <p>Para libros sin código de barras: escribe uno por línea y se agregan todos juntos.</p>
+    <div class="ls-2"><div class="f cita-f"><label for="ls-ed">Editorial (para todos)</label><input id="ls-ed" list="dl-ls-ed" placeholder="Ej.: Gredos" autocomplete="off"></div>
+      <div class="f cita-f"><label for="ls-col">Colección o serie (opcional)</label><input id="ls-col" list="dl-ls-col" placeholder="Ej.: Grandes Pensadores" autocomplete="off"></div></div>
+    <datalist id="dl-ls-ed">${eds.map(e=>`<option value="${esc(e)}">`).join("")}</datalist><datalist id="dl-ls-col">${series.map(e=>`<option value="${esc(e)}">`).join("")}</datalist>
+    <div class="f cita-f"><label for="ls-txt">Los libros</label><textarea id="ls-txt" rows="8" placeholder="Kant — Crítica de la razón pura&#10;Platón — Diálogos I&#10;Nietzsche — Así habló Zaratustra"></textarea>
+      <small class="tema-nota">«Autor — Título» o solo el título. Si empiezas con un número («3. Descartes — …»), queda como el tomo de la colección.</small></div>
+    <div class="ls-2"><div class="f cita-f"><label for="ls-tipo">Tipo</label><select id="ls-tipo">${TIPOS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div>
+      <div class="f cita-f"><label for="ls-est">Estado</label><select id="ls-est">${ESTADOS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></div></div>
+    <label class="ls-chk"><input type="checkbox" id="ls-port" checked> Buscar portadas en internet <small>(pueden ser de otra edición)</small></label>
+    <p class="auth-msg" id="lsErr" role="alert"></p>
+    <div class="dlg-acc"><button class="btn primary" type="submit" id="lsOk">Agregar</button><button class="btn ghost" type="button" id="lsNo">Cancelar</button></div>
+  </form>`);
+  const contar=()=>{ const n=lineasDeLista($("#ls-txt").value).length; $("#lsOk").textContent=n?`Agregar ${n} libro${n===1?"":"s"}`:"Agregar"; $("#lsErr").textContent=""; };
+  $("#ls-txt").oninput=contar; $("#lsNo").onclick=cerrar;
+  $("#lsForm").onsubmit=e=>{ e.preventDefault(); const L=lineasDeLista($("#ls-txt").value);
+    if(!L.length){ $("#lsErr").textContent="Escribe al menos un libro."; $("#ls-txt").focus(); return; }
+    const editorial=$("#ls-ed").value.trim().slice(0,120), serie=$("#ls-col").value.trim().slice(0,120), tipo=$("#ls-tipo").value, estado=$("#ls-est").value, portadas=$("#ls-port").checked;
+    const ya=new Set(S.books.map(b=>claveLibro(b.titulo,b.autor))); let n=0, rep=0; const ahora=Date.now();
+    L.forEach((x,i)=>{ if(ya.has(claveLibro(x.titulo,x.autor))){ rep++; return; }
+      const b=limpiarLibro({...blankBook(""),id:"l-"+(ahora+i).toString(36)+Math.random().toString(36).slice(2,6),titulo:x.titulo,autor:x.autor,editorial,serie,tomo:serie?x.tomo:"",tipo,tipoFijado:true,estado,
+        ...(estado==="leido"?{leidoEn:""}:{}),...(portadas?{}:{portadaBuscada:true}),creado:ahora-i,actualizado:ahora});
+      if(b.serie) unifySerie(b); S.books.push(b); ya.add(claveLibro(x.titulo,x.autor)); n++; });
+    persist(); render(); cerrar(); closeSheet();
+    toast(`${n} libro${n===1?"":"s"} agregado${n===1?"":"s"}${rep?` · ${rep} ya estaba${rep===1?"":"n"}`:""}`);
+    if(portadas) (async()=>{ for(const b of S.books.filter(b=>!b.isbn&&b.titulo&&!b.portadaUrl&&!b.portadaBuscada&&b.creado<=ahora&&b.creado>ahora-L.length).slice(0,40)){ await esperarTurno(); await fillCover(b.id); } })(); };
+  setTimeout(()=>$("#ls-ed")?.focus({preventScroll:true}),30); }
 
 /* ---------- colecciones de quiosco (Pruni) ---------- */
 // Portadas del catálogo de las colecciones de quiosco: archivos aparte (catalogo/…), que se bajan solo al verlas
