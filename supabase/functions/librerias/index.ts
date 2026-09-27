@@ -1,5 +1,7 @@
-// Tomo · librerias: para los ISBN que Google Books y Open Library no tienen (muchos libros peruanos, 978-612 y 978-9972).
-//  ?isbn=…        busca en la Agencia Peruana del ISBN y en librerías (Crisol, Buscalibre, SBS, Penguin Libros)
+// Tomo · librerias: para los ISBN que Google Books y Open Library no tienen (muchos libros peruanos, colombianos, mexicanos
+// y chilenos, y las ediciones de clubes como Tinta, que no se venden en tiendas).
+//  ?isbn=…        busca en la agencia del ISBN del país del libro (Perú, Colombia, México o Chile) y en librerías
+//                 (Crisol, Buscalibre, SBS, Penguin Libros)
 //  ?url=…&isbn=…  lee la página de una tienda que pegó el lector (título, autor, editorial, año, páginas y portada)
 // Lo que encuentra se guarda en la tabla libros_extra: el siguiente lector que escanee ese ISBN lo tiene al instante.
 // Sin secretos nuevos. Solo lectores con sesión iniciada.
@@ -19,15 +21,27 @@ type Datos = { titulo?: string; autor?: string; editorial?: string; anio?: strin
 type Pagina = { url: string; status: number; tipo: string; texto: string };
 type Intento = { fuente: string; resultado: string };
 
+// Las agencias del ISBN: cada país registra ahí todos sus libros, también los que no se venden en tiendas (las ediciones
+// de un club de lectura, las de una universidad…). Estas cuatro usan el mismo sistema de catálogo (el del Cerlalc).
+const AGENCIAS = [
+  { nombre: "Agencia Peruana del ISBN", solo: /^978(612|9972)/, web: "https://isbn.bnp.gob.pe" },
+  { nombre: "Agencia Colombiana del ISBN", solo: /^978(958|628)/, web: "https://isbn.camlibro.com.co" },
+  { nombre: "Agencia Mexicana del ISBN", solo: /^978(607|968|970)/, web: "https://isbnmexico.indautor.cerlalc.org" },
+  { nombre: "Agencia Chilena del ISBN", solo: /^978956/, web: "https://isbnchile.cl" },
+];
+const ES_AGENCIA = new Set(AGENCIAS.map((a) => a.nombre));
+// Buscalibre tiene una tienda por país: además de la peruana, la del país del libro
+const BUSCALIBRE_PAIS: [RegExp, string][] = [[/^978(958|628)/, "https://www.buscalibre.com.co"], [/^978(607|968|970)/, "https://www.buscalibre.com.mx"], [/^978956/, "https://www.buscalibre.cl"]];
 // Dónde buscar. Cada librería se prueba con sus direcciones en orden hasta que una trae el libro.
 const FUENTES: { nombre: string; solo?: RegExp; urls: (i: string) => string[] }[] = [
-  { nombre: "Agencia Peruana del ISBN", solo: /^978(612|9972)/, urls: (i) => [
-    `https://isbn.bnp.gob.pe/catalogo.php?mode=busqueda_rapida&palabra=${i}`,
-    `https://isbn.bnp.gob.pe/catalogo.php?mode=resultados_rapidos&palabra=${i}`] },
+  ...AGENCIAS.map((a) => ({ nombre: a.nombre, solo: a.solo, urls: (i: string) => [
+    `${a.web}/catalogo.php?mode=busqueda_rapida&palabra=${i}`,
+    `${a.web}/catalogo.php?mode=resultados_rapidos&palabra=${i}`] })),
   { nombre: "Crisol", urls: (i) => [
     `https://www.crisol.com.pe/api/catalog_system/pub/products/search?ft=${i}`,
     `https://www.crisol.com.pe/catalogsearch/result/?q=${i}`] },
-  { nombre: "Buscalibre", urls: (i) => [`https://www.buscalibre.pe/libros/search?q=${i}`] },
+  { nombre: "Buscalibre", urls: (i) => [`https://www.buscalibre.pe/libros/search?q=${i}`,
+    ...BUSCALIBRE_PAIS.filter(([re]) => re.test(i)).map(([, web]) => `${web}/libros/search?q=${i}`)] },
   { nombre: "SBS", urls: (i) => [`https://www.sbs.com.pe/catalogsearch/result/?q=${i}`] },
   { nombre: "Penguin Libros", urls: (i) => [`https://www.penguinlibros.com/pe/index.php?controller=search&s=${i}`] },
 ];
@@ -294,9 +308,13 @@ function juntar(rs: Datos[]): Datos {
     out[k] = (k === "titulo" || k === "autor" ? vs.find((v) => !esMayus(v)) : undefined) || vs[0] || "";
   }
   // la portada, mejor de una librería que de la agencia (que casi nunca tiene)
-  out.portadaUrl = rs.find((r) => r.portadaUrl && r.fuente !== FUENTES[0].nombre)?.portadaUrl || out.portadaUrl;
+  out.portadaUrl = rs.find((r) => r.portadaUrl && !ES_AGENCIA.has(r.fuente || ""))?.portadaUrl || out.portadaUrl;
+  out.editorial = sinRazonSocial(out.editorial || "");
   return out;
 }
+
+// En las agencias la editorial viene con su razón social: "Tinta - Club del Libro S.A.S." → "Tinta - Club del Libro"
+const sinRazonSocial = (e: string) => e.replace(/[\s,.;-]+(S\.?\s?A\.?\s?S|S\.?\s?A\.?\s?C|S\.?\s?A\.?\s?de\s?C\.?\s?V|S\.?\s?de\s?R\.?\s?L\.?(\s?de\s?C\.?\s?V)?|S\.?\s?R\.?\s?L|S\.?\s?A\.?\s?U|S\.?\s?L\.?\s?U|E\.?\s?I\.?\s?R\.?\s?L|S\.?\s?p\.?\s?A|Ltda|Limitada|S\.?\s?A|SpA)\.?\s*$/i, "").trim() || e;
 
 async function guardar(isbn: string, datos: Datos) {
   try { await db.from("libros_extra").upsert({ isbn, datos, fuente: datos.fuente || "", actualizado: new Date().toISOString() }); } catch { /* sin la tabla: igual se responde */ }

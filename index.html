@@ -1012,7 +1012,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 31</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 32</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
@@ -1163,7 +1163,7 @@ function normalizeIsbn(raw){
     return {isbn:s, notBook:!/^97[89]/.test(s)}; }
   return {error: s.length ? `Leí ${s.length} dígitos; un ISBN tiene 10 o 13.` : "Escribe o escanea un ISBN."};
 }
-const GROUPS = {"0":"inglés","1":"inglés","2":"francés","3":"alemán","4":"Japón","5":"ruso","7":"China","84":"España","85":"Brasil","88":"Italia","89":"Corea","90":"Países Bajos","94":"Países Bajos","607":"México","968":"México","970":"México","612":"Perú","9972":"Perú","950":"Argentina","987":"Argentina","956":"Chile","958":"Colombia","959":"Cuba","980":"Venezuela","9942":"Ecuador","9978":"Ecuador","9974":"Uruguay","99905":"Bolivia","99954":"Bolivia","99953":"Paraguay","972":"Portugal","989":"Portugal","9945":"Rep. Dominicana","99934":"Rep. Dominicana"};
+const GROUPS = {"0":"inglés","1":"inglés","2":"francés","3":"alemán","4":"Japón","5":"ruso","7":"China","84":"España","85":"Brasil","88":"Italia","89":"Corea","90":"Países Bajos","94":"Países Bajos","607":"México","968":"México","970":"México","612":"Perú","628":"Colombia","9972":"Perú","950":"Argentina","987":"Argentina","956":"Chile","958":"Colombia","959":"Cuba","980":"Venezuela","9942":"Ecuador","9978":"Ecuador","9974":"Uruguay","99905":"Bolivia","99954":"Bolivia","99953":"Paraguay","972":"Portugal","989":"Portugal","9945":"Rep. Dominicana","99934":"Rep. Dominicana"};
 const GROUPS979 = {"10":"Francia","11":"Corea","12":"Italia","8":"EE. UU."};
 function isbnOrigin(isbn){
   if(!isbn||isbn.length!==13) return "";
@@ -1297,8 +1297,9 @@ async function gb(params){
 async function getJson(url,ms=15000){ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
   try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?await window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
     if(!r.ok){ const e=new Error("http "+r.status); e.status=r.status; throw e; } return await r.json(); } finally{ clearTimeout(t); } }
-// Función "librerias" de Supabase: para los ISBN que Google y Open Library no tienen (muchos peruanos) busca en la Agencia
-// Peruana del ISBN y en librerías, y lee el enlace de una tienda que pegues. Si no está publicada (404), no se vuelve a llamar.
+// Función "librerias" de Supabase: para los ISBN que Google y Open Library no tienen (muchos de Perú, Colombia, México o Chile,
+// y las ediciones de clubes como Tinta) busca en la agencia del ISBN del país y en librerías, y lee el enlace de una tienda que
+// pegues. Si no está publicada (404), no se vuelve a llamar.
 const LIBRERIAS={falta:false};
 async function librerias(params,ms=14000){ if(VER||LIBRERIAS.falta||!window.TOMO?.fnUrl) return null;
   const j=await getJson(`${window.TOMO.fnUrl}/librerias?${params}`,ms);
@@ -1441,12 +1442,14 @@ async function buscarTomo(id){
   if(num&&num!==cur.tomo){ upd.tomo=num; upd.tomoEstimado=false; upd.actualizado=Date.now(); }
   upsert(upd); }
 // Devuelve {data, found, reached, googleOk, googleProblem, fuente, librerias}. googleOk: Google Books contestó (aunque sea "no lo tengo").
-// conLibrerias: si Google no lo tiene, también se pregunta a la Agencia Peruana del ISBN y a librerías (solo al agregar o buscar de nuevo).
+// conLibrerias: si Google no lo tiene, también se pregunta a la agencia del ISBN del país y a librerías (solo al agregar o buscar de nuevo).
+const ISBN_LATAM=/^978(612|9972|958|628|607|968|970|956)/; // Perú, Colombia, México y Chile
 async function lookup(isbn, conLibrerias){
   const conEstado=pr=>pr.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
   const valido=/^97[89]\d{10}$/.test(isbn);
-  // ISBN peruano: Google casi nunca lo tiene, así que a las librerías se les pregunta desde el principio, a la vez que a Google
-  const lP0=conLibrerias&&valido&&/^978(612|9972)/.test(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
+  // ISBN de Perú, Colombia, México o Chile: Google muchas veces no lo tiene (y nunca las ediciones de un club como Tinta),
+  // así que a la agencia y a las librerías se les pregunta desde el principio, a la vez que a Google
+  const lP0=conLibrerias&&valido&&ISBN_LATAM.test(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
   const oP=conEstado(openLibrary(isbn)), g=await conEstado(google(isbn));
   const gTiene=g.status==="fulfilled"&&!!g.value?.titulo;
   // Los demás: si Google no lo tiene, mientras se espera a Open Library ya se pregunta a las librerías (sin esperar de más si lo encuentran)
@@ -1786,7 +1789,7 @@ function avisarBusqueda(id,b,upd,r){
     const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
     setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${esc(r.googleProblem||"no pude conectarme a las bases de libros")}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo por ISBN” en su ficha más tarde."}`,"err");
     if(otraVez) setTimeout(()=>{ const x=byId(id); if(x&&!x.titulo&&!S.pending.has(id)){ BUSCADOR.pausaHasta=0; fillFromWeb(id,false); } },15000); } // el reintento vuelve a probar el buscador de Tomo
-  else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}${r.librerias?.intentos?.length?" ni en librerías":""}.${esc(tip)} Búscalo por título o pega el enlace de una tienda en su ficha.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
+  else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}${r.librerias?.intentos?.length?" ni en librerías":""}.${esc(tip)} Búscalo por título, toma una foto de la página del título o pega el enlace de una tienda en su ficha.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
 }
 
 /* ---------- fotos de portada propias (IndexedDB) ---------- */
@@ -2186,7 +2189,11 @@ function renderSheet(){
         ${isNew&&!b.isbn?`<div class="sin-cod"><h4>¿No tiene código de barras?</h4>
           <div class="pacts"><label class="btn sm" for="ppFile" id="ppBtn">${ICO_FOTO} Foto de la primera página</label><button class="btn sm" type="button" id="lsBtn">Agregar varios en lista</button></div>
           <input type="file" id="ppFile" accept="image/*" class="sr">
-          <p class="origin" id="ppMsg" role="status" style="margin:0">La página con el título o la de créditos: si trae el ISBN impreso, lo encuentro (el del tomo, no el de la «obra completa» u «O.C.»).</p></div>`:""}
+          <p class="origin" id="ppMsg" role="status" style="margin:0">La página con el título o la de créditos: si trae el ISBN impreso, lo encuentro (el del tomo, no el de la «obra completa» u «O.C.»).</p></div>`
+        :!isNew&&b.isbn&&!b.titulo&&!busy?`<div class="sin-cod"><h4>¿No aparece en ninguna parte?</h4>
+          <div class="pacts"><label class="btn sm" for="ppFile" id="ppBtn">${ICO_FOTO} Foto de la página del título</label></div>
+          <input type="file" id="ppFile" accept="image/*" class="sr">
+          <p class="origin" id="ppMsg" role="status" style="margin:0">Pasa con ediciones de clubes de lectura o de colección: con la foto leo el título, el autor y la editorial.</p></div>`:""}
         <h4>${isNew&&!b.isbn?"O búscalo por título":"¿No aparece? Búscalo por título"}</h4>
         ${!isNew&&S.diag?.[b.id]?`<p class="origin" id="tsDiag" style="margin:0">${esc(S.diag[b.id])}</p>`:""}
         ${!isNew&&S.diagLib?.[b.id]?`<details class="origin" id="tsLib"><summary>Dónde busqué</summary><ul class="lib-list">${S.diagLib[b.id].map(i=>`<li>${esc(i.fuente)}: ${esc(i.resultado)}</li>`).join("")}</ul></details>`:""}
@@ -2665,7 +2672,7 @@ async function leerPrimeraPagina(file){ const msg=t=>{ const m=$("#ppMsg"); if(m
   finally{ ocrAvance=null; btn?.classList.remove("ocupado"); soltarOCR(); }
   if(!r||!$("#ppMsg")) return; // se cerró la ficha mientras leía
   const texto=r.data?.text||"";
-  const isbn=isbnEnTexto(texto);
+  const isbn=S.openId&&byId(S.openId)?.isbn?"":isbnEnTexto(texto); // si el libro ya tiene su ISBN (y no apareció), solo se leen título y autor
   if(isbn){ closeSheet(); toast(`Encontré el ISBN en la foto: ${fmtIsbn(isbn)}`); handleIsbn(isbn); return; }
   const lineas=[]; for(const bl of r.data?.blocks||[]) for(const pa of bl.paragraphs||[]) for(const li of pa.lines||[]) lineas.push({t:li.text||"",h:li.bbox.y1-li.bbox.y0,y:li.bbox.y0,c:li.confidence||0});
   const d=datosDePortadilla(lineas,texto);
