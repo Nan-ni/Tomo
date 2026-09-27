@@ -296,6 +296,12 @@
     },
   };
 
+  // ---------- enviar un comentario (idea, error u otro) ----------
+  T.enviarComentario = async (tipo, texto, contexto) => {
+    const { error } = await sb.from("comentarios").insert({ user_id: T.uid, tipo, texto, contexto });
+    if (error) throw error;
+  };
+
   // ---------- estado del guardado (el puntito junto a "Mi cuenta") ----------
   T.estadoNube = (s) => {
     const el = $("#syncState"); if (!el) return;

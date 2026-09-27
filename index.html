@@ -704,6 +704,13 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .ts-it img,.ts-it .ts-sin{width:34px;height:51px;flex:none;border-radius:3px;object-fit:cover;background:var(--surface-2)}
 .ts-it span{flex:1;min-width:0}
 
+/* ===== enviar comentario ===== */
+.fb-tipos{justify-content:center}
+.fb-f{width:100%;text-align:left}
+.fb-f textarea{min-height:120px}
+.fb-nota{font-size:12.5px!important;color:var(--ink-3)!important}
+.dlg .auth-msg{align-self:stretch;color:var(--warn)}
+
 /* ===== compartir el estante ===== */
 a.btn{text-decoration:none;color:inherit}
 .share-link{width:100%;margin-top:6px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font:13px/1.45 var(--mono);color:var(--ink);text-align:left;overflow-wrap:anywhere;user-select:all;-webkit-user-select:all}
@@ -814,9 +821,10 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 15</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 16</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
+        <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
         <button class="menu-item" id="exportCsv" type="button">Exportar CSV<small>Para abrirlo en Excel</small></button>
         <label class="menu-item" for="importFile">Importar<small>Carga una copia de seguridad o un CSV</small></label>
@@ -1029,8 +1037,33 @@ const olCover=id=>id?`https://covers.openlibrary.org/b/id/${id}-L.jpg`:"";
 function coverSrc(u){ if(!u) return ""; u=String(u);
   if(/books\.google|googleusercontent|books\/content/.test(u) && !/fife=/.test(u)) return u+(u.includes("?")?"&":"?")+"fife=w400-h600";
   return u.replace(/(covers\.openlibrary\.org\/b\/(?:id|isbn)\/[^-]+)-[SM]\.jpg/,"$1-L.jpg"); }
-const GENEROS=["Novela","Cuento","Poesía","Teatro","Fantasía","Ciencia ficción","Misterio y suspenso","Terror","Romance","Juvenil","Infantil","Clásicos","Historia","Filosofía","Ciencia política","Relaciones internacionales","Economía y negocios","Ciencias sociales","Psicología","Ciencia","Tecnología","Autoayuda","Biografía","Ensayo","Religión","Arte","Idiomas","Educación","Derecho","Viajes","Acción y aventura","Shōnen","Seinen","Shōjo","Josei","Kodomo"];
-const GENRE_RULES=[[/action & adventure|acci[oó]n y aventura/i,"Acción y aventura"],[/relaciones internacionales|international relations|geopolit/i,"Relaciones internacionales"],[/political science|politic|pol[ií]tica/i,"Ciencia política"],[/science fiction|ciencia ficci/i,"Ciencia ficción"],[/fantas/i,"Fantasía"],[/myster|thriller|suspens|detective|crime|policiac/i,"Misterio y suspenso"],[/horror|terror/i,"Terror"],[/romance|love stor/i,"Romance"],[/juvenile|young adult|juvenil/i,"Juvenil"],[/children|infantil/i,"Infantil"],[/poetry|poes[ií]a/i,"Poesía"],[/drama|teatro/i,"Teatro"],[/short stor|cuento/i,"Cuento"],[/history|historia/i,"Historia"],[/philosoph|filosof/i,"Filosofía"],[/business|economic|econom/i,"Economía y negocios"],[/social science|sociolog|anthropolog/i,"Ciencias sociales"],[/psycholog|psicolog/i,"Psicología"],[/self-help|autoayuda|personal growth/i,"Autoayuda"],[/biograph/i,"Biografía"],[/religio|bible|theolog/i,"Religión"],[/\bart\b|arte\b|music|photograph/i,"Arte"],[/language|linguist|idioma/i,"Idiomas"],[/education|educaci/i,"Educación"],[/\blaw\b|derecho|legal/i,"Derecho"],[/travel|viaje/i,"Viajes"],[/computer|technolog|tecnolog|programming/i,"Tecnología"],[/science|ciencia|nature|mathemat/i,"Ciencia"],[/essay|ensayo|literary critic/i,"Ensayo"],[/fiction|novel|ficci|literatura/i,"Novela"]];
+// Géneros clásicos, como en una librería. Los temas académicos (derecho, política, economía…) van a "Ensayo".
+const GENEROS_FIC=["Novela","Romance","Fantasía","Ciencia ficción","Misterio y suspenso","Terror","Aventura","Drama","Humor","Deportes","Novela histórica","Clásicos","Cuento","Poesía","Teatro","Juvenil","Infantil"];
+const GENEROS_NOFIC=["Historia","Biografía","Ensayo","Autoayuda","Ciencia","Religión","Arte"];
+const GENEROS=GENEROS_FIC.concat(GENEROS_NOFIC);
+// Categorías de Google Books y temas de Open Library → género. El orden importa: primero lo más específico.
+const GENRE_RULES=[
+  [/poetry|poes[ií]a/i,"Poesía"],[/(^|[|/] *)drama\b|teatro|\bplays\b/i,"Teatro"],[/short stor|cuentos?\b|relatos/i,"Cuento"],
+  [/historical fiction|novela hist[oó]rica|fiction \/ historical/i,"Novela histórica"],[/magic(al)? realism|realismo m[aá]gico/i,"Novela"],
+  [/romance|love stor|rom[aá]ntic/i,"Romance"],[/horror|terror|ghost/i,"Terror"],
+  [/myster|thriller|suspens|detective|crime|policiac|noir|misterio|crimen/i,"Misterio y suspenso"],
+  [/science fiction|ciencia ficci|sci-fi|dystop|distop/i,"Ciencia ficción"],[/fantas|magic|magia/i,"Fantasía"],
+  [/humou?r|comedy|comedia|satire|s[aá]tira/i,"Humor"],[/sports|deporte|f[uú]tbol|soccer/i,"Deportes"],
+  [/action & adventure|adventure|aventura|superhero/i,"Aventura"],[/classics|cl[aá]sicos/i,"Clásicos"],
+  [/biograph|memoir|memorias/i,"Biografía"],[/self-help|autoayuda|personal growth|success|motivation|superaci[oó]n|personal finance/i,"Autoayuda"],
+  [/religi|bible|biblia|theolog|teolog|spiritual|espiritual/i,"Religión"],
+  [/\bart\b|\barte\b|music|m[uú]sica|photograph|fotograf|architect|arquitect|\bdesign|dise[ñn]o/i,"Arte"],
+  [/(^|[|/] *)history|historia\b/i,"Historia"],
+  [/philosoph|filosof|politic|pol[ií]tic|\blaw\b|derecho|legal|econom|business|social science|sociolog|anthropolog|education|educaci|language|linguist|idioma|travel|viaje|psycholog|psicolog|criticism|essay|ensayo|international relations|relaciones internacionales|geopolit/i,"Ensayo"],
+  [/science|ciencia|nature|naturaleza|mathemat|matem[aá]t|computer|technolog|tecnolog|medic/i,"Ciencia"],
+  [/young adult|\bjuvenil\b/i,"Juvenil"],[/juvenile|children|infantil|picture book/i,"Infantil"],
+  [/fiction|novel|ficci|literatura|literary/i,"Novela"]];
+// Géneros de antes que ya no están en la lista: se pasan al más parecido
+const GENERO_VIEJO={"Ciencia política":"Ensayo","Relaciones internacionales":"Ensayo","Economía y negocios":"Ensayo","Ciencias sociales":"Ensayo","Filosofía":"Ensayo","Derecho":"Ensayo","Educación":"Ensayo","Idiomas":"Ensayo","Viajes":"Ensayo","Psicología":"Ensayo","Tecnología":"Ciencia","Acción y aventura":"Aventura","Shōnen":"Aventura","Shonen":"Aventura","Seinen":"Drama","Shōjo":"Romance","Shojo":"Romance","Josei":"Romance","Kodomo":"Infantil"};
+const normalizarGenero=g=>g&&GENERO_VIEJO[g]!==undefined?GENERO_VIEJO[g]:(g||"");
+// AniList (manga, manhwa, cómic): de sus géneros se elige el más característico
+const ANI_GENEROS=[["Romance","Romance"],["Horror","Terror"],["Mystery","Misterio y suspenso"],["Thriller","Misterio y suspenso"],["Psychological","Misterio y suspenso"],["Sci-Fi","Ciencia ficción"],["Mecha","Ciencia ficción"],["Sports","Deportes"],["Fantasy","Fantasía"],["Supernatural","Fantasía"],["Mahou Shoujo","Fantasía"],["Adventure","Aventura"],["Action","Aventura"],["Comedy","Humor"],["Drama","Drama"],["Slice of Life","Drama"]];
+const generoDeAniList=gs=>(ANI_GENEROS.find(([a])=>(gs||[]).includes(a))||[])[1]||"";
 function mapGenre(list){ const txt=(list||[]).join(" | ").replace(/comics?\s*&\s*graphic novels?|graphic novels?|comics?|manga|historietas?/gi,""); if(!txt.replace(/[\s|/]/g,"")) return ""; for(const [re,g] of GENRE_RULES) if(re.test(txt)) return g; return ""; }
 const MANGA_PUB=/ivrea|panini|norma|planeta c[oó]mic|kodansha|viz media|shueisha|shogakukan|yen press|seven seas|milky way|distrito manga|ecc|kamite|arechi|ovni press|tokyopop|square enix|kadokawa|dark horse manga|la calabaza|kitsune|fandogamia|tomodomo|moztros|ooso|gl[eé]nat|planeta deagostini|babylon|satori|hidra|mangaline/i;
 function detectTipo(d){ const cats=(d.categorias||[]).join(" "); const t=`${cats} ${d.editorial||""}`;
@@ -1302,12 +1335,26 @@ function editorialPorIsbn(isbn){
   for(const b of S.books){ if(!b.editorial||!b.isbn||b.isbn===isbn) continue; let k=0; while(k<12&&b.isbn[k]===isbn[k]) k++; if(k>bestLen){ bestLen=k; best=b.editorial; } }
   return bestLen>=10?best:"";
 }
+// Género automático: con lo que dicen Google Books y Open Library del libro; en mangas, manhwas y cómics, también con AniList
 async function fillGenre(id){
-  const b=byId(id); if(!b||b.genero||!b.isbn) return;
-  let r; try{ r=await lookup(b.isbn); }catch(e){ return; }
-  const cur=byId(id); if(!cur) return; const upd={...cur, generoBuscado:true};
-  if(r.data.genero) upd.genero=r.data.genero; applyTipo(upd, r.data); upsert(upd);
+  const b=byId(id); if(!b||b.genero) return;
+  let r=null;
+  if(b.isbn){ try{ r=await lookup(b.isbn); }catch(e){} if(!r||(!r.found&&!r.googleOk)) return; } // sin respuesta: se intenta otro día
+  let genero=r?.data?.genero||"";
+  if(!genero && tipoOf(b)!=="libro" && b.serie) genero=await generoPorSerie(b.serie);
+  const cur=byId(id); if(!cur||cur.genero) return;
+  const upd={...cur, generoBuscado:true, generoRevisado:true}; if(genero) upd.genero=genero;
+  if(r) applyTipo(upd, r.data);
+  upsert(upd);
+  if(genero && upd.serie) generoASerie(upd.serie, genero);
 }
+const generoSerieCache=new Map();
+async function generoPorSerie(serie){ const k=normSerie(serie); if(!k) return "";
+  if(!generoSerieCache.has(k)) generoSerieCache.set(k, buscarAniList(serie).then(m=>generoDeAniList(m?.genres)).catch(()=>""));
+  return generoSerieCache.get(k); }
+// Los demás tomos de la misma serie que aún no tienen género toman el mismo
+function generoASerie(serie,genero){ const k=normSerie(serie);
+  for(const x of S.books.filter(x=>!x.genero&&x.serie&&normSerie(x.serie)===k)) upsert({...x,genero,generoRevisado:true}); }
 async function fillFromWeb(id, quiet){
   const b=byId(id); if(!b?.isbn) return;
   if(!quiet) marcarAccion();
@@ -1335,6 +1382,8 @@ async function fillFromWeb(id, quiet){
         const tp = MANHWAS.test(u.titulo) ? "manhwa" : (h.tipo || (numberedTitle(u.titulo)||MANGA_PUB.test(u.editorial||"") ? "manga" : ""));
         if(tp){ r.data.categorias=(r.data.categorias||[]).concat(tp==="manhwa"?["Manhwa"]:tp==="manga"?["Manga"]:["Comics"]); applyTipo(u, r.data); } }
       if(JSON.stringify(u)!==JSON.stringify(c)) upsert(u); } }
+  { const c=byId(id); if(c && !c.genero && tipoOf(c)!=="libro" && c.serie){ const g=await generoPorSerie(c.serie), c2=byId(id);
+      if(g && c2 && !c2.genero){ upsert({...c2,genero:g,generoRevisado:true}); generoASerie(c2.serie,g); } } }
   if(upd.isbn) await upgradeCover(id);
   if(byId(id)?.titulo && !byId(id)?.portadaUrl) await fillCover(id);
   return r;
@@ -1705,8 +1754,7 @@ function renderSheet(){
         <div class="f"><label for="f-serie">Serie o colección</label><input id="f-serie" value="${esc(b.serie)}" placeholder="${tipoOf(b)==="libro"?"Ej.: Perú global":"Ej.: One Piece"}" list="dl-series"></div>
         <div class="f"><label for="f-tomo">Tomo, volumen o número</label><input id="f-tomo" inputmode="numeric" value="${esc(b.tomo)}" placeholder="Ej.: 2"></div>
         <div class="f full"><label for="f-autor">Autor</label><input id="f-autor" value="${esc(b.autor)}"></div>
-        <div class="f full"><label for="f-genero">Género</label><input id="f-genero" value="${esc(b.genero)}" list="dl-generos" placeholder="Elige o escribe uno"></div>
-        <datalist id="dl-generos">${[...new Set(GENEROS.concat(S.books.map(x=>x.genero).filter(Boolean)))].map(g=>`<option value="${esc(g)}">`).join("")}</datalist>
+        <div class="f full"><label for="f-genero">Género</label><select id="f-genero">${opcionesGenero(b.genero)}</select></div>
         <datalist id="dl-series">${[...new Set(S.books.map(x=>x.serie).filter(Boolean))].map(g=>`<option value="${esc(g)}">`).join("")}</datalist>
         <div class="f"><label for="f-editorial">Editorial</label><input id="f-editorial" value="${esc(b.editorial)}"></div>
         <div class="f"><label for="f-anio">Año</label><input id="f-anio" inputmode="numeric" maxlength="4" value="${esc(b.anio)}"></div>
@@ -1730,6 +1778,10 @@ function renderSheet(){
   $("#titleSearch").hidden = !!b.titulo && !isNew;
   wireSheet();
 }
+function opcionesGenero(actual){ const op=g=>`<option value="${esc(g)}"${g===actual?" selected":""}>${esc(g)}</option>`;
+  return `<option value="">${actual?"Sin género":"Sin género (Tomo lo elige solo)"}</option>`
+    +(actual&&!GENEROS.includes(actual)?op(actual):"")
+    +`<optgroup label="Ficción">${GENEROS_FIC.map(op).join("")}</optgroup><optgroup label="No ficción">${GENEROS_NOFIC.map(op).join("")}</optgroup>`; }
 function loanBox(b){ const hist=(b.historial||[]).slice().reverse();
   return `<div class="box"><h4>Préstamo</h4>
     ${b.prestamo?`<div class="loan-now"><span>Lo tiene ${esc(b.prestamo.a)} desde el ${fmtDate(b.prestamo.desde)} · ${daysSince(b.prestamo.desde)} días</span><button class="btn" id="returnBtn">Ya lo devolvió</button></div>`
@@ -1739,7 +1791,7 @@ function loanBox(b){ const hist=(b.historial||[]).slice().reverse();
 // Vuelve a dibujar la ficha sin perder lo que el usuario ya escribió o eligió
 function rerenderKeeping(){
   // El enlace de portada solo se conserva si lo escribiste tú; si la portada cambió por un botón, manda el valor nuevo
-  const vals={}; document.querySelectorAll("#sheetRoot input:not([type=file]),#sheetRoot textarea").forEach(el=>{ if(el.id && (el.id!=="f-portadaUrl" || el.dataset.dirty)) vals[el.id]=el.value; });
+  const vals={}; document.querySelectorAll("#sheetRoot input:not([type=file]),#sheetRoot textarea,#sheetRoot select").forEach(el=>{ if(el.id && (el.id!=="f-portadaUrl" || el.dataset.dirty)) vals[el.id]=el.value; });
   const segs={}; ["seg","rate","tipoSeg"].forEach(id=>{ const el=$("#"+id); if(el&&el.dataset.v!=null) segs[id]=el.dataset.v; });
   renderSheet();
   for(const id in vals){ const el=$("#"+id); if(el) el.value=vals[id]; }
@@ -1949,7 +2001,7 @@ $("#importFile").addEventListener("change",async e=>{
     }
   }catch(err){ toast("No pude leer ese archivo. Usa una copia de seguridad (.json) o un CSV exportado del estante."); return; }
   let added=0, updated=0;
-  for(const raw of incoming){
+  for(const raw of incoming){ if(raw.genero) raw.genero=normalizarGenero(raw.genero);
     const b={...blankBook(raw.isbn||""),...raw}; b.id=b.id||(b.isbn?"isbn-"+b.isbn:"l-"+Math.random().toString(36).slice(2,10)); b.creado=b.creado||Date.now(); b.actualizado=Date.now();
     const i=S.books.findIndex(x=>x.id===b.id||(b.isbn&&x.isbn===b.isbn));
     if(i<0){ S.books.push(b); added++; } else { S.books[i]={...S.books[i],...Object.fromEntries(Object.entries(b).filter(([k,v])=>v!==""&&v!=null&&k!=="id"))}; updated++; }
@@ -2059,7 +2111,7 @@ S.priceEdit=null; S.pick=null; S.pickQ="";
    Manga, manhwa y cómics: AniList (base de datos pública de manga). Series de libros: Wikidata.
    AniList cuenta la edición ORIGINAL japonesa/coreana. Si tu edición junta tomos (kanzenban, 2 en 1, deluxe),
    no se toca tu total: se muestra una estimación para que la confirmes. Un total que pusiste tú nunca se cambia solo. */
-const ANI_Q=`query($s:String){Page(perPage:6){media(search:$s,type:MANGA){id siteUrl format status volumes title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}}}}`;
+const ANI_Q=`query($s:String){Page(perPage:6){media(search:$s,type:MANGA){id siteUrl format status volumes genres title{romaji english native} synonyms relations{edges{relationType node{id type format status volumes siteUrl title{romaji english}}}}}}}`;
 async function buscarAniList(nombre){
   const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:ANI_Q,variables:{s:nombre}})});
   if(!r.ok) throw new Error("anilist "+r.status);
@@ -2534,6 +2586,44 @@ async function abrirCompartir(){
   try{ const t=await C.obtener(); pintar(t?"con":"sin",t); }catch(e){ pintar("error","",falla(e)); } }
 $("#shareBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirCompartir(); });
 
+/* ---------- enviar comentario: llega a la tabla "comentarios" de Supabase ---------- */
+const ICO_COMENTARIO=`<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg>`;
+function abrirComentario(){
+  const T=window.TOMO; if(!T.enviarComentario) return;
+  let root=$("#dlgRoot"); if(!root){ root=document.createElement("div"); root.id="dlgRoot"; document.body.appendChild(root); }
+  const antes=document.activeElement;
+  const cerrar=()=>{ document.removeEventListener("keydown",tecla,true); root.innerHTML=""; try{ antes?.focus?.({preventScroll:true}); }catch(e){} };
+  const tecla=e=>{ if(e.key==="Escape"){ e.stopPropagation(); cerrar(); } };
+  document.addEventListener("keydown",tecla,true);
+  const TIPOS_C=[["error","🐞 Algo falla"],["idea","💡 Una idea"],["otro","💬 Otro"]];
+  root.innerHTML=`<div class="dlg-ov" id="dlgOv"><form class="dlg" id="fbForm" role="dialog" aria-modal="true" aria-labelledby="dlgT" novalidate>
+    <div class="dlg-ico" aria-hidden="true">${ICO_COMENTARIO}</div>
+    <h2 id="dlgT">Enviar comentario</h2>
+    <p>¿Algo no funciona o se te ocurre una mejora? Cuéntalo con tus palabras.</p>
+    <div class="chips fb-tipos" role="group" aria-label="Tipo de comentario">${TIPOS_C.map(([k,l],i)=>`<button type="button" class="chip" data-fb="${k}" aria-pressed="${i===0}">${l}</button>`).join("")}</div>
+    <div class="f fb-f"><label for="fbTexto" class="sr">Tu comentario</label><textarea id="fbTexto" maxlength="2000" placeholder="Ej.: al escanear este manga no salió la portada…"></textarea></div>
+    <p class="fb-nota">Junto con tu mensaje se envía la versión de Tomo y tu tipo de dispositivo, para encontrar errores más rápido.</p>
+    <p class="auth-msg" id="fbErr" role="alert"></p>
+    <div class="dlg-acc"><button class="btn primary" id="fbEnviar" type="submit">Enviar</button><button class="btn ghost" id="fbCancel" type="button">Cancelar</button></div>
+  </form></div>`;
+  let tipo="error";
+  $("#dlgOv").onclick=e=>{ if(e.target.id==="dlgOv") cerrar(); };
+  $("#fbCancel").onclick=cerrar;
+  $("#fbTexto").oninput=()=>{ $("#fbErr").textContent=""; };
+  root.querySelector(".fb-tipos").onclick=e=>{ const c=e.target.closest("[data-fb]"); if(!c) return; tipo=c.dataset.fb; root.querySelectorAll("[data-fb]").forEach(x=>x.setAttribute("aria-pressed",x===c)); };
+  $("#fbForm").onsubmit=async e=>{ e.preventDefault();
+    const texto=$("#fbTexto").value.trim(), err=$("#fbErr"), btn=$("#fbEnviar");
+    if(!texto){ err.textContent="Escribe tu comentario."; $("#fbTexto").focus(); return; }
+    err.textContent=""; btn.disabled=true; btn.innerHTML='<span class="spin"></span> Enviando…';
+    const contexto={version:$(".menu-ver")?.textContent.replace(/\D/g,"")||"", pantalla:`${innerWidth}×${innerHeight}`, dispositivo:navigator.userAgent.slice(0,250),
+      instalada:matchMedia("(display-mode: standalone)").matches, vista:S.view, libros:S.books.length};
+    try{ await T.enviarComentario(tipo,texto,contexto); cerrar(); toast("¡Gracias! Tu comentario llegó 💚"); }
+    catch(x){ btn.disabled=false; btn.textContent="Enviar";
+      err.textContent=/comentarios|schema cache|does not exist|42P01|PGRST20/i.test(`${x?.code} ${x?.message}`)?"Falta preparar la base de datos: vuelve a ejecutar supabase/schema.sql en Supabase."
+        :navigator.onLine===false?"Sin conexión. Tu mensaje sigue aquí: envíalo cuando tengas internet.":"No se pudo enviar. Intenta de nuevo en un rato."; } };
+  setTimeout(()=>$("#fbTexto")?.focus({preventScroll:true}),30); }
+$("#feedbackBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirComentario(); });
+
 function showKeyState(){ const k=gKey(), propia=(()=>{ try{ return localStorage.getItem(NS+"gkey")||""; }catch(e){ return ""; } })();
   $("#keyState").textContent = k?(propia?"· Google Books activo":"· Google Books activo (clave incluida)"):"· solo Open Library"; $("#gkey").value=propia; }
 $("#keyForm").addEventListener("submit",e=>{ e.preventDefault(); const k=$("#gkey").value.trim();
@@ -2627,6 +2717,8 @@ if(VER){ // encabezado y pie del estante compartido
   $("#estSub").textContent="Compartido desde Tomo · solo para mirar";
   $("#storeNote").innerHTML=`Estás viendo el estante de ${esc(nombreDueno()||"un lector")}. <a href="./">¿Quieres el tuyo? Pide una cuenta de Tomo</a>`; }
 // Completar libros que quedaron sin datos (por ejemplo, sin internet al escanear)
+// Géneros de antes (Derecho, Relaciones internacionales, Shōnen…) pasan a la lista clásica
+if(!VER){ let ch=false; S.books=S.books.map(b=>{ const g=normalizarGenero(b.genero); if(g===(b.genero||"")) return b; ch=true; return {...b,genero:g,actualizado:Date.now()}; }); if(ch){ persist(); render(); } }
 if(!VER) (async()=>{ await dormir(3000);
   for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0,40)){ await esperarTurno(); await fillFromWeb(b.id,true); }
   for(const b of S.books.filter(b=>b.isbn&&!b.amazonProbado&&!b.portadaAmazon&&autoCover(b)).slice(0,60)){ await esperarTurno(); await upgradeCover(b.id); }
@@ -2644,7 +2736,7 @@ if(!VER) (async()=>{ await dormir(3000);
   for(const b of S.books.filter(b=>tipoOf(b)!=="libro"&&b.serie&&(!b.tomo||b.tomoEstimado)&&/^97[89]\d{10}$/.test(b.isbn||"")&&!b.tomoRevisado).slice(0,20)){ await esperarTurno(); await buscarTomo(b.id); }
   // unificar series escritas distinto (p. ej. "nv." y "Nv.")
   { let ch=false; for(const b of S.books){ if(!b.serie) continue; const before=JSON.stringify(b); const u={...b}; unifySerie(u); if(JSON.stringify(u)!==before){ Object.assign(b,u); ch=true; } } if(ch){ persist(); render(); } }
-  for(const b of S.books.filter(b=>b.isbn&&b.titulo&&!b.genero&&!b.generoBuscado).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); } })();
+  for(const b of S.books.filter(b=>b.titulo&&!b.genero&&!b.generoRevisado&&(b.isbn||(tipoOf(b)!=="libro"&&b.serie))).slice(0,40)){ await esperarTurno(); await fillGenre(b.id); } })();
 };
 </script>
 <!-- crossorigin: así la app instalada puede guardar la librería y abrir sin internet -->
