@@ -119,8 +119,8 @@ grant insert (user_id) on public.compartidos to authenticated;
 
 -- ---------------------------------------------------------------------
 --  Comentarios: lo que los lectores envían desde "Mi cuenta → Enviar comentario".
---  Cada lector solo puede enviar (no ver ni cambiar). Tú los lees en
---  Table Editor → comentarios, o en el SQL Editor.
+--  Cada lector solo puede enviar (no ver ni cambiar). Te llegan por correo
+--  (función "comentario") y quedan todos en Table Editor → comentarios.
 -- ---------------------------------------------------------------------
 create table if not exists public.comentarios (
   id       uuid primary key default gen_random_uuid(),

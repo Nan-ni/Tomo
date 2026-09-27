@@ -21,7 +21,7 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 - **Tu cuenta en la nube:** se guarda solo, se sincroniza entre tus dispositivos y funciona sin internet.
 - **Géneros automáticos:** cada libro recibe un género clásico (romance, fantasía, historia…) según lo que dicen Google Books, Open Library y, en mangas, AniList.
 - **Copias de seguridad:** exporta a JSON o CSV (para Excel) e importa cuando quieras.
-- **Enviar comentario:** desde *Mi cuenta* puedes reportar un error o proponer una idea.
+- **Enviar comentario:** desde *Mi cuenta* puedes reportar un error o proponer una idea; le llega por correo al administrador.
 
 ## 🛠️ Cómo está hecho
 
@@ -45,7 +45,7 @@ Es una app sin instalación ni compilación: HTML, CSS y JavaScript que se sirve
 | `config.js` | Dirección y clave **pública** de Supabase |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Lo que permite instalarla como app y abrirla sin internet |
 | `supabase/schema.sql` | Tablas y reglas de seguridad de la base de datos |
-| `supabase/functions/` | Funciones del servidor: `solicitar`, `aprobar`, `olvide`, `libros` y `compartido` |
+| `supabase/functions/` | Funciones del servidor: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido` y `comentario` |
 
 La carpeta `supabase/` no se publica en la página: es el código que se copia en el panel de Supabase.
 
@@ -69,14 +69,14 @@ La carpeta `supabase/` no se publica en la página: es el código que se copia e
 ### 2. Supabase
 1. **SQL Editor → New query:** pega `supabase/schema.sql` y pulsa **Run**. Se puede ejecutar más de una vez sin borrar nada.
 2. **Authentication → Sign In / Providers:** deja **Email** activado y desactiva **“Allow new users to sign up”**. Las cuentas solo las crea la función `aprobar`.
-3. **Edge Functions → Deploy a new function → Via Editor**, una por cada carpeta de `supabase/functions/`: `solicitar`, `aprobar`, `olvide`, `libros` y `compartido`. Usa el nombre exacto, pega su `index.ts`, pulsa **Deploy** y, en sus ajustes, **desactiva “Enforce JWT verification”**.
+3. **Edge Functions → Deploy a new function → Via Editor**, una por cada carpeta de `supabase/functions/`: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido` y `comentario`. Usa el nombre exacto, pega su `index.ts`, pulsa **Deploy** y, en sus ajustes, **desactiva “Enforce JWT verification”**.
 4. **Edge Functions → Secrets:**
 
    | Nombre | Valor |
    |---|---|
    | `BREVO_API_KEY` | la clave de Brevo |
    | `REMITENTE_EMAIL` | el correo confirmado en Brevo |
-   | `ADMIN_EMAIL` | el correo donde llegan las solicitudes |
+   | `ADMIN_EMAIL` | el correo donde llegan las solicitudes y los comentarios |
    | `APP_URL` | la dirección de la página, por ejemplo `https://tu-usuario.github.io/Tomo` |
    | `GOOGLE_BOOKS_KEY` | una clave de Google Books (opcional pero recomendada) |
 
