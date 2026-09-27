@@ -322,6 +322,36 @@ html{background:var(--bg)}
 .rn .why::before{content:"💡";flex:none}
 .rn .pacts{margin-top:4px}
 #readNext .chips .chip{font-size:13px;padding:5px 11px}
+/* libros que me prestaron */
+.pill.ajeno{background:var(--accent-soft);color:var(--accent)}
+.aj-box summary{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;cursor:pointer;list-style:none}
+.aj-box summary::-webkit-details-marker{display:none}
+@media (pointer:coarse){.aj-box summary{min-height:44px}}
+.aj-box summary::before{content:"";width:8px;height:8px;border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);transform:rotate(-45deg);transition:transform .15s;flex:none;margin-right:2px}
+.aj-box[open] summary::before{transform:rotate(45deg)}
+.aj-t{font-weight:700;font-size:15px}
+.aj-hint{color:var(--ink-3);font-size:13px}
+.aj-box[open] summary .aj-p{display:none} /* abierto ya se ve la fecha completa */
+.aj-box{display:block}
+.aj-in{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.aj-vence{margin:0;font-weight:600;font-size:14px;border-radius:9px;padding:8px 11px;background:var(--accent-soft);color:var(--accent)}
+.aj-vence.loan{background:var(--warn-soft);color:var(--warn)}
+.aj-vence.pausado{background:color-mix(in oklab,var(--brass) 16%,var(--surface));color:var(--brass)}
+.aj-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.aj-form .f{min-width:0}
+.aj-form .f:first-child{grid-column:1/-1}
+@media (max-width:400px){.aj-form{grid-template-columns:1fr}}
+#avisoBox{border-color:color-mix(in oklab,var(--warn) 35%,var(--line))}
+.dev-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.dev-list li{display:grid;grid-template-columns:46px 1fr;gap:12px;align-items:start;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px 10px 10px}
+.dev-list .cover{width:46px;cursor:pointer}
+.dev-t{min-width:0;display:flex;flex-direction:column;gap:5px}
+.dev-t b{font-family:var(--serif);font-size:15.5px;line-height:1.25;cursor:pointer;overflow-wrap:anywhere}
+.dev-v{font-size:13px;font-weight:600;color:var(--accent)}
+.dev-v.loan{color:var(--warn)} .dev-v.pausado{color:var(--brass)}
+.dev-t .pacts .btn{white-space:normal;text-align:left}
+.dlg-acc.dlg-acc3{flex-direction:column}
+.dlg-acc.dlg-acc3 .btn{width:100%;flex:none}
 /* citas */
 .cita-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .cita-h h4{margin:0}
@@ -354,7 +384,7 @@ html{background:var(--bg)}
 .ly-t{min-width:0;display:flex;flex-direction:column;gap:5px}
 .ly-t h4{margin:0;font-family:var(--serif);font-size:15.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .ly-t .prog{height:6px}
-.ly-m{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2)}
+.ly-m{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:12.5px;color:var(--ink-2)}
 .ly-m .btn{flex:none}
 .racha{display:inline-flex;align-items:center;gap:4px;font-weight:600;color:var(--brass)}
 .meta-big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
@@ -793,7 +823,7 @@ a.btn{text-decoration:none;color:inherit}
 .linkbtn.warn{color:var(--warn)}
 .share-cerrar{width:100%;margin-top:2px}
 /* estante compartido: solo para mirar */
-.solo-ver .dock,.solo-ver .top-r,.solo-ver #readNext,.solo-ver #leyendoBox,.solo-ver .nextbtn,.solo-ver #views [data-v="colecciones"],.solo-ver #views [data-v="stats"]{display:none!important}
+.solo-ver .dock,.solo-ver .top-r,.solo-ver #readNext,.solo-ver #leyendoBox,.solo-ver #avisoBox,.solo-ver .nextbtn,.solo-ver #views [data-v="colecciones"],.solo-ver #views [data-v="stats"]{display:none!important}
 .solo-ver .stat:nth-child(4)::before{background:var(--ink-3)}
 .solo-ver .chip.want{cursor:default}
 .solo-ver .chip.want:hover{border-color:var(--line);color:var(--ink)}
@@ -906,7 +936,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 26</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 27</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
@@ -968,6 +998,7 @@ a.btn{text-decoration:none;color:inherit}
   </section>
 
   <section class="stats" id="stats" aria-label="Resumen"></section>
+  <section class="panel" id="avisoBox" aria-label="Por devolver" hidden></section>
   <section class="panel" id="leyendoBox" aria-label="Leyendo ahora" hidden></section>
   <section class="panel" id="readNext" aria-label="Qué leer ahora" hidden></section>
 
@@ -1095,6 +1126,8 @@ function limpiarLibro(b){ if(!b||typeof b!=="object"||Array.isArray(b)) return n
   if(o.estado&&!ESTADO_OK.has(o.estado)) o.estado="por-leer";
   if("pagina" in o) o.pagina=Math.max(0,Math.min(99999,Math.round(+o.pagina||0)));
   if(o.leidoLog!=null) o.leidoLog=limpiarLog(o.leidoLog);
+  if(o.ajeno!=null){ const a=o.ajeno, f=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||""))?String(v):"";
+    o.ajeno=a&&typeof a==="object"&&typeof a.de==="string"&&a.de.trim()?{de:a.de.trim().slice(0,80),desde:f(a.desde),vence:f(a.vence),devuelto:f(a.devuelto)}:null; }
   if(o.citas!=null) o.citas=Array.isArray(o.citas)?o.citas.filter(c=>c&&typeof c==="object"&&typeof c.texto==="string"&&c.texto.trim()).slice(-300)
     .map(c=>({id:texto(c.id,40)||"c-"+Math.random().toString(36).slice(2,10),texto:texto(c.texto,2000),pagina:/^\d{1,5}$/.test(texto(c.pagina,10))?texto(c.pagina,10):"",creado:+c.creado>0?+c.creado:0})):[];
   return o; }
@@ -1713,12 +1746,12 @@ document.addEventListener("error",e=>{ const im=e.target; if(!(im instanceof HTM
   if(!im.dataset.f&&im.src!==im.dataset.orig){ im.dataset.f="1"; im.src=im.dataset.orig; } else im.remove(); },true);
 const starStr=n=>{ n=Math.max(0,Math.min(5,Math.round(+n||0))); return n?"★".repeat(n)+"☆".repeat(5-n):""; };
 const estrellas=b=>{ const n=Math.max(0,Math.min(5,Math.round(+b.calificacion||0))); return n?`<span class="stars" aria-label="${n} de 5">${starStr(n)}</span>`:""; };
-function counts(){ const c={todos:S.books.length,"por-leer":0,leyendo:0,leido:0,pausado:0,abandonado:0,prestados:0,sindatos:0};
-  for(const b of S.books){ c[ESTADO_OK.has(b.estado)?b.estado:"por-leer"]++; if(b.prestamo) c.prestados++; if(!b.titulo) c.sindatos++; } return c; }
+function counts(){ const c={todos:S.books.length,"por-leer":0,leyendo:0,leido:0,pausado:0,abandonado:0,prestados:0,ajenos:0,sindatos:0};
+  for(const b of S.books){ c[ESTADO_OK.has(b.estado)?b.estado:"por-leer"]++; if(b.prestamo) c.prestados++; if(ajenoActivo(b)) c.ajenos++; if(!b.titulo) c.sindatos++; } return c; }
 // Texto de búsqueda de cada libro, sin tildes; se recalcula solo si el libro cambió
 const searchCache=new WeakMap();
 const sinTildes=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
-function searchText(b){ let t=searchCache.get(b); if(t===undefined){ t=sinTildes([b.titulo,b.autor,b.editorial,b.isbn,b.prestamo?.a,b.notas,b.genero,b.serie,...(b.citas||[]).map(c=>c.texto)].join(" ")); searchCache.set(b,t); } return t; }
+function searchText(b){ let t=searchCache.get(b); if(t===undefined){ t=sinTildes([b.titulo,b.autor,b.editorial,b.isbn,b.prestamo?.a,b.ajeno?.de,b.notas,b.genero,b.serie,...(b.citas||[]).map(c=>c.texto)].join(" ")); searchCache.set(b,t); } return t; }
 function render(){
   renderOther();
   // si estás en otra pestaña, el estante se dibuja recién cuando vuelvas a él
@@ -1726,12 +1759,14 @@ function render(){
   S.estanteDirty=false;
   const c=counts();
   $("#stats").innerHTML=[["En el estante",c.todos],["Leídos",c.leido],["Leyendo",c.leyendo],VER?["Por leer",c["por-leer"]]:["Prestados",c.prestados]].map(([l,n])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
+  if(typeof renderAviso==="function") renderAviso();
   if(typeof renderLeyendo==="function") renderLeyendo();
   if(typeof renderReadNext==="function") renderReadNext();
   const F=[["todos","Todos"],["por-leer","Por leer"],["leyendo","Leyendo"],["leido","Leídos"]];
   if(c.pausado||S.filter==="pausado") F.push(["pausado","Pausados"]);
   if(c.abandonado||S.filter==="abandonado") F.push(["abandonado","Abandonados"]);
   if(!VER) F.push(["prestados","Prestados"]);
+  if(!VER&&(c.ajenos||S.filter==="ajenos")) F.push(["ajenos","Me prestaron"]);
   if(c.sindatos&&!VER) F.push(["sindatos","Sin datos"]);
   if(!F.some(f=>f[0]===S.filter)) S.filter="todos";
   $("#chips").innerHTML=F.map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${S.filter===k}">${l}<span class="n">${c[k]}</span></button>`).join("");
@@ -1755,13 +1790,14 @@ function render(){
   if(S.genero&&S.genero!=="__sin"&&!gens.includes(S.genero)) S.genero="";
   $("#genero").innerHTML=`<option value="">${acadF?"Todas las áreas":"Todos los géneros"}</option>`+gens.map(g=>`<option ${S.genero===g?"selected":""}>${esc(g)}</option>`).join("")+(delTipo.some(b=>!b.genero)?`<option value="__sin" ${S.genero==="__sin"?"selected":""}>${acadF?"Sin área":"Sin género"}</option>`:"");
   // Si no cambió nada de lo que muestra la lista (p. ej. al volver de otra pestaña), no se rehace: las portadas no se vuelven a cargar
-  const firma=[S.q,S.tipo,S.genero,S.filter,S.sort,S.group,S.ver,S.fotosVer||0,[...S.pending].join(",")].join("\u0001");
+  const firma=[S.q,S.tipo,S.genero,S.filter,S.sort,S.group,S.ver,S.fotosVer||0,[...S.pending].join(","),today()].join("\u0001");
   if(firma===S.listaFirma&&list.childElementCount) return;
   S.listaFirma=firma;
   let arr=S.books.filter(b=>{
     if(S.tipo!=="todo"&&tipoOf(b)!==S.tipo) return false;
     if(S.genero==="__sin"?!!b.genero:(S.genero&&b.genero!==S.genero)) return false;
     if(S.filter==="prestados"&&!b.prestamo) return false;
+    if(S.filter==="ajenos"&&!ajenoActivo(b)) return false;
     if(S.filter==="sindatos"&&b.titulo) return false;
     if(ESTADO_OK.has(S.filter)&&(ESTADO_OK.has(b.estado)?b.estado:"por-leer")!==S.filter) return false;
     if(qs.length){ const hay=searchText(b); for(const w of qs) if(!hay.includes(w)) return false; }
@@ -1807,6 +1843,7 @@ function cardHtml(b){ const busy=S.pending.has(b.id); return `
           ${!b.titulo&&!busy?'<span class="pill nodata">Sin datos</span>':''}
           <span class="pill ${esc(b.estado||"por-leer")}">${estadoName(b.estado)}</span>
           ${b.prestamo?`<span class="pill loan">Con ${esc(b.prestamo.a)}</span>`:''}
+          ${ajenoActivo(b)?(v=>`<span class="pill ${v.cls}">${esc(v.corto)}</span>`)(venceInfo(b.ajeno)):b.ajeno?.devuelto?'<span class="pill">Devuelto</span>':''}
           ${estrellas(b)}
         </div>
       </div>
@@ -2069,7 +2106,8 @@ function renderSheet(){
       <div class="f"><label for="f-notas">Notas</label><textarea id="f-notas" placeholder="Qué te pareció, de dónde salió…">${esc(b.notas)}</textarea></div>
       ${isNew?"":citasBox(b)}
       ${!isNew&&grupos().length?`<div class="f"><label>Grupos (misma editorial, diseño o club)</label><div class="chips" id="grpChips">${grupos().map(g=>`<button type="button" class="chip" data-g="${esc(g.id)}" aria-pressed="${(g.libros||[]).includes(b.id)}">${esc(g.nombre)}</button>`).join("")}</div></div>`:""}
-      ${isNew?"":loanBox(b)}
+      ${VER?"":ajenoBox(b)}
+      ${isNew||ajenoActivo(b)?"":loanBox(b)}
       <div class="foot">
         ${isNew?`<button class="btn ghost" id="cancelBtn">Descartar</button><button class="btn primary" id="saveBtn">Guardar en el estante</button>`
           :`<span id="delZone"><button class="btn danger" id="delBtn" type="button">Quitar del estante</button></span><button class="btn primary" id="saveBtn">Guardar cambios</button>`}
@@ -2098,6 +2136,7 @@ function rerenderKeeping(antes){
   const vals={}; document.querySelectorAll("#sheetRoot input:not([type=file]),#sheetRoot textarea,#sheetRoot select").forEach(el=>{ if(!el.id || (el.id==="f-portadaUrl" && !el.dataset.dirty)) return;
     const k=el.id.startsWith("f-")?el.id.slice(2):""; if(antes && k && k in antes && el.value===String(antes[k]??"")) return; vals[el.id]=el.value; });
   const segs={}; ["seg","rate","tipoSeg"].forEach(id=>{ const el=$("#"+id); if(el&&el.dataset.v!=null) segs[id]=el.dataset.v; });
+  const ajAbierto=$("#ajenoBox")?.open, scroll=$(".sheet")?.scrollTop||0;
   // también lo que estabas haciendo: resultados de la búsqueda por título, el aviso del enlace pegado y dónde estabas escribiendo
   const tsRes=$("#tsRes")?.innerHTML||"", urlMsg=$("#urlMsg")?.textContent||"", act=document.activeElement, foco=act&&act.id&&$("#sheetRoot").contains(act)?act.id:"";
   const sel=foco&&act.selectionStart!=null?[act.selectionStart,act.selectionEnd]:null;
@@ -2110,6 +2149,8 @@ function rerenderKeeping(antes){
   if(segs.seg){ $("#seg").dataset.v=segs.seg; [...$("#seg").children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.e===segs.seg)); $("#leidoBox").hidden=segs.seg!=="leido"; $("#paginaBox").hidden=!EN_CURSO.has(segs.seg); }
   if(segs.tipoSeg){ $("#tipoSeg").dataset.v=segs.tipoSeg; [...$("#tipoSeg").children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.tp===segs.tipoSeg)); }
   if(segs.rate!=null){ $("#rate").dataset.v=segs.rate; [...$("#rate").children].forEach((x,i)=>x.classList.toggle("on",i<+segs.rate)); }
+  if(ajAbierto&&$("#ajenoBox")) $("#ajenoBox").open=true;
+  if(scroll&&$(".sheet")) $(".sheet").scrollTop=scroll; // sigue donde estabas
 }
 function readForm(){
   const v=id=>($("#"+id)?.value??"").trim();
@@ -2118,6 +2159,11 @@ function readForm(){
     genero:v("f-genero"), tipo:tp, serie:v("f-serie"), tomo:v("f-tomo").replace(/\D/g,""), precio:v("f-precio").replace(/^S\/\s*/i,"").replace(",","."), leidoEn:v("f-leidoEn")};
   if($("#tipoSeg").dataset.v) out.tipoFijado=true;
   const pg=v("f-pagina"); if(pg!=="") out.pagina=pg;
+  // me lo prestaron: con nombre queda prestado; si borras el nombre, deja de estarlo (lo ya devuelto se conserva)
+  if($("#aj-de")){ const de=v("aj-de"), cur=current().ajeno;
+    if(de){ out.ajeno={de:de.slice(0,80),desde:v("aj-desde")||today(),vence:v("aj-vence"),devuelto:""};
+      if(out.ajeno.vence&&out.ajeno.vence<out.ajeno.desde) return {error:"La fecha para devolverlo debe ser después de la del préstamo."}; }
+    else if(cur&&!cur.devuelto) out.ajeno=null; }
   if($("#f-genero")?.dataset.tocado) out.generoManual=!!out.genero;
   if(out.precio && !/^\d+(\.\d{1,2})?$/.test(out.precio)) return {error:"El precio debe ser un número, por ejemplo 45.90."};
   if(out.portadaUrl && !/^https:\/\//.test(out.portadaUrl)) return {error:"El enlace de portada debe empezar con https://"};
@@ -2149,6 +2195,8 @@ function wireSheet(){
     const si=await confirmar({titulo:`¿Quitar “${b.titulo||"este libro"}” de tu estante?`, texto:"Se borra en todos tus dispositivos y no se puede deshacer.", si:"Sí, quitar", no:"No, cancelar", peligro:true});
     if(si) del(id); });
   $("#lendBtn")&&($("#lendBtn").onclick=lend);
+  $("#ajCal")&&($("#ajCal").onclick=()=>icsAjeno(current()));
+  $("#ajDevolvi")&&($("#ajDevolvi").onclick=()=>devolverAjeno(S.openId));
   $("#citasBox")&&($("#citasBox").onclick=e=>clickCitas(e,S.openId));
   $("#returnBtn")&&($("#returnBtn").onclick=giveBack);
   $("#refetchBtn")&&($("#refetchBtn").onclick=()=>fillFromWeb(S.openId,false));
@@ -2262,9 +2310,9 @@ function confirmar({titulo,texto="",si="Sí",no="Cancelar",peligro=false}){
   }); }
 function del(idQuitar){ const b=idQuitar?byId(idQuitar):current(); if(!b) return; if(b.portadaLocal) IDB.del(b.id).catch(()=>{}); S.borrados=S.borrados||{}; S.borrados[b.id]=Date.now(); try{ localStorage.setItem(NS+"borrados",JSON.stringify(S.borrados)); }catch(e){} S.books=S.books.filter(x=>x.id!==b.id); persist(); render(); toast("Libro quitado del estante"); closeSheet(); }
 function lend(){ const b=current(); const a=$("#l-a").value.trim(), d=$("#l-d").value||today(); if(!a){ toast("Escribe a quién se lo prestas."); $("#l-a").focus(); return; }
-  upsert({...b,prestamo:{a,desde:d},actualizado:Date.now()}); toast(`Prestado a ${a}`); renderSheet(); }
+  upsert({...b,prestamo:{a,desde:d},actualizado:Date.now()}); toast(`Prestado a ${a}`); rerenderKeeping(); }
 function giveBack(){ const b=current(); if(!b.prestamo) return; const hist=[...(b.historial||[]),{a:b.prestamo.a,desde:b.prestamo.desde,hasta:today()}].slice(-30);
-  upsert({...b,prestamo:null,historial:hist,actualizado:Date.now()}); toast("Devuelto. ¡De vuelta en casa!"); renderSheet(); }
+  upsert({...b,prestamo:null,historial:hist,actualizado:Date.now()}); toast("Devuelto. ¡De vuelta en casa!"); rerenderKeeping(); }
 
 /* ---------- copias, exportar e importar ---------- */
 function download(name, text, type){ const url=URL.createObjectURL(new Blob([text],{type})); const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000); }
@@ -2321,9 +2369,9 @@ if(!VER) (async()=>{ if(!AUTO.supported){ showAuto(); return; }
     if(h){ AUTO.handle=h; const p=await h.queryPermission({mode:"readwrite"}); AUTO.state = p==="granted" ? "on" : "perm"; if(AUTO.state==="on") writeAuto(); }
   }catch(e){}
   showAuto(); })();
-const CSV_COLS=["isbn","tipo","titulo","autor","editorial","anio","genero","serie","tomo","estado","calificacion","prestado_a","prestado_desde","notas","precio","terminado","paginas","pagina"];
+const CSV_COLS=["isbn","tipo","titulo","autor","editorial","anio","genero","serie","tomo","estado","calificacion","prestado_a","prestado_desde","notas","precio","terminado","paginas","pagina","me_lo_presto","devolver_antes"];
 $("#exportCsv").onclick=()=>{ const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const rows=S.books.map(b=>[b.isbn,tipoOf(b),b.titulo,b.autor,b.editorial,b.anio,b.genero,b.serie,b.tomo,estadoName(b.estado),b.calificacion||"",b.prestamo?.a||"",b.prestamo?.desde||"",b.notas,b.precio||"",b.leidoEn||"",b.paginas||"",pagActual(b)||""].map(q).join(","));
+  const rows=S.books.map(b=>[b.isbn,tipoOf(b),b.titulo,b.autor,b.editorial,b.anio,b.genero,b.serie,b.tomo,estadoName(b.estado),b.calificacion||"",b.prestamo?.a||"",b.prestamo?.desde||"",b.notas,b.precio||"",b.leidoEn||"",b.paginas||"",pagActual(b)||"",ajenoActivo(b)?.de||"",ajenoActivo(b)?.vence||""].map(q).join(","));
   download(`estante-${today()}.csv`, "﻿"+CSV_COLS.join(",")+"\n"+rows.join("\n"), "text/csv"); };
 function parseCsv(text){ const rows=[]; let row=[], f="", q=false; text=text.replace(/^﻿/,"");
   for(let i=0;i<text.length;i++){ const c=text[i];
@@ -2347,7 +2395,7 @@ $("#importFile").addEventListener("change",async e=>{
     } else {
       const rows=parseCsv(text); const head=rows.shift().map(h=>h.trim().toLowerCase()); const ix=k=>head.indexOf(k);
       incoming=rows.map(r=>{ const g=k=>ix(k)>=0?(r[ix(k)]||"").trim():""; const raw=g("isbn"); const n=raw?normalizeIsbn(raw):{};
-        return {...blankBook(n.isbn||""), tipo:["academico","manga","manhwa","manhua","comic"].includes(g("tipo"))?g("tipo"):"libro", genero:g("genero"), serie:g("serie"), tomo:g("tomo"), titulo:g("titulo"), autor:g("autor"), editorial:g("editorial"), anio:g("anio"), estado:estadoKey(g("estado")), calificacion:+g("calificacion")||0, notas:g("notas"), precio:g("precio"), leidoEn:g("terminado"), paginas:g("paginas"), ...(/^\d{1,5}$/.test(g("pagina"))?{pagina:+g("pagina")}:{}), prestamo:g("prestado_a")?{a:g("prestado_a"),desde:g("prestado_desde")||today()}:null}; });
+        return {...blankBook(n.isbn||""), tipo:["academico","manga","manhwa","manhua","comic"].includes(g("tipo"))?g("tipo"):"libro", genero:g("genero"), serie:g("serie"), tomo:g("tomo"), titulo:g("titulo"), autor:g("autor"), editorial:g("editorial"), anio:g("anio"), estado:estadoKey(g("estado")), calificacion:+g("calificacion")||0, notas:g("notas"), precio:g("precio"), leidoEn:g("terminado"), paginas:g("paginas"), ...(/^\d{1,5}$/.test(g("pagina"))?{pagina:+g("pagina")}:{}), ...(g("me_lo_presto")?{ajeno:{de:g("me_lo_presto"),desde:today(),vence:/^\d{4}-\d{2}-\d{2}$/.test(g("devolver_antes"))?g("devolver_antes"):"",devuelto:""}}:{}), prestamo:g("prestado_a")?{a:g("prestado_a"),desde:g("prestado_desde")||today()}:null}; });
     }
   }catch(err){ toast("No pude leer ese archivo. Usa una copia de seguridad (.json) o un CSV exportado del estante."); return; }
   let added=0, updated=0;
@@ -2844,6 +2892,69 @@ function abrirMeta(){ const m=metaDelAnio();
 function ponerMeta(anio,n){ const metas={...(S.ajustes.metas||{})}; if(n) metas[anio]=n; else delete metas[anio];
   S.ajustes={...S.ajustes,metas}; saveJ(AJUSTES_KEY,S.ajustes); render(); }
 
+/* ---------- libros que me prestaron: de quién, hasta cuándo, aviso y recordatorio en el calendario ---------- */
+const ICO_DEVOLVER=`<svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>`;
+const ajenoActivo=b=>b&&b.ajeno&&b.ajeno.de&&!b.ajeno.devuelto?b.ajeno:null;
+const diasHasta=d=>Math.round((new Date(d+"T12:00:00")-new Date(today()+"T12:00:00"))/864e5);
+// Cómo va la fecha de devolución: texto largo (ficha y aviso), texto corto (tarjeta) y color
+function venceInfo(a){ if(!a||a.devuelto) return null;
+  if(!a.vence) return {dias:null,cls:"ajeno",largo:`Te lo prestó ${a.de}`,corto:`De ${a.de}`};
+  const d=diasHasta(a.vence), cuando=d<0?`venció hace ${-d} día${-d===1?"":"s"}`:d===0?"vence hoy":d===1?"vence mañana":`vence en ${d} días`;
+  return {dias:d,cls:d<=0?"loan":d<=3?"pausado":"ajeno",largo:`Devolver a ${a.de}: ${cuando} (${fmtDate(a.vence)})`,
+    corto:d<0?`Devolver ya · ${a.de}`:d===0?`Devolver hoy · ${a.de}`:d<=7?`Devolver en ${d} d · ${a.de}`:`De ${a.de}`}; }
+function ajenoBox(b){ const a=ajenoActivo(b), dv=b.ajeno&&b.ajeno.devuelto?b.ajeno:null, v=venceInfo(a);
+  return `<details class="box aj-box" id="ajenoBox" ${a?"open":""}><summary><span class="aj-t">Me lo prestaron</span>${a?`<span class="pill ${v.cls}${a.vence?" aj-p":""}">${esc(v.corto)}</span>`:dv?`<span class="pill">Devuelto a ${esc(dv.de)} el ${fmtDate(dv.devuelto)}</span>`:`<span class="aj-hint">¿No es tuyo? Anota quién te lo prestó</span>`}</summary>
+    <div class="aj-in">${a&&a.vence?`<p class="aj-vence ${v.cls}">${esc(v.largo)}</p>`:""}
+    <div class="loan-form aj-form">
+      <div class="f"><label for="aj-de">¿Quién te lo prestó?</label><input id="aj-de" value="${esc(a?.de||"")}" placeholder="Nombre" maxlength="80" autocomplete="off"></div>
+      <div class="f"><label for="aj-desde">Desde</label><input id="aj-desde" type="date" value="${esc(a?.desde||today())}"></div>
+      <div class="f"><label for="aj-vence">Devolver antes del</label><input id="aj-vence" type="date" value="${esc(a?.vence||"")}"></div>
+    </div>
+    ${a?`<div class="pacts">${a.vence?`<button class="btn sm" type="button" id="ajCal">Recordármelo en el calendario</button>`:""}<button class="btn sm" type="button" id="ajDevolvi">Ya lo devolví</button></div>`
+      :`<p class="origin" style="margin:0">Se guarda con <b>Guardar</b>. Si pones la fecha, Tomo te avisa cuando se acerque.</p>`}</div>
+  </details>`; }
+// "Ya lo devolví": queda en tu estante como Devuelto (con lo que leíste, tus notas y citas) o se quita
+function devolverAjeno(id){ const b=byId(id), a=ajenoActivo(b); if(!a) return;
+  const cerrar=abrirDlg(`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT" aria-describedby="dlgX"><div class="dlg-ico" aria-hidden="true">${ICO_DEVOLVER}</div>
+    <h2 id="dlgT">¿Ya se lo devolviste a ${esc(a.de)}?</h2>
+    <p id="dlgX">Puedes dejar «${esc(b.titulo||"el libro")}» en tu estante como <b>Devuelto</b>, para recordar que lo leíste, o quitarlo.</p>
+    <div class="dlg-acc dlg-acc3"><button class="btn primary" type="button" id="dvDejar">Dejarlo como devuelto</button><button class="btn" type="button" id="dvQuitar">Quitarlo del estante</button><button class="btn ghost" type="button" id="dvNo">Cancelar</button></div></div>`);
+  $("#dvNo").onclick=cerrar;
+  $("#dvDejar").onclick=()=>{ cerrar(); const cur=byId(id); if(!ajenoActivo(cur)) return;
+    upsert({...cur,ajeno:{...cur.ajeno,devuelto:today()},actualizado:Date.now()}); toast(`Listo: devuelto a ${cur.ajeno.de}`);
+    if(S.openId===id){ rerenderKeeping(); if($("#aj-de")){ $("#aj-de").value=""; $("#aj-vence").value=""; $("#aj-desde").value=today(); } } };
+  $("#dvQuitar").onclick=()=>{ cerrar(); del(id); };
+  setTimeout(()=>$("#dvNo")?.focus({preventScroll:true}),30); }
+// Recordatorio en el calendario del celular: un evento de todo el día, con alarma a las 9 de la mañana del día anterior
+function icsAjeno(b){ const a=ajenoActivo(b); if(!a||!a.vence) return;
+  const e=t=>String(t).replace(/\\/g,"\\\\").replace(/[;,]/g,m=>"\\"+m).replace(/\r?\n/g,"\\n");
+  const dia=d=>d.replace(/-/g,""), sig=new Date(a.vence+"T12:00:00"); sig.setDate(sig.getDate()+1);
+  const fin=sig.getFullYear()+String(sig.getMonth()+1).padStart(2,"0")+String(sig.getDate()).padStart(2,"0");
+  const ahora=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+  const te=new TextEncoder(), doblar=l=>{ let out="", n=0; for(const ch of l){ const k=te.encode(ch).length; if(n+k>74){ out+="\r\n "; n=1; } out+=ch; n+=k; } return out; }; // renglones de 75 bytes como mucho
+  const ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Tomo//Estante//ES","CALSCALE:GREGORIAN","METHOD:PUBLISH","BEGIN:VEVENT",
+    `UID:${e(b.id)}-${dia(a.vence)}@tomo`,`DTSTAMP:${ahora}`,`DTSTART;VALUE=DATE:${dia(a.vence)}`,`DTEND;VALUE=DATE:${fin}`,
+    `SUMMARY:${e(`Devolver «${b.titulo||"el libro"}» a ${a.de}`)}`,`DESCRIPTION:${e(`${a.desde?`Te lo prestó el ${fmtDate(a.desde)}. `:""}Recordatorio de Tomo.`)}`,
+    "BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${e(`Mañana: devolver «${b.titulo||"el libro"}»`)}`,"TRIGGER:-PT15H","END:VALARM","END:VEVENT","END:VCALENDAR"].map(doblar).join("\r\n")+"\r\n";
+  download("devolver-"+(sinTildes(b.titulo||"libro").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"libro")+".ics",ics,"text/calendar");
+  toast("Abre el archivo para agregarlo a tu calendario"); }
+// Aviso arriba del estante: lo que vence en 7 días o ya venció (se puede ocultar hasta mañana)
+S.posp={}; try{ S.posp=JSON.parse(localStorage.getItem(NS+"avisoPosp")||"{}")||{}; }catch(e){}
+function renderAviso(){ const el=$("#avisoBox"); if(!el) return; if(VER){ el.hidden=true; return; }
+  const clave=[S.ver,S.fotosVer||0,today(),JSON.stringify(S.posp)].join("|"); if(clave===S.avClave) return; S.avClave=clave;
+  const L=S.books.map(b=>({b,a:ajenoActivo(b)})).filter(x=>x.a&&x.a.vence&&diasHasta(x.a.vence)<=7&&S.posp[x.b.id]!==today())
+    .map(x=>({...x,v:venceInfo(x.a)})).sort((p,q)=>p.v.dias-q.v.dias);
+  if(!L.length){ el.hidden=true; el.innerHTML=""; return; } el.hidden=false;
+  const venc=L.filter(x=>x.v.dias<0).length;
+  el.innerHTML=`<div class="phead"><div><h3>Por devolver</h3><div class="sub">${venc?`${venc} ya venció${venc===1?"":"eron"} · `:""}Libros que te prestaron y vencen pronto</div></div></div>
+    <ul class="dev-list">${L.map(({b,v})=>`<li><div data-av-open="${esc(b.id)}" title="Ver ficha">${coverHtml(b)}</div><div class="dev-t"><b data-av-open="${esc(b.id)}">${esc(b.titulo||"Sin título")}</b><span class="dev-v ${v.cls}">${esc(v.largo)}</span>
+      <span class="pacts"><button class="btn sm" type="button" data-av-ok="${esc(b.id)}">Ya lo devolví</button><button class="btn ghost sm" type="button" data-av-luego="${esc(b.id)}">Recordármelo mañana</button></span></div></li>`).join("")}</ul>`; }
+$("#avisoBox").addEventListener("click",e=>{
+  const o=e.target.closest("[data-av-open]"); if(o){ openBook(o.dataset.avOpen); return; }
+  const k=e.target.closest("[data-av-ok]"); if(k){ devolverAjeno(k.dataset.avOk); return; }
+  const l=e.target.closest("[data-av-luego]"); if(l){ S.posp={...Object.fromEntries(Object.entries(S.posp).filter(([,d])=>d===today())),[l.dataset.avLuego]:today()};
+    try{ localStorage.setItem(NS+"avisoPosp",JSON.stringify(S.posp)); }catch(err){} renderAviso(); toast("Te lo recuerdo mañana"); } });
+
 /* ---------- citas: frases de cada libro, escritas o copiadas de una foto, y compartidas como imagen ---------- */
 const ICO_CITA=`<svg viewBox="0 0 24 24"><path d="M4.5 11.5V7.2c0-.9.7-1.7 1.7-1.7h2.6c.9 0 1.7.8 1.7 1.7v4.3c0 3.6-1.9 5.9-4.7 7M4.5 11.5h5.9M13.5 11.5V7.2c0-.9.7-1.7 1.7-1.7h2.6c.9 0 1.7.8 1.7 1.7v4.3c0 3.6-1.9 5.9-4.7 7M13.5 11.5h5.9"/></svg>`;
 const ICO_FOTO=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>`;
@@ -3067,6 +3178,7 @@ function sugerencias(modo){
         :ultimo?`Vienes de ${ultimo.genero||"otro género"} y aún no has leído nada de ${g}.`:`Todavía no has leído nada de ${g}.`})); }
   // Para ti: mezcla de razones con un poco de azar
   return C.map(x=>{ const b=x.b, R=[]; const a=(b.autor||"").split(",")[0].trim(), g=b.genero;
+    const aj=ajenoActivo(b); if(aj) R.push([3.5,`Te lo prestó ${aj.de}${aj.vence?`: devuélvelo antes del ${fmtDate(aj.vence)}`:""}.`]);
     if(b.estado==="pausado") R.push([2.5,pagActual(b)?`Lo dejaste en pausa en la página ${pagActual(b)}${totalPags(b)?` de ${totalPags(b)}`:""}: retómalo.`:"Lo dejaste en pausa: retómalo."]);
     if(x.s&&x.s.sigue) R.push([3,`Ya leíste el anterior: sigue con el ${x.s.n} de ${x.s.nombre}.`]);
     if(a&&gustados.has(a)) R.push([2,`Te gustó otro libro de ${a}.`]);
