@@ -6,6 +6,7 @@
 <title>Tomo</title>
 <meta name="description" content="Tomo: tu estante de libros, mangas, manhwas, manhuas y cómics.">
 <meta name="theme-color" content="#1F4D3F">
+<script>/* tema elegido en Mi cuenta → Apariencia: se aplica antes de pintar, sin parpadeo */try{var tt=JSON.parse(localStorage.getItem("tomo.tema")||"{}"),rr=document.documentElement;if(tt.modo==="claro")rr.dataset.theme="light";else if(tt.modo==="oscuro")rr.dataset.theme="dark";if(/^(oceano|ciruela|terracota|rosa|grafito)$/.test(tt.color))rr.dataset.color=tt.color;}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -109,12 +110,10 @@ button{cursor:pointer}
 @media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
 
 /* toolbar */
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:500;color:var(--ink-2)}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .chip .n{font-family:var(--mono);font-size:12px;opacity:.7;margin-left:4px}
-.tools{display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end;min-width:240px}
 .search{flex:1;min-width:0;max-width:320px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px}
 select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px}
 
@@ -196,7 +195,6 @@ select{border:1px solid var(--line);background:var(--surface);border-radius:10px
 .settings summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--ink-2)}
 .set-body{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .set-body p{margin:0;color:var(--ink-2);font-size:14px;max-width:65ch}
-.typebar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .seg.tipos{display:inline-grid;grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:1fr;min-width:min(100%,340px)}
 .seg.tipos button{padding:9px 14px}
 .seg.tipos .n{font-family:var(--mono);font-size:12px;opacity:.7;margin-left:6px}
@@ -352,6 +350,15 @@ html{background:var(--bg)}
 .dev-t .pacts .btn{white-space:normal;text-align:left}
 .dlg-acc.dlg-acc3{flex-direction:column}
 .dlg-acc.dlg-acc3 .btn{width:100%;flex:none}
+/* apariencia */
+.tema-f{align-self:stretch;display:flex;flex-direction:column;gap:8px;text-align:left;margin-top:6px}
+.tema-l{font-size:13px;font-weight:700;color:var(--ink-2)}
+.tema-nota{font-size:12.5px;color:var(--ink-3)}
+#temaModo button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sw{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 4px 8px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.sw i{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--c1) 0 50%,var(--c2) 50% 100%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sw[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 3px color-mix(in oklab,var(--accent) 22%,transparent)}
 /* citas */
 .cita-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .cita-h h4{margin:0}
@@ -435,6 +442,24 @@ html{background:var(--bg)}
   --shadow-lg:0 2px 6px rgba(0,0,0,.4),0 18px 44px rgba(0,0,0,.45);
   --book:0 1px 1px rgba(0,0,0,.5),0 6px 14px -4px rgba(0,0,0,.6),0 14px 28px -12px rgba(0,0,0,.6);
 }
+/* Colores (Mi cuenta → Apariencia). Bosque, el verde de siempre, no necesita nada */
+:root[data-color="oceano"]{--accent:#1F4E79;--accent-ink:#F5F9FD;--accent-soft:#DCE8F4}
+:root[data-color="ciruela"]{--accent:#5E3A78;--accent-ink:#FBF7FD;--accent-soft:#ECE1F3}
+:root[data-color="terracota"]{--accent:#9A3F22;--accent-ink:#FFF8F4;--accent-soft:#F5E2D8}
+:root[data-color="rosa"]{--accent:#A13A63;--accent-ink:#FFF7FA;--accent-soft:#F7DFE8}
+:root[data-color="grafito"]{--accent:#2F3A45;--accent-ink:#F6F8FA;--accent-soft:#E2E7EC}
+@media (prefers-color-scheme:dark){
+  :root[data-color="oceano"]:not([data-theme="light"]){--accent:#8DB8E8;--accent-ink:#0C1724;--accent-soft:#1B2A3B}
+  :root[data-color="ciruela"]:not([data-theme="light"]){--accent:#C3A6DC;--accent-ink:#1A1022;--accent-soft:#2B2135}
+  :root[data-color="terracota"]:not([data-theme="light"]){--accent:#EDA285;--accent-ink:#22110A;--accent-soft:#3A2219}
+  :root[data-color="rosa"]:not([data-theme="light"]){--accent:#F0A3C0;--accent-ink:#25101A;--accent-soft:#3A1E2A}
+  :root[data-color="grafito"]:not([data-theme="light"]){--accent:#B9C4CF;--accent-ink:#11161B;--accent-soft:#262C33}
+}
+:root[data-color="oceano"][data-theme="dark"]{--accent:#8DB8E8;--accent-ink:#0C1724;--accent-soft:#1B2A3B}
+:root[data-color="ciruela"][data-theme="dark"]{--accent:#C3A6DC;--accent-ink:#1A1022;--accent-soft:#2B2135}
+:root[data-color="terracota"][data-theme="dark"]{--accent:#EDA285;--accent-ink:#22110A;--accent-soft:#3A2219}
+:root[data-color="rosa"][data-theme="dark"]{--accent:#F0A3C0;--accent-ink:#25101A;--accent-soft:#3A1E2A}
+:root[data-color="grafito"][data-theme="dark"]{--accent:#B9C4CF;--accent-ink:#11161B;--accent-soft:#262C33}
 body{font-size:15px;background:var(--bg)}
 .wrap{max-width:1140px;gap:22px;padding-block:22px 72px}
 ::selection{background:var(--accent-soft)}
@@ -473,6 +498,8 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .menu-item:hover{background:var(--surface-2)}
 .menu-item.warn{color:var(--warn)}
 #autoBtn{border-bottom:1px solid var(--line);border-radius:11px 11px 0 0;margin-bottom:4px}
+.menu-sec{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);padding:12px 12px 3px}
+.menu-sec:first-of-type{padding-top:6px}
 @media (max-width:520px){.menu>summary span{display:none}.logo{width:42px;height:42px}}
 
 /* pestañas: fijas arriba al bajar */
@@ -523,7 +550,6 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .sech{margin:10px 0 -6px;font-size:12.5px;letter-spacing:.1em}
 
 /* filtros */
-.typebar,.toolbar{gap:12px}
 .seg{border-radius:12px;background:var(--surface-2);border-color:transparent;padding:3px;gap:3px}
 .seg button{border-radius:9px;background:transparent;border:0!important;color:var(--ink-2);transition:background .15s,color .15s}
 .seg button:hover{color:var(--ink)}
@@ -531,7 +557,15 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .seg.tipos{display:inline-flex;grid-template-columns:none;max-width:100%;overflow-x:auto;scrollbar-width:none}
 .seg.tipos::-webkit-scrollbar,.views::-webkit-scrollbar{display:none}
 .seg.tipos button{flex:none}
-.typebar>*,.toolbar>*{min-width:0}
+/* buscar y filtrar */
+.shelfbar{display:flex;flex-direction:column;gap:12px}
+.shelfbar>*{min-width:0}
+.sb-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sb-top .search{flex:1 1 260px;max-width:none}
+.sb-filtros{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sb-filtros select{min-width:0;max-width:100%}
+.sb-fbtn{display:none}
+.shelfbar .seg.tipos{align-self:flex-start}
 .seg.tipos button{padding:7px 14px}
 #tipoSeg button[aria-pressed="true"],#seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .vmode{display:inline-flex;flex:none}
@@ -728,12 +762,20 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
   .views .tl-s{display:inline}
   .wrap{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
-  /* filtros: el buscador a lo ancho, los menús en dos columnas */
-  .typebar,.toolbar{flex-direction:column;align-items:stretch}
-  .typebar .tools{display:grid;grid-template-columns:1fr 1fr;min-width:0}
-  .toolbar .tools{display:grid;grid-template-columns:minmax(0,1fr) auto;min-width:0}
-  .toolbar .search{grid-column:1/-1;max-width:none}
-  .typebar select,.toolbar select{width:100%;min-width:0}
+  /* buscar y filtrar: el buscador y el botón «Filtros»; género, agrupar, orden y vista se abren con él */
+  .sb-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .sb-fbtn{display:inline-flex;align-items:center;gap:6px;position:relative;padding-inline:13px}
+  .sb-fbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  .sb-fbtn[aria-expanded="true"]{background:var(--accent-soft);border-color:color-mix(in oklab,var(--accent) 35%,var(--line));color:var(--accent)}
+  .sb-dot{position:absolute;top:5px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .sb-filtros{grid-column:1/-1;display:none;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+  .shelfbar.abierto .sb-filtros{display:grid}
+  .sb-filtros select{width:100%}
+  .sb-filtros .vmode{justify-self:start}
+  /* estados en una sola fila que se desliza */
+  .shelfbar .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:1px 0 3px}
+  .shelfbar .chips::-webkit-scrollbar{display:none}
+  .shelfbar .chips .chip{flex:none}
   /* enlaces más fáciles de tocar */
   .linkbtn{padding:8px 2px;min-height:36px}
   .hero .linkbtn{padding:6px 0;min-height:32px;display:block}
@@ -756,11 +798,7 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 /* Filtros en tablet y laptop angosta: si no caben en una línea, los menús y el buscador bajan a su propia fila
    (antes se encimaban sobre las pestañas y el buscador quedaba de 40 px) */
 @media (min-width:561px){
-  .typebar,.toolbar{flex-wrap:wrap}
-  .typebar .tools{flex:1 1 300px;flex-wrap:nowrap;justify-content:flex-end}
-  .toolbar .tools{flex:1 1 420px;flex-wrap:nowrap}
-  .tools select{flex:0 1 auto;min-width:0}
-  .toolbar .search{flex:1 1 160px;max-width:none}
+  .sb-filtros select{flex:0 1 auto}
 }
 /* iPhone y iPad hacen zoom (y la página queda agrandada) al tocar un campo con letra menor a 16 px */
 @media (pointer:coarse){.search,select,.f input:not(.title),.f textarea,.tile .pin{font-size:16px}}
@@ -839,6 +877,21 @@ a.btn{text-decoration:none;color:inherit}
 .ver-datos dd{margin:2px 0 0;font-weight:600;overflow-wrap:anywhere}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ===== Diseño v3: más cómodo en el celular ===== */
+.stat .sl-s{display:none}
+@media (pointer:coarse){ .dock .hint{display:none} } /* la ayuda del lector USB y de dónde salen los datos: solo en computadora */
+@media (max-width:560px){
+  /* resumen en una sola fila */
+  .stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  .stat{padding:10px 8px 9px 13px;border-radius:14px}
+  .stat::before{top:10px;bottom:10px}
+  .stat b{font-size:22px}
+  .stat span{font-size:10.5px;letter-spacing:.03em}
+  .stat .sl-l{display:none}
+  .stat .sl-s{display:inline}
+}
+@media (max-width:339px){ .sb-fbtn .sb-fl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} .sb-fbtn{padding-inline:11px} }
 </style>
 </head>
 <body>
@@ -936,15 +989,19 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 27</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 28</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
+        <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
-        <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
+        <button class="menu-item" id="temaBtn" type="button">Apariencia<small>Modo claro u oscuro y colores</small></button>
+        <button class="menu-item" id="renameBtn" type="button">Cambiar nombre<small>El que aparece arriba de tu estante</small></button>
+        <div class="menu-sec">Tus datos</div>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
         <button class="menu-item" id="exportCsv" type="button">Exportar CSV<small>Para abrirlo en Excel</small></button>
         <label class="menu-item" for="importFile">Importar<small>Carga una copia de seguridad o un CSV</small></label>
-        <button class="menu-item" id="renameBtn" type="button">Cambiar nombre<small>El que aparece arriba de tu estante</small></button>
+        <div class="menu-sec">Cuenta</div>
+        <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
         <button class="menu-item" id="pwBtn" type="button">Cambiar contraseña<small>Elige una nueva</small></button>
         <button class="menu-item" id="installBtn" type="button" hidden>Instalar Tomo<small>Como app en tu celular o computadora</small></button>
         <button class="menu-item" id="logoutBtn" type="button">Cerrar sesión</button>
@@ -1002,37 +1059,37 @@ a.btn{text-decoration:none;color:inherit}
   <section class="panel" id="leyendoBox" aria-label="Leyendo ahora" hidden></section>
   <section class="panel" id="readNext" aria-label="Qué leer ahora" hidden></section>
 
-  <section class="typebar">
-    <div class="seg tipos" id="tipos" role="group" aria-label="Tipo"></div>
-    <div class="tools">
-      <label for="genero" class="sr">Género</label>
-      <select id="genero"></select>
-      <label for="group" class="sr">Agrupar</label>
-      <select id="group">
+  <!-- Buscar y filtrar: el buscador arriba; en el celular, género, agrupar, orden y vista quedan en «Filtros» -->
+  <section class="shelfbar" id="shelfbar" aria-label="Buscar y filtrar">
+    <div class="sb-top">
+      <label for="q" class="sr">Buscar en el estante</label>
+      <input class="search" id="q" type="search" placeholder="Buscar por título, autor, ISBN o persona">
+      <button class="btn sb-fbtn" id="filtrosBtn" type="button" aria-expanded="false" aria-controls="sbFiltros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="sb-fl">Filtros</span><i class="sb-dot" id="filtrosDot" hidden></i></button>
+      <div class="sb-filtros" id="sbFiltros">
+        <label for="genero" class="sr">Género</label>
+        <select id="genero"></select>
+        <label for="group" class="sr">Agrupar</label>
+        <select id="group">
         <option value="none">Sin agrupar</option>
         <option value="genero">Agrupar por género</option>
         <option value="serie">Agrupar por serie o colección</option>
         <option value="autor">Agrupar por autor</option>
       </select>
-    </div>
-  </section>
-  <section class="toolbar">
-    <div class="chips" id="chips" role="group" aria-label="Filtrar"></div>
-    <div class="tools">
-      <label for="q" class="sr">Buscar en el estante</label>
-      <input class="search" id="q" type="search" placeholder="Título, autor, ISBN o persona">
-      <label for="sort" class="sr">Ordenar</label>
-      <select id="sort">
+        <label for="sort" class="sr">Ordenar</label>
+        <select id="sort">
         <option value="recent">Recientes</option>
         <option value="title">Título A–Z</option>
         <option value="author">Autor A–Z</option>
         <option value="rating">Mejor calificados</option>
       </select>
-      <div class="seg vmode" id="viewMode" role="group" aria-label="Vista">
+        <div class="seg vmode" id="viewMode" role="group" aria-label="Vista">
         <button type="button" data-vm="portadas" title="Ver portadas" aria-label="Ver portadas"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="10" rx="1.2"/><rect x="13.5" y="3" width="7.5" height="10" rx="1.2"/><path d="M3 17h7.5M13.5 17H21M3 20.5h5M13.5 20.5h5"/></svg></button>
         <button type="button" data-vm="lista" title="Ver lista" aria-label="Ver lista"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="4" height="6" rx=".8"/><rect x="3" y="14" width="4" height="6" rx=".8"/><path d="M10 6h11M10 9h7M10 16h11M10 19h7"/></svg></button>
       </div>
+      </div>
     </div>
+    <div class="seg tipos" id="tipos" role="group" aria-label="Tipo"></div>
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por estado"></div>
   </section>
 
   <section id="list" aria-live="polite"></section>
@@ -1758,7 +1815,7 @@ function render(){
   if(S.view&&S.view!=="estante"){ S.estanteDirty=true; return; }
   S.estanteDirty=false;
   const c=counts();
-  $("#stats").innerHTML=[["En el estante",c.todos],["Leídos",c.leido],["Leyendo",c.leyendo],VER?["Por leer",c["por-leer"]]:["Prestados",c.prestados]].map(([l,n])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
+  $("#stats").innerHTML=[['<span class="sl-l">En el estante</span><span class="sl-s">Libros</span>',c.todos],["Leídos",c.leido],["Leyendo",c.leyendo],VER?["Por leer",c["por-leer"]]:["Prestados",c.prestados]].map(([l,n])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
   if(typeof renderAviso==="function") renderAviso();
   if(typeof renderLeyendo==="function") renderLeyendo();
   if(typeof renderReadNext==="function") renderReadNext();
@@ -1789,6 +1846,7 @@ function render(){
   const gens=[...new Set(delTipo.map(b=>b.genero).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
   if(S.genero&&S.genero!=="__sin"&&!gens.includes(S.genero)) S.genero="";
   $("#genero").innerHTML=`<option value="">${acadF?"Todas las áreas":"Todos los géneros"}</option>`+gens.map(g=>`<option ${S.genero===g?"selected":""}>${esc(g)}</option>`).join("")+(delTipo.some(b=>!b.genero)?`<option value="__sin" ${S.genero==="__sin"?"selected":""}>${acadF?"Sin área":"Sin género"}</option>`:"");
+  pintarFiltrosBtn();
   // Si no cambió nada de lo que muestra la lista (p. ej. al volver de otra pestaña), no se rehace: las portadas no se vuelven a cargar
   const firma=[S.q,S.tipo,S.genero,S.filter,S.sort,S.group,S.ver,S.fotosVer||0,[...S.pending].join(","),today()].join("\u0001");
   if(firma===S.listaFirma&&list.childElementCount) return;
@@ -1876,6 +1934,12 @@ $("#tipos").addEventListener("click",e=>{const b=e.target.closest("[data-t]"); i
 $("#genero").addEventListener("change",e=>{S.genero=e.target.value; render();});
 $("#group").addEventListener("change",e=>{S.group=e.target.value; try{localStorage.setItem(NS+"group",S.group)}catch(e){} render();});
 $("#sort").addEventListener("change",e=>{S.sort=e.target.value; try{localStorage.setItem(NS+"sort",S.sort)}catch(e){} render();});
+// «Filtros» (en el celular): abre género, agrupar, orden y vista. El punto avisa si alguno no está como al principio.
+$("#filtrosBtn").addEventListener("click",()=>{ const sb=$("#shelfbar"), ab=!sb.classList.contains("abierto"); sb.classList.toggle("abierto",ab); $("#filtrosBtn").setAttribute("aria-expanded",ab); });
+// el texto del buscador, a la medida del espacio que tiene
+function textoBuscador(){ const w=innerWidth; $("#q").placeholder=w<340?"Buscar…":w<430?"Buscar en tu estante":"Buscar por título, autor, ISBN o persona"; }
+textoBuscador(); addEventListener("resize",textoBuscador);
+function pintarFiltrosBtn(){ const d=$("#filtrosDot"); if(d) d.hidden=!(S.genero||S.group!=="none"||S.sort!=="recent"); }
 $("#list").addEventListener("click",e=>{
   if(e.target.closest("[data-mas]")){ pintarLista(TANDA); return; }
   const nx=e.target.closest("[data-next]"); if(nx){ addNext(nx.dataset.next); return; }
@@ -2430,12 +2494,30 @@ const compartidoCols=()=>{ const out={}; for(const [k,v] of Object.entries(windo
 const compartidoDeseos=()=>{ const w=window.TOMO.compartido.deseos||{}; return {items:(Array.isArray(w.items)?w.items:[]).map(limpiarDeseo).filter(Boolean),ocultas:(Array.isArray(w.ocultas)?w.ocultas:[]).filter(x=>typeof x==="string")}; };
 S.colsCfg=VER?compartidoCols():loadJ(COLS_KEY,{}); S.wish=VER?compartidoDeseos():loadJ(WISH_KEY,{items:[],ocultas:[]});
 if(!Array.isArray(S.wish.items)) S.wish.items=[]; if(!Array.isArray(S.wish.ocultas)) S.wish.ocultas=[];
-// Ajustes que viajan con tu cuenta: por ahora, la meta de libros de cada año
+// Apariencia: modo (automático, claro u oscuro) y color. Se guarda en tu cuenta y, para abrir sin parpadeo, en este dispositivo.
+const MODOS=[["auto","Automático"],["claro","Claro"],["oscuro","Oscuro"]];
+const COLORES=[["bosque","Bosque","#1F4D3F","#8CC5AE"],["oceano","Océano","#1F4E79","#8DB8E8"],["ciruela","Ciruela","#5E3A78","#C3A6DC"],["terracota","Terracota","#9A3F22","#EDA285"],["rosa","Rosa","#A13A63","#F0A3C0"],["grafito","Grafito","#2F3A45","#B9C4CF"]];
+function limpiarTema(t){ t=t&&typeof t==="object"?t:{}; return {modo:MODOS.some(m=>m[0]===t.modo)?t.modo:"auto",color:COLORES.some(c=>c[0]===t.color)?t.color:"bosque"}; }
+function temaActual(){ if(S.ajustes?.tema) return limpiarTema(S.ajustes.tema); try{ return limpiarTema(JSON.parse(localStorage.getItem("tomo.tema")||"{}")); }catch(e){ return limpiarTema({}); } }
+const esOscuro=()=>{ const t=document.documentElement.dataset.theme; return t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches; };
+// la barra de arriba del celular: del color de la app (o del fondo, en modo oscuro)
+function pintarBarra(){ const m=document.querySelector('meta[name="theme-color"]'); if(!m) return; const cs=getComputedStyle(document.documentElement);
+  m.content=(esOscuro()?cs.getPropertyValue("--bg"):cs.getPropertyValue("--accent")).trim()||"#1F4D3F"; }
+function aplicarTema(t){ t=limpiarTema(t); const r=document.documentElement;
+  if(t.modo==="auto") delete r.dataset.theme; else r.dataset.theme=t.modo==="oscuro"?"dark":"light";
+  if(t.color==="bosque") delete r.dataset.color; else r.dataset.color=t.color;
+  try{ localStorage.setItem("tomo.tema",JSON.stringify(t)); }catch(e){}
+  pintarBarra(); }
+try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",pintarBarra); }catch(e){}
+// Ajustes que viajan con tu cuenta: la meta de libros de cada año y la apariencia
 function limpiarAjustes(a){ const m=a&&typeof a==="object"&&a.metas&&typeof a.metas==="object"?a.metas:{};
-  return {metas:Object.fromEntries(Object.entries(m).filter(([k,v])=>/^\d{4}$/.test(k)&&+v>=1).map(([k,v])=>[k,Math.min(999,Math.round(+v))]))}; }
+  const out={metas:Object.fromEntries(Object.entries(m).filter(([k,v])=>/^\d{4}$/.test(k)&&+v>=1).map(([k,v])=>[k,Math.min(999,Math.round(+v))]))};
+  if(a&&typeof a==="object"&&a.tema) out.tema=limpiarTema(a.tema);
+  return out; }
 S.ajustes=VER?{metas:{}}:limpiarAjustes(loadJ(AJUSTES_KEY,{}));
+if(S.ajustes.tema) aplicarTema(S.ajustes.tema); else pintarBarra();
 S.colOpen=new Set(); S.colEdit=null; S.showHidden=false;
-window.addEventListener("storage",e=>{ if(e.key===COLS_KEY){ S.colsCfg=loadJ(COLS_KEY,{}); renderOther(); } if(e.key===WISH_KEY){ S.wish=loadJ(WISH_KEY,{items:[],ocultas:[]}); renderOther(); } if(e.key===AJUSTES_KEY){ S.ajustes=limpiarAjustes(loadJ(AJUSTES_KEY,{})); S.ver=(S.ver||0)+1; render(); } });
+window.addEventListener("storage",e=>{ if(e.key===COLS_KEY){ S.colsCfg=loadJ(COLS_KEY,{}); renderOther(); } if(e.key===WISH_KEY){ S.wish=loadJ(WISH_KEY,{items:[],ocultas:[]}); renderOther(); } if(e.key===AJUSTES_KEY){ S.ajustes=limpiarAjustes(loadJ(AJUSTES_KEY,{})); if(S.ajustes.tema) aplicarTema(S.ajustes.tema); S.ver=(S.ver||0)+1; render(); } });
 
 // Dos clases de colección: "serie" (tomos o entregas numeradas, se unen por el nombre de la serie)
 // y "grupo" (libros elegidos a mano: misma editorial, mismo diseño o un club como Tinta Club)
@@ -3148,7 +3230,8 @@ $("#citasBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirMi
 
 /* ---------- qué leer ahora ---------- */
 const RN_MODOS=[["parati","Para ti"],["corto","Algo corto"],["genero","Cambiar de género"],["serie","Seguir una serie"],["espera","El que más espera"]];
-S.rn={modo:"parati",i:0,min:false}; try{ S.rn.modo=localStorage.getItem(NS+"rn.modo")||"parati"; S.rn.min=localStorage.getItem(NS+"rn.min")==="1"; }catch(e){}
+// en el celular empieza plegado (una sola línea) para que tus libros aparezcan antes; se recuerda lo que elijas
+S.rn={modo:"parati",i:0,min:false}; try{ S.rn.modo=localStorage.getItem(NS+"rn.modo")||"parati"; const mn=localStorage.getItem(NS+"rn.min"); S.rn.min=mn==null?matchMedia("(max-width:560px)").matches:mn==="1"; }catch(e){}
 // azar estable durante el día: la sugerencia no cambia cada vez que se redibuja la página
 function azarDelDia(id){ let h=2166136261; for(const ch of String(id)+today()) h=Math.imul(h^ch.charCodeAt(0),16777619); return (h>>>0)/4294967296; }
 const paginasDe=b=>+String(b.paginas||"").replace(/\D/g,"")||0;
@@ -3359,6 +3442,28 @@ async function abrirCompartir(){
   try{ const t=await C.obtener(); pintar(t?"con":"sin",t); }catch(e){ pintar("error","",falla(e)); } }
 $("#shareBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirCompartir(); });
 
+/* ---------- apariencia: modo y color ---------- */
+const ICO_TEMA=`<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c.9 0 1.5-.7 1.5-1.5 0-.4-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.9.7-1.6 1.6-1.6H16a5 5 0 005-5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="10.5" cy="7.5" r="1.2"/><circle cx="15.2" cy="8" r="1.2"/></svg>`;
+function ponerTema(t){ t=limpiarTema(t); aplicarTema(t); S.ajustes={...S.ajustes,tema:t}; saveJ(AJUSTES_KEY,S.ajustes); }
+function abrirApariencia(){ let t=temaActual();
+  const cerrar=abrirDlg(`<div class="dlg dlg-tema" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+    <div class="dlg-ico" aria-hidden="true">${ICO_TEMA}</div>
+    <h2 id="dlgT">Apariencia</h2>
+    <p>Los cambios se ven al instante y se guardan en tu cuenta.</p>
+    <div class="tema-f"><span class="tema-l" id="temaModoL">Modo</span>
+      <div class="seg" id="temaModo" role="group" aria-labelledby="temaModoL">${MODOS.map(([k,l])=>`<button type="button" data-modo="${k}" aria-pressed="${t.modo===k}">${l}</button>`).join("")}</div>
+      <small class="tema-nota">Automático sigue el modo claro u oscuro de tu celular o computadora.</small></div>
+    <div class="tema-f"><span class="tema-l" id="temaColorL">Color</span>
+      <div class="swatches" id="temaColor" role="group" aria-labelledby="temaColorL">${COLORES.map(([k,l,c1,c2])=>`<button type="button" class="sw" data-color="${k}" aria-pressed="${t.color===k}" style="--c1:${c1};--c2:${c2}"><i aria-hidden="true"></i><span>${l}</span></button>`).join("")}</div></div>
+    <div class="dlg-acc"><button class="btn primary" type="button" id="temaOk">Listo</button></div></div>`);
+  $("#temaOk").onclick=cerrar;
+  $("#temaModo").onclick=e=>{ const b=e.target.closest("[data-modo]"); if(!b) return; t={...t,modo:b.dataset.modo}; ponerTema(t);
+    $("#temaModo").querySelectorAll("[data-modo]").forEach(x=>x.setAttribute("aria-pressed",x===b)); };
+  $("#temaColor").onclick=e=>{ const b=e.target.closest("[data-color]"); if(!b) return; t={...t,color:b.dataset.color}; ponerTema(t);
+    $("#temaColor").querySelectorAll("[data-color]").forEach(x=>x.setAttribute("aria-pressed",x===b)); };
+  setTimeout(()=>$('#temaModo [aria-pressed="true"]')?.focus({preventScroll:true}),30); }
+$("#temaBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirApariencia(); });
+
 /* ---------- enviar comentario: llega a la tabla "comentarios" de Supabase y al correo del administrador ---------- */
 const ICO_COMENTARIO=`<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></svg>`;
 function abrirComentario(){
@@ -3433,7 +3538,7 @@ if(!VER) (function(){
   function aplicar(d){
     S.books=d.libros; S.borrados=d.borrados; S.colsCfg=d.colecciones; S.colsTs=d.colsTs;
     const w=d.deseos||{}; S.wish={items:Array.isArray(w.items)?w.items:[],ocultas:Array.isArray(w.ocultas)?w.ocultas:[]}; S.wishTs=d.wishTs;
-    S.ajustes=limpiarAjustes(d.ajustes); S.ajustesTs=d.ajustesTs||0;
+    S.ajustes=limpiarAjustes(d.ajustes); S.ajustesTs=d.ajustesTs||0; if(S.ajustes.tema) aplicarTema(S.ajustes.tema); // la apariencia que elegiste en otro dispositivo
     try{ localStorage.setItem(KEY,JSON.stringify(S.books)); localStorage.setItem(COLS_KEY,JSON.stringify(S.colsCfg)); localStorage.setItem(WISH_KEY,JSON.stringify(S.wish)); localStorage.setItem(AJUSTES_KEY,JSON.stringify(S.ajustes));
       localStorage.setItem(NS+"borrados",JSON.stringify(S.borrados)); localStorage.setItem(NS+"ts",JSON.stringify({colsTs:S.colsTs,wishTs:S.wishTs,ajustesTs:S.ajustesTs})); }catch(e){}
     S.ver=(S.ver||0)+1; render(); if(S.openId&&!byId(S.openId)) closeSheet(); }
