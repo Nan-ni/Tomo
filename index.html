@@ -1012,7 +1012,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 30</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 31</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
@@ -1646,6 +1646,7 @@ async function revisarPortada(id){
   upsert({...cur2,portadaUrl:nueva,portadaOtraEd:!!nueva&&!/amazon\.com\/images\/P\/|waterstones\.com/.test(nueva),portadaAmazon:/amazon/.test(nueva),portadaRevisada:true,actualizado:Date.now()});
 }
 function applyTipo(upd, data){
+  const tomoAntes=upd.tomo;
   if(!upd.tipoFijado){ const t=detectTipo(data)||(esAcademico({...data,titulo:data.titulo||upd.titulo,editorial:data.editorial||upd.editorial})?"academico":""); if(t) upd.tipo=t; }
   const num=/^\d{1,3}$/.test(data.numero||"")&&+data.numero>0?String(+data.numero):"";
   // ¿Es otro tomo de una serie que ya tienes? (mismo título que la serie)
@@ -1657,25 +1658,46 @@ function applyTipo(upd, data){
     upd.serie=pb?pb.serie:(data.baseTitle||upd.titulo||"").split(":")[0].trim();
     if(!upd.tomo) upd.tomo=(pb||pt)?.tomo||num; }
   if(porTomos(tipoOf(upd)) && upd.serie && !upd.tomo && num) upd.tomo=num;
-  unifySerie(upd);
+  unifySerie(upd, !tomoAntes); // el número que acaba de llegar de internet se puede corregir con los que arreglaste tú
 }
 // Usa el mismo nombre de serie que ya tienes (sin importar mayúsculas o tildes) y completa datos desde los otros tomos
-function unifySerie(upd){
+function unifySerie(upd, tomoDeInternet){
   if(!upd.serie) return; const n=normSerie(upd.serie);
   const sib=S.books.find(b=>b.id!==upd.id && b.serie && normSerie(b.serie)===n); if(!sib) return;
   upd.serie=sib.serie;
   if(sib.tipo && !upd.tipoFijado) upd.tipo=sib.tipo;
   if(sib.autor && (!upd.autor || (nonLatin.test(upd.autor) && !nonLatin.test(sib.autor)))) upd.autor=sib.autor;
   for(const k of ["editorial","genero"]) if(!upd[k] && sib[k]){ upd[k]=sib[k]; if(k==="genero" && sib.generoManual) upd.generoManual=true; }
-  // Tomo que falta: las editoriales numeran los tomos seguidos, así que el ISBN delata el número
-  if(!upd.tomo && /^97[89]\d{10}$/.test(upd.isbn||"")){
-    const base=x=>+x.slice(3,12);
-    const ref=S.books.filter(b=>b.id!==upd.id && b.tomo && normSerie(b.serie)===n && /^97[89]\d{10}$/.test(b.isbn||"") && b.isbn.slice(0,9)===upd.isbn.slice(0,9))
-      .sort((a,b)=>Math.abs(base(a.isbn)-base(upd.isbn))-Math.abs(base(b.isbn)-base(upd.isbn)))[0];
-    if(ref){ const t=+ref.tomo + (base(upd.isbn)-base(ref.isbn)); if(t>0 && Math.abs(base(upd.isbn)-base(ref.isbn))<=30){ upd.tomo=String(t); upd.tomoEstimado=true; } }
+  // Número por el ISBN: las editoriales numeran seguidos los ISBN de una colección. Si falta el número, el ISBN lo delata;
+  // y si ya corregiste a mano el de algún tomo de la serie, ese manda aunque internet diga otro (hay bases que traen
+  // la numeración de otro país, o corrida en uno). Nunca cambia un número que pusiste tú.
+  if(/^97[89]\d{10}$/.test(upd.isbn||"") && !upd.tomoManual && (!upd.tomo || upd.tomoEstimado || tomoDeInternet)){
+    const base=x=>+x.slice(3,12), dist=b=>Math.abs(base(b.isbn)-base(upd.isbn));
+    const cerca=b=>b.id!==upd.id && +b.tomo>0 && normSerie(b.serie)===n && /^97[89]\d{10}$/.test(b.isbn||"") && b.isbn.slice(0,9)===upd.isbn.slice(0,9) && dist(b)<=30;
+    const manual=S.books.filter(b=>cerca(b)&&b.tomoManual).sort((a,b)=>dist(a)-dist(b))[0];
+    const ref=manual||(!upd.tomo?S.books.filter(cerca).sort((a,b)=>dist(a)-dist(b))[0]:null);
+    if(ref){ const t=+ref.tomo+(base(upd.isbn)-base(ref.isbn));
+      if(t>0 && String(t)!==upd.tomo){ const decia=upd.tomo, eraEstimado=upd.tomoEstimado; upd.tomo=String(t); upd.tomoEstimado=!manual;
+        if(manual){ upd.tomoAjustado=true; if(decia&&!eraEstimado) upd.tomoCorregido=decia; else delete upd.tomoCorregido; const c=colOf(upd);
+          if(c&&(c.entregas||[]).length){ upd.titulo=tituloEntrega(c,t); const k=catSrc(`${c.id}-${t}`); if(k&&!upd.portadaLocal){ upd.portadaUrl=k; upd.portadaOtraEd=false; upd.portadaManual=true; } } } } }
   }
   if(upd.titulo && normSerie(upd.titulo)===n && upd.tomo) upd.titulo=sib.serie;
 }
+// Corregiste el número de un tomo: los otros de la colección con el número corrido de la misma forma se arreglan de una vez
+async function corregirHermanos(id){ const ref=byId(id); if(!ref||!ref.tomoManual||!/^97[89]\d{10}$/.test(ref.isbn||"")) return;
+  const n=normSerie(ref.serie), base=x=>+x.slice(3,12);
+  const L=S.books.filter(b=>b.id!==id&&!b.tomoManual&&b.serie&&normSerie(b.serie)===n&&/^97[89]\d{10}$/.test(b.isbn||"")&&b.isbn.slice(0,9)===ref.isbn.slice(0,9)&&Math.abs(base(b.isbn)-base(ref.isbn))<=30)
+    .map(b=>({b,t:+ref.tomo+(base(b.isbn)-base(ref.isbn))})).filter(x=>x.t>0&&String(x.t)!==(x.b.tomo||"")).sort((a,b)=>a.t-b.t);
+  if(!L.length) return;
+  const lista=L.slice(0,6).map(x=>x.b.tomo?`el ${x.b.tomo} es el ${x.t}`:`el que no tenía número es el ${x.t}`).join(", ")+(L.length>6?"…":"");
+  if(!await confirmar({titulo:L.length===1?"¿Corrijo también el otro tomo?":`¿Corrijo también los otros ${L.length}?`,texto:`Por sus ISBN, ${lista}.`,si:"Sí, corregir",no:"No, dejarlos"})) return;
+  const c=colOf(ref);
+  for(const x of L){ const cur=byId(x.b.id); if(!cur) continue; const u={...cur,tomo:String(x.t),tomoEstimado:false,tomoManual:true,actualizado:Date.now()}; delete u.tomoCorregido; delete u.tomoAjustado;
+    if(c&&(c.entregas||[]).length){ u.titulo=tituloEntrega(c,x.t); if(!u.portadaLocal){ const k=catSrc(`${c.id}-${x.t}`), deCat=/^catalogo\//.test(u.portadaUrl||"");
+      if(k&&(!u.portadaManual||deCat)){ u.portadaUrl=k; u.portadaManual=true; u.portadaOtraEd=false; } else if(deCat){ u.portadaUrl=""; u.portadaManual=false; } } }
+    upsert(u); }
+  toast(L.length===1?"Listo: también corregí el otro":`Listo: corregí ${L.length} tomos más`);
+  for(const x of L){ const b=byId(x.b.id); if(b&&!b.portadaUrl){ await esperarTurno(); await fillCover(b.id); } } }
 // Editorial que falta: libros tuyos con el ISBN casi igual son de la misma editorial
 function editorialPorIsbn(isbn){
   if(!/^97[89]\d{10}$/.test(isbn||"")) return "";
@@ -1759,7 +1781,7 @@ async function fillFromWeb(id, quiet){
 // Mensaje bajo el escáner según lo que encontró la búsqueda
 function avisarBusqueda(id,b,upd,r){
   const tip = r.googleProblem ? ` ${r.googleProblem}` : (!gKey() ? ` Con una clave de Google Books (en “Ajustes de búsqueda”) se encuentran muchos más libros.` : "");
-  if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}${r.fuente?` · datos de ${esc(r.fuente)}`:""}`,"ok");
+  if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomoCorregido?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (internet decía ${esc(upd.tomoCorregido)}; lo ajusté según los que corregiste)`:upd.tomoAjustado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (sacado del ISBN, según los que corregiste)`:upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}${r.fuente?` · datos de ${esc(r.fuente)}`:""}`,"ok");
   else if(!r.reached || !r.googleOk){ // no es que no exista: Google no llegó a contestar
     const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
     setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${esc(r.googleProblem||"no pude conectarme a las bases de libros")}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo por ISBN” en su ficha más tarde."}`,"err");
@@ -2164,7 +2186,7 @@ function renderSheet(){
         ${isNew&&!b.isbn?`<div class="sin-cod"><h4>¿No tiene código de barras?</h4>
           <div class="pacts"><label class="btn sm" for="ppFile" id="ppBtn">${ICO_FOTO} Foto de la primera página</label><button class="btn sm" type="button" id="lsBtn">Agregar varios en lista</button></div>
           <input type="file" id="ppFile" accept="image/*" class="sr">
-          <p class="origin" id="ppMsg" role="status" style="margin:0">La página con el título o la de créditos: si trae el ISBN impreso, lo encuentro.</p></div>`:""}
+          <p class="origin" id="ppMsg" role="status" style="margin:0">La página con el título o la de créditos: si trae el ISBN impreso, lo encuentro (el del tomo, no el de la «obra completa» u «O.C.»).</p></div>`:""}
         <h4>${isNew&&!b.isbn?"O búscalo por título":"¿No aparece? Búscalo por título"}</h4>
         ${!isNew&&S.diag?.[b.id]?`<p class="origin" id="tsDiag" style="margin:0">${esc(S.diag[b.id])}</p>`:""}
         ${!isNew&&S.diagLib?.[b.id]?`<details class="origin" id="tsLib"><summary>Dónde busqué</summary><ul class="lib-list">${S.diagLib[b.id].map(i=>`<li>${esc(i.fuente)}: ${esc(i.resultado)}</li>`).join("")}</ul></details>`:""}
@@ -2372,6 +2394,11 @@ function save(){
     else if(!cat && !f.portadaUrl && f.titulo) (porTomos(tipoOf(nuevo))&&nuevo.serie&&nuevo.tomo?completarTomo(id):fillCover(id)).then(ok=>{ if(ok) toast(`Portada de “${nuevo.titulo}” encontrada`); });
   } else {
     const upd={...b,...f,estado,calificacion:cal,actualizado:Date.now()};
+    const tomoCambio=!!f.tomo&&f.tomo!==(b.tomo||"");
+    if(tomoCambio){ upd.tomoManual=true; upd.tomoEstimado=false; delete upd.tomoCorregido; delete upd.tomoAjustado;
+      const c=colOf(upd); if(c&&(c.entregas||[]).length&&f.titulo===b.titulo) upd.titulo=tituloEntrega(c,+f.tomo); // el título del catálogo para ese número
+      if(c&&(c.entregas||[]).length&&!upd.portadaLocal&&f.portadaUrl===b.portadaUrl){ const k=catSrc(`${c.id}-${f.tomo}`), deCat=/^catalogo\//.test(b.portadaUrl||""); // la portada del catálogo para ese número
+        if(k&&(!b.portadaManual||deCat)){ upd.portadaUrl=k; upd.portadaManual=true; upd.portadaOtraEd=false; } else if(deCat){ upd.portadaUrl=""; upd.portadaManual=false; } } }
     if(f.portadaUrl!==b.portadaUrl){ upd.portadaOtraEd=false; upd.portadaManual=!!f.portadaUrl; }
     if((+f.precio||0)!==(+b.precio||0)) upd.precioFuente=""; // lo cambiaste tú: ya no es el de Crisol
     if(upd.serie!==b.serie || upd.tipo!==b.tipo) unifySerie(upd);
@@ -2380,6 +2407,7 @@ function save(){
       && (upd.tomo!==b.tomo || tipoOf(upd)!==tipoOf(b) || upd.serie!==b.serie);
     if(refetch){ upd.portadaUrl=""; upd.portadaOtraEd=false; }
     upsert(upd); toast(fin?`¡Llegaste a la última página! “${upd.titulo||"El libro"}” quedó como Leído.`:"Cambios guardados"); closeSheet();
+    if(tomoCambio&&upd.serie&&/^97[89]\d{10}$/.test(upd.isbn||"")) corregirHermanos(upd.id);
     if(refetch) fillCover(upd.id).then(ok=>{ if(ok) toast(`Portada del ${numLabel(upd).toLowerCase()} ${upd.tomo} encontrada`); });
     else if(f.isbn && f.isbn!==b.isbn && !upd.portadaLocal) fillFromWeb(upd.id,true).then(()=>{ if(byId(upd.id)?.portadaUrl) toast("Portada encontrada con el ISBN"); });
   }
@@ -2605,8 +2633,11 @@ const nombrePropio=t=>t.toLowerCase().replace(/(^|[\s.'-])([a-záéíóúüñ])/
 // ISBN impreso: el que no diga "obra completa" (en las colecciones viene el de la colección y el del tomo)
 function isbnEnTexto(texto){ const hallados=[];
   for(const linea of String(texto||"").split(/\n/)){ const re=/((?:97[89][\s.-]?)?(?:\d[\s.-]?){9}[\dXx])/g; let m;
-    while((m=re.exec(linea))){ const n=normalizeIsbn(m[1]); if(n.isbn&&!n.notBook) hallados.push({isbn:n.isbn,obra:/obra completa|o\.\s?c\.|colecci[oó]n/i.test(linea)}); } }
-  return (hallados.find(h=>!h.obra)||hallados[0]||{}).isbn||""; }
+    while((m=re.exec(linea))){ const n=normalizeIsbn(m[1]); if(n.isbn&&!n.notBook) hallados.push({isbn:n.isbn,
+      obra:/obra completa|\b[o0]\.\s?c\.|\(\s?[o0]\.?\s?c\.?\s?\)|\boc\b|colecci[oó]n/i.test(linea),
+      tomo:/\blote\b|\btomo\b|volumen|\bvol\.|fasc[ií]culo|entrega|n\.?\s?[º°]|n[uú]mero/i.test(linea), es:n.isbn.startsWith("97884")}); } }
+  const pts=h=>(h.obra?-10:0)+(h.tomo?2:0)+(h.es?1:0);
+  return (hallados.sort((a,b)=>pts(b)-pts(a))[0]||{}).isbn||""; }
 function datosDePortadilla(lineas,texto){
   const L=lineas.map(l=>({t:l.t.replace(/^[^\p{L}\d]+|[^\p{L}\d.)]+$/gu,"").replace(/\s+/g," ").trim(),h:l.h,y:l.y,c:l.c})).filter(l=>l.t.length>=2&&l.c>=50&&/\p{L}{2}/u.test(l.t));
   const cand=L.filter(l=>!NO_TITULO.test(l.t));
@@ -3000,7 +3031,7 @@ $("#v-colecciones").addEventListener("click",e=>{
 $("#v-colecciones").addEventListener("change",e=>{ const t=e.target.closest("[data-tomo]"); if(!t) return;
   const n=t.value.replace(/\D/g,"").replace(/^0+(?=\d)/,""), b=byId(t.dataset.tomo); if(!b) return;
   if(!n||+n<1){ t.value=""; return; }
-  upsert({...b,tomo:n,tomoEstimado:false,actualizado:Date.now()}); toast(`${b.titulo||"Libro"}: ${numLabel(b).toLowerCase()} ${n}`); });
+  { const u={...b,tomo:n,tomoEstimado:false,tomoManual:true,actualizado:Date.now()}; delete u.tomoCorregido; delete u.tomoAjustado; upsert(u); corregirHermanos(u.id); } toast(`${b.titulo||"Libro"}: ${numLabel(b).toLowerCase()} ${n}`); });
 $("#v-colecciones").addEventListener("keydown",e=>{ const t=e.target.closest("[data-tomo]"); if(t&&e.key==="Enter"){ e.preventDefault(); t.blur(); } });
 // precios: se guardan sin redibujar para no perder el foco al pasar a la siguiente casilla
 $("#v-colecciones").addEventListener("change",e=>{ const p=e.target.closest("[data-price]"); if(!p) return;
