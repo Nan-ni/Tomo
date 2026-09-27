@@ -1,7 +1,7 @@
 // Tomo · service worker: permite instalar la app, abrirla al instante y usarla aunque no haya internet.
 // Al publicar cambios, sube el número de VERSION para que todos reciban la versión nueva
 // (y el mismo número en index.html, en "Tomo · versión N" del menú Mi cuenta).
-const VERSION = "tomo-v25";
+const VERSION = "tomo-v26";
 const BASE = ["./", "./index.html", "./cuenta.js", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/favicon-64.png", "./icons/apple-touch-icon.png"];
 // La librería de Supabase: sin ella la app no abre, así que se guarda desde el principio (si falla, se guardará al usarla)
 const LIBS = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"];
@@ -41,6 +41,8 @@ self.addEventListener("fetch", (e) => {
     );
     return;
   }
+  // El idioma del lector de fotos (citas) lo guarda el mismo lector en el navegador: no hace falta otra copia de 2 MB
+  if (url.pathname.includes("/@tesseract.js-data/")) return;
   // Librerías y tipografías: la copia guardada al instante y se actualiza por detrás
   if (CDN.test(url.hostname)) {
     e.respondWith(
