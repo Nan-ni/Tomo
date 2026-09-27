@@ -797,19 +797,30 @@ a.btn{text-decoration:none;color:inherit}
 
     <form data-p="olvide" id="fOlv" hidden novalidate>
       <h1>¿Olvidaste tu contraseña?</h1>
-      <p class="auth-p">Escribe tu ID o el correo con el que pediste tu cuenta. Te enviaremos tu ID y una contraseña temporal.</p>
+      <p class="auth-p">Escribe tu ID o el correo con el que pediste tu cuenta. Te enviaremos tu ID y un enlace para crear una contraseña nueva.</p>
       <div class="f"><label for="oDato">Tu ID o tu correo</label><input id="oDato" autocomplete="username" spellcheck="false"></div>
       <p class="auth-msg" id="oErr" role="alert"></p>
-      <button class="btn primary big" type="submit">Enviarme una contraseña nueva</button>
+      <button class="btn primary big" type="submit">Enviarme el enlace</button>
       <button class="linkbtn center" type="button" data-go="login">Volver a ingresar</button>
     </form>
 
     <section data-p="olvEnviado" hidden>
       <div class="auth-ok" aria-hidden="true">✉</div>
       <h1>Revisa tu correo</h1>
-      <p class="auth-p">Si hay una cuenta con ese dato, en unos minutos te llegará tu ID y una contraseña temporal. Revisa también la carpeta de spam.</p>
+      <p class="auth-p">Si hay una cuenta con ese dato, en unos minutos te llegará un enlace para crear una contraseña nueva (vence en 30 minutos). Mientras tanto, tu contraseña de siempre sigue funcionando. Revisa también la carpeta de spam.</p>
       <button class="btn big" type="button" data-go="login">Volver a ingresar</button>
     </section>
+
+    <form data-p="restablecer" id="fRes" hidden novalidate>
+      <h1>Crea tu contraseña nueva</h1>
+      <p class="auth-p">Elige una contraseña nueva para tu cuenta. Al guardarla, se cerrará la sesión en tus otros dispositivos.</p>
+      <div class="f"><label for="rs1">Contraseña nueva</label><div class="pw"><input id="rs1" type="password" autocomplete="new-password" minlength="8"><button type="button" class="eye" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <div class="f"><label for="rs2">Repítela</label><div class="pw"><input id="rs2" type="password" autocomplete="new-password"><button type="button" class="eye" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <p class="auth-hint">Mínimo 8 caracteres. Mejor si mezclas letras y números.</p>
+      <p class="auth-msg" id="rErr" role="alert"></p>
+      <button class="btn primary big" type="submit">Guardar contraseña</button>
+      <button class="linkbtn center" type="button" data-go="login">Volver a ingresar</button>
+    </form>
 
     <form data-p="cambiar" id="fPw" hidden novalidate>
       <h1 id="pwT">Crea tu contraseña</h1>
@@ -839,7 +850,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 23</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 24</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
@@ -1009,8 +1020,33 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 window.addEventListener("storage",e=>{ if(e.key===KEY){ S.books=loadBooks(); S.ver=(S.ver||0)+1; render(); if(S.openId&&!S.books.some(b=>b.id===S.openId)) closeSheet(); } });
 
 // En el estante compartido, las fotos propias llegan con un enlace temporal en vez de estar en este dispositivo
+// Datos que vienen de afuera (el estante que otro compartió, una copia de seguridad importada): cada campo con el tipo que
+// la app espera. Un texto raro se muestra como texto y nunca se vuelve código; lo que no es de un libro se descarta.
+const CAMPOS_TEXTO=["id","isbn","tipo","titulo","autor","editorial","anio","paginas","portadaUrl","genero","serie","tomo","estado","notas","precio","leidoEn","empezadoEn"];
+const TIPOS_OK=new Set(["libro","academico","manga","manhwa","manhua","comic"]);
+const texto=(v,max=2000)=>v==null?"":typeof v==="string"?v.slice(0,max):typeof v==="number"&&isFinite(v)?String(v):"";
+function limpiarLibro(b){ if(!b||typeof b!=="object"||Array.isArray(b)) return null;
+  const o={}; for(const [k,v] of Object.entries(b)) if(!/^(__proto__|constructor|prototype)$/.test(k)) o[k]=v;
+  for(const k of CAMPOS_TEXTO) if(k in o) o[k]=texto(o[k]);
+  if(o.tipo&&!TIPOS_OK.has(o.tipo)) o.tipo="libro";
+  if(o.portadaUrl&&!/^(https?:\/\/|catalogo\/)/i.test(o.portadaUrl)) o.portadaUrl="";
+  o.calificacion=Math.max(0,Math.min(5,Math.round(+o.calificacion||0)));
+  for(const k of ["creado","actualizado"]) if(k in o) o[k]=+o[k]||0;
+  if(o.prestamo!=null) o.prestamo=o.prestamo&&typeof o.prestamo==="object"&&typeof o.prestamo.a==="string"?{a:o.prestamo.a.slice(0,200),desde:texto(o.prestamo.desde,20)}:null;
+  if(o.historial!=null) o.historial=Array.isArray(o.historial)?o.historial.filter(h=>h&&typeof h==="object").slice(-30).map(h=>({a:texto(h.a,200),desde:texto(h.desde,20),hasta:texto(h.hasta,20)})):[];
+  return o; }
+const limpiarDeseo=w=>w&&typeof w==="object"&&w.id?{id:texto(w.id,100),titulo:texto(w.titulo,300),autor:texto(w.autor,300),nota:texto(w.nota,500),creado:+w.creado||0}:null;
+function limpiarColeccion(c){ if(!c||typeof c!=="object"||Array.isArray(c)) return null; const o={};
+  for(const k of ["nombre","editorial","distribuye","frecuencia","nota","nombreBusqueda","autor","genero"]) if(k in c) o[k]=texto(c[k],300);
+  if(c.id) o.id=texto(c.id,100); if("clase" in c) o.clase=c.clase==="grupo"?"grupo":"serie"; if("tipo" in c) o.tipo=TIPOS_OK.has(c.tipo)?c.tipo:"libro";
+  for(const k of ["total","precio"]) if(k in c) o[k]=+c[k]>=0?+c[k]:0;
+  for(const k of ["propia","oculta","prefijo"]) if(k in c) o[k]=!!c[k];
+  if(Array.isArray(c.libros)) o.libros=c.libros.filter(x=>typeof x==="string").slice(0,5000);
+  if(c.precios&&typeof c.precios==="object") o.precios=Object.fromEntries(Object.entries(c.precios).filter(([k,v])=>/^\d{1,4}$/.test(k)&&+v>=0).map(([k,v])=>[k,+v]));
+  return o; } // "det" (lo que se sabe de la serie) no se copia: se vuelve a buscar
 function librosCompartidos(){ const d=window.TOMO.compartido||{}, f=d.fotos||{};
-  return (d.libros||[]).map(b=>!b.portadaLocal?b:f[b.id]?{...b,portadaLocal:false,portadaUrl:f[b.id],portadaManual:true}:{...b,portadaLocal:false}); }
+  return (Array.isArray(d.libros)?d.libros:[]).map(limpiarLibro).filter(b=>b&&b.id&&b.titulo)
+    .map(b=>!b.portadaLocal?b:typeof f[b.id]==="string"&&/^https:\/\//.test(f[b.id])?{...b,portadaLocal:false,portadaUrl:f[b.id],portadaManual:true}:{...b,portadaLocal:false}); }
 const S = { books:VER?librosCompartidos():loadBooks(), filter:"todos", q:"", sort:"recent", tipo:"todo", genero:"", group:"none", openId:null, draft:null, pending:new Set() };
 try{ S.filter=localStorage.getItem(NS+"filter")||"todos"; S.sort=localStorage.getItem(NS+"sort")||"recent"; S.tipo=localStorage.getItem(NS+"tipo")||"todo"; S.group=localStorage.getItem(NS+"group")||"none"; }catch(e){}
 $("#sort").value=S.sort; $("#group").value=S.group;
@@ -1588,7 +1624,8 @@ function coverHtml(b){
 // (Un solo aviso para todas: así el enlace nunca se mete dentro de código.)
 document.addEventListener("error",e=>{ const im=e.target; if(!(im instanceof HTMLImageElement)||im.dataset.orig==null) return;
   if(!im.dataset.f&&im.src!==im.dataset.orig){ im.dataset.f="1"; im.src=im.dataset.orig; } else im.remove(); },true);
-const starStr=n=>n?"★".repeat(n)+"☆".repeat(5-n):"";
+const starStr=n=>{ n=Math.max(0,Math.min(5,Math.round(+n||0))); return n?"★".repeat(n)+"☆".repeat(5-n):""; };
+const estrellas=b=>{ const n=Math.max(0,Math.min(5,Math.round(+b.calificacion||0))); return n?`<span class="stars" aria-label="${n} de 5">${starStr(n)}</span>`:""; };
 function counts(){ const c={todos:S.books.length,"por-leer":0,leyendo:0,leido:0,prestados:0,sindatos:0};
   for(const b of S.books){ c[b.estado||"por-leer"]++; if(b.prestamo) c.prestados++; if(!b.titulo) c.sindatos++; } return c; }
 // Texto de búsqueda de cada libro, sin tildes; se recalcula solo si el libro cambió
@@ -1680,7 +1717,7 @@ function cardHtml(b){ const busy=S.pending.has(b.id); return `
           ${!b.titulo&&!busy?'<span class="pill nodata">Sin datos</span>':''}
           <span class="pill ${esc(b.estado||"por-leer")}">${estadoName(b.estado)}</span>
           ${b.prestamo?`<span class="pill loan">Con ${esc(b.prestamo.a)}</span>`:''}
-          ${b.calificacion?`<span class="stars" aria-label="${b.calificacion} de 5">${starStr(b.calificacion)}</span>`:''}
+          ${estrellas(b)}
         </div>
       </div>
     </button>`; }
@@ -1872,7 +1909,7 @@ function fichaVer(b){
           <div class="row">
             ${b.tomo?`<span class="pill tomo">${numLabel(b)} ${esc(b.tomo)}</span>`:""}
             <span class="pill ${esc(b.estado||"por-leer")}">${estadoName(b.estado)}</span>
-            ${b.calificacion?`<span class="stars" aria-label="${b.calificacion} de 5">${starStr(b.calificacion)}</span>`:""}
+            ${estrellas(b)}
           </div>
         </div>
       </div>
@@ -2193,11 +2230,11 @@ $("#importFile").addEventListener("change",async e=>{
   try{
     if(/\.json$/i.test(file.name)||text.trim().startsWith("{")||text.trim().startsWith("[")){
       const j=JSON.parse(text); incoming=(Array.isArray(j)?j:j.libros||[]).filter(x=>x&&typeof x==="object");
-      if(j.fotos) for(const [id,d] of Object.entries(j.fotos)){ try{ await IDB.put(id, await dataUrlToBlob(d)); localUrls.delete(id); }catch(e){} }
-      if(j.colecciones && typeof j.colecciones==="object"){ S.colsCfg={...S.colsCfg,...j.colecciones}; saveJ(COLS_KEY,S.colsCfg); }
+      if(j.fotos&&typeof j.fotos==="object") for(const [id,d] of Object.entries(j.fotos)){ if(typeof d!=="string"||!/^data:image\/(jpeg|png|webp);base64,/.test(d)) continue; try{ await IDB.put(texto(id,200), await dataUrlToBlob(d)); localUrls.delete(id); }catch(e){} }
+      if(j.colecciones && typeof j.colecciones==="object"){ const cs={}; for(const [k,v] of Object.entries(j.colecciones)){ const c=limpiarColeccion(v); if(c) cs[texto(k,100)]=c; } S.colsCfg={...S.colsCfg,...cs}; saveJ(COLS_KEY,S.colsCfg); }
       if(j.nombre && !nombreDueno()){ window.TOMO.guardarNombre(String(j.nombre).slice(0,40)); applyNombre(); }
       if(j.deseos && Array.isArray(j.deseos.items)){ const ids=new Set(S.wish.items.map(w=>w.id));
-        S.wish.items.push(...j.deseos.items.filter(w=>w&&w.id&&!ids.has(w.id)));
+        S.wish.items.push(...j.deseos.items.map(limpiarDeseo).filter(w=>w&&!ids.has(w.id)));
         S.wish.ocultas=[...new Set([...(S.wish.ocultas||[]),...(j.deseos.ocultas||[])])]; saveJ(WISH_KEY,S.wish); }
     } else {
       const rows=parseCsv(text); const head=rows.shift().map(h=>h.trim().toLowerCase()); const ix=k=>head.indexOf(k);
@@ -2206,7 +2243,7 @@ $("#importFile").addEventListener("change",async e=>{
     }
   }catch(err){ toast("No pude leer ese archivo. Usa una copia de seguridad (.json) o un CSV exportado del estante."); return; }
   let added=0, updated=0;
-  for(const raw of incoming){ if(raw.genero) Object.assign(raw,normalizarGenero(raw));
+  for(const sucio of incoming){ const raw=limpiarLibro(sucio); if(!raw) continue; if(raw.genero) Object.assign(raw,normalizarGenero(raw));
     const b={...blankBook(raw.isbn||""),...raw}; b.id=b.id||(b.isbn?"isbn-"+b.isbn:"l-"+Math.random().toString(36).slice(2,10)); b.creado=b.creado||Date.now(); b.actualizado=Date.now();
     const i=S.books.findIndex(x=>x.id===b.id||(b.isbn&&x.isbn===b.isbn));
     if(i<0){ S.books.push(b); added++; } else { S.books[i]={...S.books[i],...Object.fromEntries(Object.entries(b).filter(([k,v])=>v!==""&&v!=null&&k!=="id"))}; updated++; }
@@ -2233,7 +2270,9 @@ const catSrc=key=>CAT_IMG.has(key)?`catalogo/${key}.jpg`:"";
 const COLS_KEY=NS+"colecciones.v1", WISH_KEY=NS+"deseos.v1";
 const loadJ=(k,def)=>{ try{ const v=JSON.parse(localStorage.getItem(k)||"null"); return v&&typeof v==="object"?v:def; }catch(e){ return def; } };
 function saveJ(k,v){ S.ver=(S.ver||0)+1; if(VER) return; if(k===COLS_KEY) S.colsTs=Date.now(); if(k===WISH_KEY) S.wishTs=Date.now(); try{ localStorage.setItem(k,JSON.stringify(v)); localStorage.setItem(NS+"ts",JSON.stringify({colsTs:S.colsTs||0,wishTs:S.wishTs||0})); }catch(e){ toast("No se pudo guardar en este navegador."); } scheduleAutoSave(); window.TOMO.alCambiar&&window.TOMO.alCambiar(); }
-S.colsCfg=VER?(window.TOMO.compartido.colecciones||{}):loadJ(COLS_KEY,{}); S.wish=VER?(window.TOMO.compartido.deseos||{items:[],ocultas:[]}):loadJ(WISH_KEY,{items:[],ocultas:[]});
+const compartidoCols=()=>{ const out={}; for(const [k,v] of Object.entries(window.TOMO.compartido.colecciones||{})){ const c=limpiarColeccion(v); if(c) out[texto(k,100)]=c; } return out; };
+const compartidoDeseos=()=>{ const w=window.TOMO.compartido.deseos||{}; return {items:(Array.isArray(w.items)?w.items:[]).map(limpiarDeseo).filter(Boolean),ocultas:(Array.isArray(w.ocultas)?w.ocultas:[]).filter(x=>typeof x==="string")}; };
+S.colsCfg=VER?compartidoCols():loadJ(COLS_KEY,{}); S.wish=VER?compartidoDeseos():loadJ(WISH_KEY,{items:[],ocultas:[]});
 if(!Array.isArray(S.wish.items)) S.wish.items=[]; if(!Array.isArray(S.wish.ocultas)) S.wish.ocultas=[];
 S.colOpen=new Set(); S.colEdit=null; S.showHidden=false;
 window.addEventListener("storage",e=>{ if(e.key===COLS_KEY){ S.colsCfg=loadJ(COLS_KEY,{}); renderOther(); } if(e.key===WISH_KEY){ S.wish=loadJ(WISH_KEY,{items:[],ocultas:[]}); renderOther(); } });
@@ -2357,10 +2396,10 @@ function detHtml(c,maxH){ if(c.distribuye) return "";
   if(d.error) return `<div class="det"><div>No pude buscar cuántos ${unidad(c)[1]} tiene (¿sin conexión?). Lo intentaré de nuevo más tarde.</div></div>`;
   if(d.noEncontrado) return `<div class="det"><div>No encontré “${esc(d.consulta)}” en ${fuente}. Pon el total en <b>Editar</b>, o escribe ahí su <b>nombre original</b> para buscarla.</div></div>`;
   const tot=+c.total||0, lin=[];
-  if(d.original) lin.push(`Según <a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${d.original}</b> ${!porTomos(c.tipo)?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
+  if(d.original) lin.push(`Según <a href="${esc(soloHttps(d.url))}" target="_blank" rel="noopener">${esc(d.fuente)}</a>: <b>${+d.original||0}</b> ${!porTomos(c.tipo)?"libros":"tomos"}${d.fuente==="AniList"?" en la edición original":""}${d.estado?` · ${esc(d.estado)}`:""}.`);
   else lin.push(`${esc(d.fuente)} tiene la serie${d.estado?` (${esc(d.estado)})`:""}, pero no dice cuántos tomos son todavía.`);
-  if(d.agrupada&&d.estimado) lin.push(`Tu edición junta tomos (2 en 1 o kanzenban), así que serían unos <b>${d.estimado}</b>.${!tot?` <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.estimado}" data-col="${esc(c.id)}">Usar ${d.estimado}</button>`:tot!==d.estimado?` Tú pusiste ${tot}.`:""}`);
-  else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${d.total}" data-col="${esc(c.id)}">Usar ${d.total}</button>`);
+  if(d.agrupada&&d.estimado) lin.push(`Tu edición junta tomos (2 en 1 o kanzenban), así que serían unos <b>${+d.estimado||0}</b>.${!tot?` <button class="btn sm" type="button" data-act="usarTotal" data-n="${+d.estimado||0}" data-col="${esc(c.id)}">Usar ${+d.estimado||0}</button>`:tot!==d.estimado?` Tú pusiste ${tot}.`:""}`);
+  else if(tot&&d.total&&tot!==d.total&&!c.totalAuto) lin.push(`Tú pusiste ${tot}; si tu edición es distinta, déjalo así. <button class="btn sm" type="button" data-act="usarTotal" data-n="${+d.total||0}" data-col="${esc(c.id)}">Usar ${+d.total||0}</button>`);
   if(d.estado==="sigue saliendo") lin.push(`Todavía salen tomos nuevos: el total puede subir.`);
   for(const [i,s] of (d.sigue||[]).entries()){ const tiene=S.books.some(b=>b.serie&&normSerie(b.serie)===normSerie(s.titulo));
     const enDeseos=S.wish.items.some(w=>normSerie(w.titulo)===normSerie(s.titulo));

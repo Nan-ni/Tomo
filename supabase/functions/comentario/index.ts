@@ -88,7 +88,9 @@ Deno.serve(async (req) => {
       const admin = Deno.env.get("ADMIN_EMAIL");
       const hace24h = new Date(Date.now() - 86400_000).toISOString();
       const { count: hoy } = await db.from("comentarios").select("id", { count: "exact", head: true }).gte("creado", hace24h);
-      if (admin && (suyos || 0) < CORREOS_HORA && (hoy || 0) <= CORREOS_DIA) {
+      const { count: todos } = await db.from("envios").select("id", { count: "exact", head: true }).gte("creado", hace24h); // todos los correos de Tomo hoy
+      if (admin && (suyos || 0) < CORREOS_HORA && (hoy || 0) <= CORREOS_DIA && (todos || 0) < 250) {
+        await db.from("envios").insert({ tipo: "comentario", destino: uid });
         const { data: p } = await db.from("perfiles").select("codigo,nombre,email").eq("user_id", uid).maybeSingle();
         const codigo = p?.codigo || "sin ID";
         const nombre = (p?.nombre || "").trim() || codigo;

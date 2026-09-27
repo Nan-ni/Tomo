@@ -36,6 +36,15 @@ async function enviarCorreo(to: string, asunto: string, html: string) {
   if (!r.ok) throw new Error(`Brevo ${r.status}: ${await r.text()}`);
 }
 
+// Correos enviados en un tiempo (tabla "envios"): así nadie puede llenar de correos a un lector ni gastar los 300 diarios de Brevo
+async function enviados(db: ReturnType<typeof createClient>, desde: number, tipo?: string, destino?: string) {
+  let q = db.from("envios").select("id", { count: "exact", head: true }).gte("creado", new Date(Date.now() - desde).toISOString());
+  if (tipo) q = q.eq("tipo", tipo); if (destino) q = q.eq("destino", destino);
+  const { count, error } = await q; if (error) { console.error("envios", error.message); return 0; } // sin la tabla: sin límite (ejecuta schema.sql)
+  return count || 0;
+}
+const DIA = 86_400_000, TOPE_DIARIO = 250; // deja margen para aprobar cuentas y restablecer contraseñas
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -50,9 +59,12 @@ Deno.serve(async (req) => {
     const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     const app = (Deno.env.get("APP_URL") || "").replace(/\/$/, "");
 
-    // ¿Ya tiene cuenta? Le recordamos su ID a su propio correo (a quien pregunta no se le dice nada)
+    // ¿Ya tiene cuenta? Le recordamos su ID a su propio correo (a quien pregunta no se le dice nada).
+    // Como mucho un recordatorio al día por correo, para que nadie pueda llenarle la bandeja.
     const { data: ya } = await db.from("perfiles").select("codigo").eq("email", email).limit(1);
     if (ya && ya.length) {
+      if (await enviados(db, DIA, "recordatorio", email) > 0 || await enviados(db, DIA) >= TOPE_DIARIO) return json({ ok: true });
+      await db.from("envios").insert({ tipo: "recordatorio", destino: email });
       await enviarCorreo(email, "Ya tienes una cuenta en Tomo", plantilla("Ya tienes una cuenta",
         `Alguien (seguramente tú) pidió una cuenta con este correo, pero ya tienes una.<br><br>Tu ID es <b style="font-family:monospace;font-size:17px;color:#1E1912">${ya[0].codigo}</b>.<br><br>Si no recuerdas tu contraseña, entra a Tomo y toca <b>¿Olvidaste tu contraseña?</b>.`,
         app ? { texto: "Ir a Tomo", url: app + "/" } : undefined));
@@ -70,6 +82,9 @@ Deno.serve(async (req) => {
 
     const { data: sol, error } = await db.from("solicitudes").insert({ email, nombre, mensaje }).select("token").single();
     if (error) throw error;
+    // la solicitud queda guardada; si ya se mandaron muchos correos hoy, el aviso no se envía (la ves en Table Editor → solicitudes)
+    if (await enviados(db, DIA) >= TOPE_DIARIO) return json({ ok: true });
+    await db.from("envios").insert({ tipo: "solicitud", destino: String(Deno.env.get("ADMIN_EMAIL") || "").toLowerCase() });
 
     await enviarCorreo(Deno.env.get("ADMIN_EMAIL")!, `Nueva solicitud en Tomo: ${nombre}`, plantilla("Nueva solicitud de cuenta",
       `<b>${esc(nombre)}</b> quiere una cuenta.<br>Correo: ${esc(email)}${mensaje ? `<br><br><i>“${esc(mensaje)}”</i>` : ""}<br><br>Abre el enlace para aprobarla o rechazarla.`,

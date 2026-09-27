@@ -56,7 +56,10 @@ La carpeta `supabase/` no se publica en la página: es el código que se copia e
 ## 🔒 Privacidad y seguridad
 
 - Cada lector solo puede ver y cambiar su propio estante y sus fotos (reglas de la base de datos, *row level security*).
-- Las cuentas se identifican con un ID (`TOMO-XXXXX`); el correo solo se usa para enviar el acceso o una contraseña temporal.
+- Las cuentas se identifican con un ID (`TOMO-XXXXX`); el correo solo se usa para enviar el acceso o un enlace para crear una contraseña nueva.
+- **¿Olvidaste tu contraseña?** manda un enlace de un solo uso que vence en 30 minutos; hasta que lo uses, tu contraseña sigue igual. Al crear la nueva se cierran tus otras sesiones.
+- Los correos tienen límites (por persona y por día) para que nadie pueda llenar la bandeja de un lector ni agotar los 300 diarios de Brevo.
+- Lo que llega de afuera (un estante compartido, una copia de seguridad) se limpia antes de mostrarse: un texto con código se ve como texto.
 - La clave de `config.js` es la **pública** de Supabase: está hecha para estar en la página. Las claves secretas (Brevo, Google Books y la *service role* de Supabase) viven solo en el servidor.
 
 ---
