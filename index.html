@@ -350,6 +350,18 @@ html{background:var(--bg)}
 .dev-t .pacts .btn{white-space:normal;text-align:left}
 .dlg-acc.dlg-acc3{flex-direction:column}
 .dlg-acc.dlg-acc3 .btn{width:100%;flex:none}
+/* traer desde Goodreads */
+.gr-pasos,.gr-res{align-self:stretch;text-align:left;margin:2px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:7px;font-size:14px;color:var(--ink-2)}
+.gr-pasos a{color:var(--accent);font-weight:600;overflow-wrap:anywhere}
+.gr-res{padding-left:18px}
+.gr-op{align-self:stretch;border:0;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left}
+.gr-op legend{font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:6px;padding:0}
+.gr-op label{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.gr-op label:has(input:checked){border-color:var(--accent);background:color-mix(in oklab,var(--accent) 7%,var(--surface))}
+.gr-op input{margin-top:3px;accent-color:var(--accent)}
+.gr-op span{display:flex;flex-direction:column;gap:1px;font-size:14px}
+.gr-op small{color:var(--ink-3);font-size:12.5px}
+label.btn{text-align:center;cursor:pointer}
 /* apariencia */
 .tema-f{align-self:stretch;display:flex;flex-direction:column;gap:8px;text-align:left;margin-top:6px}
 .tema-l{font-size:13px;font-weight:700;color:var(--ink-2)}
@@ -989,7 +1001,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 28</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 29</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
@@ -1000,6 +1012,7 @@ a.btn{text-decoration:none;color:inherit}
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
         <button class="menu-item" id="exportCsv" type="button">Exportar CSV<small>Para abrirlo en Excel</small></button>
         <label class="menu-item" for="importFile">Importar<small>Carga una copia de seguridad o un CSV</small></label>
+        <button class="menu-item" id="grBtn" type="button">Traer desde Goodreads<small>Tus libros, lo que leíste y tus calificaciones</small></button>
         <div class="menu-sec">Cuenta</div>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
         <button class="menu-item" id="pwBtn" type="button">Cambiar contraseña<small>Elige una nueva</small></button>
@@ -2457,6 +2470,7 @@ $("#importFile").addEventListener("change",async e=>{
         S.wish.ocultas=[...new Set([...(S.wish.ocultas||[]),...(j.deseos.ocultas||[])])]; saveJ(WISH_KEY,S.wish); }
       if(j.ajustes){ const a=limpiarAjustes(j.ajustes); if(Object.keys(a.metas).length){ S.ajustes={...S.ajustes,metas:{...a.metas,...(S.ajustes.metas||{})}}; saveJ(AJUSTES_KEY,S.ajustes); } }
     } else {
+      if(esGoodreads(text.replace(/^\ufeff/,"").split(/\r?\n/,1)[0].toLowerCase().split(",").map(h=>h.trim()))){ abrirGoodreads(text); return; } // el archivo de Goodreads
       const rows=parseCsv(text); const head=rows.shift().map(h=>h.trim().toLowerCase()); const ix=k=>head.indexOf(k);
       incoming=rows.map(r=>{ const g=k=>ix(k)>=0?(r[ix(k)]||"").trim():""; const raw=g("isbn"); const n=raw?normalizeIsbn(raw):{};
         return {...blankBook(n.isbn||""), tipo:["academico","manga","manhwa","manhua","comic"].includes(g("tipo"))?g("tipo"):"libro", genero:g("genero"), serie:g("serie"), tomo:g("tomo"), titulo:g("titulo"), autor:g("autor"), editorial:g("editorial"), anio:g("anio"), estado:estadoKey(g("estado")), calificacion:+g("calificacion")||0, notas:g("notas"), precio:g("precio"), leidoEn:g("terminado"), paginas:g("paginas"), ...(/^\d{1,5}$/.test(g("pagina"))?{pagina:+g("pagina")}:{}), ...(g("me_lo_presto")?{ajeno:{de:g("me_lo_presto"),desde:today(),vence:/^\d{4}-\d{2}-\d{2}$/.test(g("devolver_antes"))?g("devolver_antes"):"",devuelto:""}}:{}), prestamo:g("prestado_a")?{a:g("prestado_a"),desde:g("prestado_desde")||today()}:null}; });
@@ -2473,6 +2487,93 @@ $("#importFile").addEventListener("change",async e=>{
   const missing=S.books.filter(b=>b.isbn&&!b.titulo&&!b.buscado);
   for(const b of missing){ await fillFromWeb(b.id,true); }
 });
+
+/* ---------- traer desde Goodreads: el archivo que exporta Goodreads (goodreads_library_export.csv) ----------
+   Leídos, leyendo, abandonados y pausados van al estante con su fecha, tu calificación y tu reseña.
+   Los «Quiero leer» (to-read) casi siempre son libros que aún no tienes: van a tu lista de deseos,
+   salvo los que marcaste como tuyos en Goodreads (o si eliges llevarlos al estante como «Por leer»). */
+const ICO_GR=`<svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 19h14"/></svg>`;
+const esGoodreads=head=>head.includes("book id")&&head.includes("exclusive shelf");
+const fechaGR=d=>{ const m=String(d||"").match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/); return m?`${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`:""; };
+const sinHtml=t=>String(t||"").replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]*>/g,"").replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\n{3,}/g,"\n\n").trim();
+// "Los juegos del hambre (Los juegos del hambre, #1)" → título, serie y número
+function tituloGR(t){ const m=String(t||"").match(/^(.*?)\s*\(([^()]+?),?\s*#\s*([\d.]+)[^()]*\)\s*$/);
+  if(!m) return {titulo:String(t||"").trim(),serie:"",tomo:""};
+  return {titulo:m[1].trim()||String(t).trim(),serie:m[2].trim(),tomo:/^\d{1,4}$/.test(m[3])?String(+m[3]):""}; }
+function leerGoodreads(text){ const rows=parseCsv(text); const head=(rows.shift()||[]).map(h=>h.trim().toLowerCase());
+  if(!esGoodreads(head)) return null; const ix=k=>head.indexOf(k);
+  return rows.map(r=>{ const g=k=>ix(k)>=0?String(r[ix(k)]??"").trim():"";
+    const limpio=k=>g(k).replace(/[="\s]/g,""), crudo=limpio("isbn13")||limpio("isbn"); // Goodreads los escribe como ="978…" (y ="" si no hay)
+    const n=crudo?normalizeIsbn(crudo):{}; const isbn=n.isbn&&!n.notBook?n.isbn:"";
+    const t=tituloGR(g("title")); if(!t.titulo) return null;
+    const estante=g("exclusive shelf").toLowerCase(), repisas=g("bookshelves").toLowerCase();
+    const estado=estante==="read"?"leido":estante==="currently-reading"?"leyendo":/did-?not-?finish|dnf|abandon|dropped|no-terminad/.test(estante)?"abandonado":/pause|on-?hold|pausad/.test(estante)?"pausado":estante==="to-read"?"quiero":"por-leer";
+    const autor=[g("author"),...g("additional authors").split(",")].map(x=>x.trim()).filter(Boolean).join(", ");
+    const notas=[sinHtml(g("my review")),sinHtml(g("private notes"))].filter(Boolean).join("\n\n");
+    const alta=fechaGR(g("date added"));
+    return {grId:g("book id").replace(/\D/g,"").slice(0,20),isbn,...t,autor,editorial:g("publisher"),anio:(g("year published")||g("original publication year")).replace(/\D/g,"").slice(0,4),
+      paginas:g("number of pages").replace(/\D/g,""),calificacion:Math.max(0,Math.min(5,+g("my rating")||0)),estado,leidoEn:estado==="leido"?fechaGR(g("date read")):"",
+      notas,creado:alta?new Date(alta+"T12:00:00").getTime():0,tuyo:+g("owned copies")>0||/(^|[\s,])(owned|own|mis-libros|tengo|en-casa)([\s,]|$)/.test(repisas)}; }).filter(Boolean); }
+const claveLibro=(t,a)=>sinTildes(t).replace(/[^a-z0-9]+/g," ").trim()+"|"+sinTildes(String(a||"").split(",")[0]).replace(/[^a-z0-9]+/g," ").trim();
+function traerGoodreads(L,deseos){ let nuevos=0, completados=0, aDeseos=0; const ahora=Date.now();
+  const porClave=new Map(S.books.map(b=>[claveLibro(b.titulo,b.autor),b]));
+  const enDeseos=new Set(S.wish.items.map(w=>claveLibro(w.titulo,w.autor)));
+  for(const x of L){ const clave=claveLibro(x.titulo,x.autor);
+    const ya=S.books.find(b=>(x.isbn&&b.isbn===x.isbn)||b.id===(x.isbn?"isbn-"+x.isbn:"gr-"+x.grId))||porClave.get(clave);
+    if(x.estado==="quiero"&&!x.tuyo&&deseos&&!ya){ // a la lista de deseos
+      if(!enDeseos.has(clave)){ S.wish.items.push(limpiarDeseo({id:"w-gr-"+(x.grId||Math.random().toString(36).slice(2,10)),titulo:x.titulo,autor:x.autor,nota:"De tu lista «Quiero leer» de Goodreads",creado:x.creado||ahora})); enDeseos.add(clave); aDeseos++; }
+      continue; }
+    const estado=x.estado==="quiero"?"por-leer":x.estado;
+    const datos={titulo:x.titulo,autor:x.autor,editorial:x.editorial,anio:x.anio,paginas:x.paginas,serie:x.serie,tomo:x.tomo,notas:x.notas,
+      portadaUrl:x.isbn&&/^97[89]/.test(x.isbn)?`https://covers.openlibrary.org/b/isbn/${x.isbn}-L.jpg?default=false`:""};
+    if(ya){ // se completa lo que falta; lo que ya pusiste en Tomo no se toca
+      const u={...ya}; for(const [k,v] of Object.entries(datos)) if(v&&!u[k]) u[k]=v;
+      if((u.estado||"por-leer")==="por-leer"&&estado!=="por-leer"){ u.estado=estado; if(estado==="leido"&&x.leidoEn) u.leidoEn=x.leidoEn; }
+      if(!u.calificacion&&x.calificacion) u.calificacion=x.calificacion;
+      if(!u.isbn&&x.isbn) u.isbn=x.isbn;
+      u.actualizado=ahora; const nb=limpiarLibro(u); S.books[S.books.indexOf(ya)]=nb; porClave.set(clave,nb); completados++; continue; }
+    const b=limpiarLibro({...blankBook(x.isbn),...datos,id:x.isbn?"isbn-"+x.isbn:"gr-"+(x.grId||Math.random().toString(36).slice(2,10)),
+      estado,leidoEn:x.leidoEn,calificacion:x.calificacion,creado:x.creado||ahora,actualizado:ahora,deGoodreads:true});
+    S.books.push(b); porClave.set(clave,b); nuevos++; }
+  persist(); if(aDeseos) saveJ(WISH_KEY,S.wish); render();
+  return {nuevos,completados,aDeseos}; }
+// La ventana: cómo bajar el archivo, qué se encontró y qué se trae
+function abrirGoodreads(textoInicial){
+  const cerrar=abrirDlg(`<div class="dlg dlg-gr" role="dialog" aria-modal="true" aria-labelledby="dlgT" id="grDlg"></div>`);
+  const caja=$("#grDlg");
+  const paso1=(msg="")=>{ caja.innerHTML=`<div class="dlg-ico" aria-hidden="true">${ICO_GR}</div><h2 id="dlgT">Traer desde Goodreads</h2>
+    <p>Pasa a Tomo tus libros de Goodreads: lo que leíste, con la fecha y tu calificación, y tu lista «Quiero leer».</p>
+    <ol class="gr-pasos"><li>Entra a <a href="https://www.goodreads.com/review/import" target="_blank" rel="noopener">goodreads.com/review/import</a> desde el navegador (en la app de Goodreads no se puede).</li>
+      <li>Toca <b>Export Library</b> y espera a que aparezca el enlace del archivo. Descárgalo.</li><li>Elígelo aquí.</li></ol>
+    <p class="auth-msg" id="grErr" role="alert">${esc(msg)}</p>
+    <div class="dlg-acc"><label class="btn primary" for="grFile" id="grElegir">Elegir el archivo</label><button class="btn ghost" type="button" id="grNo">Cancelar</button></div>
+    <input type="file" id="grFile" accept=".csv,text/csv" class="sr">`;
+    $("#grNo").onclick=cerrar;
+    $("#grFile").onchange=async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; resumen(await f.text()); };
+    setTimeout(()=>$("#grElegir")?.focus({preventScroll:true}),30); };
+  const resumen=text=>{ let L=null; try{ L=leerGoodreads(text); }catch(e){}
+    if(!L) return paso1("Ese archivo no es el que exporta Goodreads. Busca «goodreads_library_export.csv».");
+    if(!L.length) return paso1("El archivo no tiene libros.");
+    const c=k=>L.filter(x=>x.estado===k).length, quiero=L.filter(x=>x.estado==="quiero"), tuyos=quiero.filter(x=>x.tuyo).length;
+    const ya=L.filter(x=>S.books.some(b=>(x.isbn&&b.isbn===x.isbn)||claveLibro(b.titulo,b.autor)===claveLibro(x.titulo,x.autor))).length;
+    const partes=[[c("leido"),"leído","leídos"],[c("leyendo"),"leyendo","leyendo"],[c("pausado"),"pausado","pausados"],[c("abandonado"),"abandonado","abandonados"],[c("por-leer"),"en otra repisa","en otras repisas"]].filter(p=>p[0]).map(p=>`${p[0]} ${p[0]===1?p[1]:p[2]}`);
+    caja.innerHTML=`<div class="dlg-ico" aria-hidden="true">${ICO_GR}</div><h2 id="dlgT">Encontré ${L.length} libro${L.length===1?"":"s"}</h2>
+      <ul class="gr-res">${partes.length?`<li><b>Al estante:</b> ${partes.join(" · ")}</li>`:""}${quiero.length?`<li><b>«Quiero leer»:</b> ${quiero.length}${tuyos?` (${tuyos} marcado${tuyos===1?"":"s"} como tuyo${tuyos===1?"":"s"}: ${tuyos===1?"va":"van"} al estante)`:""}</li>`:""}
+        ${ya?`<li>${ya} ya ${ya===1?"está":"están"} en Tomo: se completa${ya===1?"":"n"} sin borrar lo tuyo.</li>`:""}</ul>
+      ${quiero.length-tuyos>0?`<fieldset class="gr-op"><legend>¿A dónde van tus «Quiero leer»?</legend>
+        <label><input type="radio" name="grQ" value="deseos" checked> <span><b>A mi lista de deseos</b><small>Son libros que todavía no tienes</small></span></label>
+        <label><input type="radio" name="grQ" value="estante"> <span><b>A mi estante, como «Por leer»</b><small>Si los tienes en casa</small></span></label></fieldset>`:""}
+      <div class="dlg-acc"><button class="btn primary" type="button" id="grSi">Traer ${L.length} libro${L.length===1?"":"s"}</button><button class="btn ghost" type="button" id="grNo">Cancelar</button></div>`;
+    $("#grNo").onclick=cerrar;
+    $("#grSi").onclick=()=>{ const deseos=(document.querySelector('input[name="grQ"]:checked')?.value||"deseos")==="deseos";
+      const r=traerGoodreads(L,deseos); cerrar();
+      toast([r.nuevos?`${r.nuevos} al estante`:"",r.aDeseos?`${r.aDeseos} a tu lista de deseos`:"",r.completados?`${r.completados} completado${r.completados===1?"":"s"}`:""].filter(Boolean).join(" · ")||"No había libros nuevos");
+      despuesDeGoodreads(); };
+    setTimeout(()=>$("#grSi")?.focus({preventScroll:true}),30); };
+  if(textoInicial) resumen(textoInicial); else paso1(); }
+// portadas de los que llegaron sin ISBN: se buscan por título de a poco, sin apurar a nadie
+async function despuesDeGoodreads(){ for(const b of S.books.filter(b=>b.deGoodreads&&b.titulo&&!b.portadaUrl&&!b.portadaBuscada).slice(0,40)){ await esperarTurno(); await fillCover(b.id); } }
+$("#grBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirGoodreads(); });
 
 /* ---------- colecciones de quiosco (Pruni) ---------- */
 // Portadas del catálogo de las colecciones de quiosco: archivos aparte (catalogo/…), que se bajan solo al verlas
