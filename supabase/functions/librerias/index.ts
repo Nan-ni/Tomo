@@ -30,11 +30,33 @@ const AGENCIAS = [
   { nombre: "Agencia Chilena del ISBN", solo: /^978956/, web: "https://isbnchile.cl" },
 ];
 const ES_AGENCIA = new Set(AGENCIAS.map((a) => a.nombre));
+// Los catálogos de las agencias guardan el ISBN con sus guiones (978-612-99324-0-8), y según el país la búsqueda no lo
+// encuentra escrito de corrido. Los guiones salen de los rangos oficiales de la Agencia Internacional del ISBN.
+const RANGOS: Record<string, string> = {
+  "612": "00-29 300-399 4000-4499 45000-49999 5000-5299 99000-99999",
+  "9972": "00-09 1-1 200-249 2500-2999 30-59 600-899 9000-9999",
+  "958": "00-49 500-509 5100-5199 52000-53999 5400-5599 56000-59999 600-799 8000-9499 95000-99999",
+  "628": "00-09 500-549 7500-8499 95000-99999",
+  "607": "00-25 2600-2649 26500-26999 27-39 400-588 5890-5929 59300-59999 600-691 69200-69999 700-749 7500-9499 95000-99999",
+  "968": "01-39 400-499 5000-7999 800-899 9000-9999",
+  "970": "01-59 600-899 9000-9099 91000-96999 9700-9999",
+  "956": "00-07 08000-09999 10-19 200-599 6000-6999 7000-9999",
+};
+function conGuiones(isbn: string) {
+  for (const [g, r] of Object.entries(RANGOS)) {
+    if (!isbn.startsWith("978" + g) || isbn.length !== 13) continue;
+    const resto = isbn.slice(3 + g.length, 12);
+    for (const par of r.split(" ")) { const [a, b] = par.split("-"), x = resto.slice(0, a.length);
+      if (x >= a && x <= b && resto.length > a.length) return `978-${g}-${x}-${resto.slice(a.length)}-${isbn[12]}`; }
+  }
+  return isbn;
+}
 // Buscalibre tiene una tienda por país: además de la peruana, la del país del libro
 const BUSCALIBRE_PAIS: [RegExp, string][] = [[/^978(958|628)/, "https://www.buscalibre.com.co"], [/^978(607|968|970)/, "https://www.buscalibre.com.mx"], [/^978956/, "https://www.buscalibre.cl"]];
 // Dónde buscar. Cada librería se prueba con sus direcciones en orden hasta que una trae el libro.
 const FUENTES: { nombre: string; solo?: RegExp; urls: (i: string) => string[] }[] = [
   ...AGENCIAS.map((a) => ({ nombre: a.nombre, solo: a.solo, urls: (i: string) => [
+    ...(conGuiones(i) !== i ? [`${a.web}/catalogo.php?mode=resultados_rapidos&palabra=${conGuiones(i)}`] : []),
     `${a.web}/catalogo.php?mode=busqueda_rapida&palabra=${i}`,
     `${a.web}/catalogo.php?mode=resultados_rapidos&palabra=${i}`] })),
   { nombre: "Crisol", urls: (i) => [

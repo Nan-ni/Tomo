@@ -1012,7 +1012,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 32</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 33</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
@@ -1171,7 +1171,24 @@ function isbnOrigin(isbn){
   for(let n=5;n>=1;n--){const k=rest.slice(0,n); if(map[k]) return {g:k, name:map[k]};}
   return "";
 }
+// Agencias del ISBN de Perú, Colombia, México y Chile (su catálogo tiene todos los libros del país, también los que no se venden
+// en tiendas) y los rangos oficiales de cada grupo, para escribir el ISBN con sus guiones como lo guardan ellas
+const AGENCIAS_ISBN=[
+  ["612","Perú","https://isbn.bnp.gob.pe","00-29 300-399 4000-4499 45000-49999 5000-5299 99000-99999"],
+  ["9972","Perú","https://isbn.bnp.gob.pe","00-09 1-1 200-249 2500-2999 30-59 600-899 9000-9999"],
+  ["958","Colombia","https://isbn.camlibro.com.co","00-49 500-509 5100-5199 52000-53999 5400-5599 56000-59999 600-799 8000-9499 95000-99999"],
+  ["628","Colombia","https://isbn.camlibro.com.co","00-09 500-549 7500-8499 95000-99999"],
+  ["607","México","https://isbnmexico.indautor.cerlalc.org","00-25 2600-2649 26500-26999 27-39 400-588 5890-5929 59300-59999 600-691 69200-69999 700-749 7500-9499 95000-99999"],
+  ["968","México","https://isbnmexico.indautor.cerlalc.org","01-39 400-499 5000-7999 800-899 9000-9999"],
+  ["970","México","https://isbnmexico.indautor.cerlalc.org","01-59 600-899 9000-9099 91000-96999 9700-9999"],
+  ["956","Chile","https://isbnchile.cl","00-07 08000-09999 10-19 200-599 6000-6999 7000-9999"],
+].map(([g,pais,web,r])=>({g,pais,web,r:r.split(" ").map(x=>x.split("-"))}));
+const agenciaDe=isbn=>/^978\d{10}$/.test(isbn||"")?AGENCIAS_ISBN.find(a=>isbn.startsWith("978"+a.g))||null:null;
+function isbnConGuiones(isbn){ const a=agenciaDe(isbn); if(!a) return "";
+  const resto=isbn.slice(3+a.g.length,12); for(const [x,y] of a.r){ const t=resto.slice(0,x.length); if(t>=x&&t<=y&&resto.length>x.length) return `978-${a.g}-${t}-${resto.slice(x.length)}-${isbn[12]}`; }
+  return ""; }
 function fmtIsbn(isbn){ if(!isbn) return "sin ISBN"; if(isbn.length!==13) return isbn;
+  const cg=isbnConGuiones(isbn); if(cg) return cg;
   const o=isbnOrigin(isbn); if(o) return `${isbn.slice(0,3)}-${o.g}-${isbn.slice(3+o.g.length,12)}-${isbn[12]}`;
   return `${isbn.slice(0,3)}-${isbn.slice(3,12)}-${isbn[12]}`; }
 
@@ -1443,13 +1460,12 @@ async function buscarTomo(id){
   upsert(upd); }
 // Devuelve {data, found, reached, googleOk, googleProblem, fuente, librerias}. googleOk: Google Books contestó (aunque sea "no lo tengo").
 // conLibrerias: si Google no lo tiene, también se pregunta a la agencia del ISBN del país y a librerías (solo al agregar o buscar de nuevo).
-const ISBN_LATAM=/^978(612|9972|958|628|607|968|970|956)/; // Perú, Colombia, México y Chile
 async function lookup(isbn, conLibrerias){
   const conEstado=pr=>pr.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
   const valido=/^97[89]\d{10}$/.test(isbn);
   // ISBN de Perú, Colombia, México o Chile: Google muchas veces no lo tiene (y nunca las ediciones de un club como Tinta),
   // así que a la agencia y a las librerías se les pregunta desde el principio, a la vez que a Google
-  const lP0=conLibrerias&&valido&&ISBN_LATAM.test(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
+  const lP0=conLibrerias&&valido&&agenciaDe(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
   const oP=conEstado(openLibrary(isbn)), g=await conEstado(google(isbn));
   const gTiene=g.status==="fulfilled"&&!!g.value?.titulo;
   // Los demás: si Google no lo tiene, mientras se espera a Open Library ya se pregunta a las librerías (sin esperar de más si lo encuentran)
@@ -2201,7 +2217,7 @@ function renderSheet(){
         <div id="tsRes" class="hist"></div>
         ${LIBRERIAS.falta?"":`<div class="pega" id="pegaBox">
           <h4>¿Lo viste en una tienda? Pega el enlace</h4>
-          <p class="origin" style="margin:0">${b.isbn?`Abre <a class="linkbtn" href="https://www.google.com/search?q=${encodeURIComponent(b.isbn)}" target="_blank" rel="noopener" id="googleIsbn">el ISBN en Google ↗</a>, entra`:"Entra"} a la página del libro (Crisol, Buscalibre, la editorial…), copia el enlace y pégalo aquí: Tomo trae el título, el autor y la portada.</p>
+          <p class="origin" style="margin:0">${b.isbn?`Abre <a class="linkbtn" href="https://www.google.com/search?q=${encodeURIComponent(b.isbn)}" target="_blank" rel="noopener" id="googleIsbn">el ISBN en Google ↗</a>${agenciaDe(b.isbn)?` o <a class="linkbtn" href="${agenciaDe(b.isbn).web}/catalogo.php?mode=resultados_rapidos&amp;palabra=${encodeURIComponent(isbnConGuiones(b.isbn)||b.isbn)}" target="_blank" rel="noopener" id="agenciaIsbn">en la Agencia del ISBN de ${agenciaDe(b.isbn).pais} ↗</a>`:""}, entra`:"Entra"} a la página del libro (Crisol, Buscalibre, la editorial${agenciaDe(b.isbn)?", la agencia":""}…), copia el enlace y pégalo aquí: Tomo trae el título, el autor y la portada.</p>
           <form id="urlForm" novalidate style="display:flex;gap:8px"><label for="url-q" class="sr">Enlace de la página del libro</label><input id="url-q" class="search" type="url" inputmode="url" autocomplete="off" style="max-width:none" placeholder="https://…"><button class="btn" type="submit" id="urlBtn">Traer datos</button></form>
           <p class="origin" id="urlMsg" role="status" style="margin:0"></p>
         </div>`}
