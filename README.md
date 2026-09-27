@@ -46,7 +46,8 @@ Es una app sin instalación ni compilación: HTML, CSS y JavaScript que se sirve
 | `cuenta.js` | Ingreso, solicitudes, contraseñas, compartir y guardado en la nube |
 | `aprobar.html` | Página para aprobar o rechazar solicitudes (el enlace llega al correo del administrador) |
 | `config.js` | Dirección y clave **pública** de Supabase |
-| `sw.js`, `manifest.webmanifest`, `icons/` | Lo que permite instalarla como app y abrirla sin internet |
+| `sw.js`, `manifest.webmanifest`, `icons/` | Lo que permite instalarla como app, abrirla al instante y usarla sin internet |
+| `catalogo/` | Portadas de las colecciones de quiosco (se descargan solo al verlas) |
 | `supabase/schema.sql` | Tablas y reglas de seguridad de la base de datos |
 | `supabase/functions/` | Funciones del servidor: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido`, `comentario` y `librerias` |
 
@@ -89,7 +90,7 @@ La carpeta `supabase/` no se publica en la página: es el código que se copia e
 **Settings → Pages:** *Deploy from a branch*, rama `main`, carpeta `/ (root)`.
 
 ### Publicar cambios
-Sube el número de `VERSION` en `sw.js` (y el de “Tomo · versión N” en `index.html`) para que las apps ya instaladas reciban la versión nueva.
+Sube el número de `VERSION` en `sw.js` (y el de “Tomo · versión N” en `index.html`) para que las apps ya instaladas reciban la versión nueva: la instalan por detrás y muestran el aviso **“Nueva versión de Tomo · Actualizar”**.
 
 ### Límites del plan gratuito
 - **Supabase:** 500 MB de base de datos y 1 GB de fotos. Si nadie lo usa en 7 días se pausa; se reactiva con *Restore*.

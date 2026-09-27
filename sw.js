@@ -1,15 +1,17 @@
-// Tomo · service worker: permite instalar la app y abrirla aunque no haya internet.
+// Tomo · service worker: permite instalar la app, abrirla al instante y usarla aunque no haya internet.
 // Al publicar cambios, sube el número de VERSION para que todos reciban la versión nueva
 // (y el mismo número en index.html, en "Tomo · versión N" del menú Mi cuenta).
-const VERSION = "tomo-v22";
+const VERSION = "tomo-v23";
 const BASE = ["./", "./index.html", "./cuenta.js", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/favicon-64.png", "./icons/apple-touch-icon.png"];
 // La librería de Supabase: sin ella la app no abre, así que se guarda desde el principio (si falla, se guardará al usarla)
 const LIBS = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"];
 const CDN = /^(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)$/;
 
 self.addEventListener("install", (e) => {
+  // cache "reload": los archivos nuevos vienen del servidor, no de la memoria del navegador
   e.waitUntil(caches.open(VERSION).then((c) =>
-    c.addAll(BASE).then(() => Promise.all(LIBS.map((u) => c.add(new Request(u, { mode: "cors" })).catch(() => {}))))
+    c.addAll(BASE.map((u) => new Request(u, { cache: "reload" })))
+      .then(() => Promise.all(LIBS.map((u) => c.add(new Request(u, { mode: "cors" })).catch(() => {}))))
   ).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
@@ -21,19 +23,22 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // La app misma: primero internet (para tener siempre lo último), y si no hay, la copia guardada.
-  // Con internet lento (señal débil en el celular) no se espera más de 4 s: se abre la copia y la nueva se guarda por detrás.
   if (url.origin === location.origin) {
+    // Portadas del catálogo de colecciones: nunca cambian, así que primero la copia guardada
+    if (url.pathname.includes("/catalogo/")) {
+      e.respondWith(caches.open(VERSION).then((ca) => ca.match(req).then((hit) => hit || fetch(req).then((r) => { if (r.ok) ca.put(req, r.clone()); return r; }))));
+      return;
+    }
+    // La app: se abre al instante con la copia guardada y la de internet se guarda por detrás para la próxima vez
+    // (una versión nueva de verdad llega con un sw.js nuevo, que la instala entera y la app avisa para recargar).
     const red = fetch(req).then((r) => { if (r.ok) { const c = r.clone(); caches.open(VERSION).then((ca) => ca.put(req, c)); } return r; });
-    const guardada = () => caches.match(req, { ignoreSearch: true }).then((r) => r || (req.mode === "navigate" ? caches.match("./index.html") : undefined));
-    e.respondWith(new Promise((resolve) => {
-      let listo = false;
-      const dar = (r) => { if (!listo && r) { listo = true; resolve(r); } };
-      const t = setTimeout(() => guardada().then(dar), 4000);
-      red.then((r) => { clearTimeout(t); dar(r); })
-        .catch(() => { clearTimeout(t); guardada().then((r) => { dar(r); if (!listo) { listo = true; resolve(Response.error()); } }); });
-    }));
-    e.waitUntil(red.catch(() => {}));
+    e.waitUntil(red.then(() => {}, () => {}));
+    e.respondWith(
+      caches.match(req, { ignoreSearch: true })
+        .then((hit) => hit || (req.mode === "navigate" ? caches.match("./index.html") : undefined))
+        .then((hit) => hit || red)
+        .catch(() => Response.error())
+    );
     return;
   }
   // Librerías y tipografías: la copia guardada al instante y se actualiza por detrás
