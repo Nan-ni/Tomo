@@ -256,26 +256,34 @@ function enlaces(html: string, base: string, isbn: string) {
   return [...new Set(out.sort((x, y) => y[0] - x[0]).map((x) => x[1]))].slice(0, 3);
 }
 
+// La primera promesa que trae algo (no la primera que termina)
+function primero<T>(ps: Promise<T | null>[]): Promise<T | null> {
+  return new Promise((res) => { let n = ps.length; if (!n) res(null);
+    for (const p of ps) p.then((v) => { if (v) res(v); else if (--n === 0) res(null); }, () => { if (--n === 0) res(null); }); });
+}
+// Una dirección de búsqueda de una librería → la ficha del libro (o null, anotando por qué)
+async function probar(url: string, isbn: string, fuente: string, motivos: string[]): Promise<Datos | null> {
+  try {
+    const p = await traer(url);
+    if (p.status >= 400) { motivos.push(`respondió ${p.status}`); return null; }
+    if (/json/i.test(p.tipo) || /^\s*\[/.test(p.texto)) { const v = leerVtex(p.texto, isbn, p.url); if (v?.titulo) return { ...v, fuente, enlace: v.enlace || p.url }; motivos.push("no lo tiene"); return null; }
+    // la búsqueda a veces lleva directo a la ficha (y la página de resultados repite el número buscado: eso no cuenta)
+    const aqui = leerFicha(p.texto, p.url, isbn);
+    if (aqui.d.titulo && (aqui.coincide || (p.url !== url && aqui.esProducto && aqui.menciona))) return { ...aqui.d, fuente, enlace: p.url };
+    const r = await primero(enlaces(p.texto, p.url, isbn).slice(0, 2).map(async (e) => {
+      const q = await traer(e); if (q.status >= 400) return null;
+      const x = leerFicha(q.texto, q.url, isbn); return x.menciona && x.d.titulo ? { ...x.d, fuente, enlace: q.url } : null;
+    }));
+    if (!r) motivos.push("no lo tiene");
+    return r;
+  } catch (e) { motivos.push(/abort|timeout/i.test(String(e)) ? "no respondió a tiempo" : "no se pudo conectar"); return null; }
+}
+// Todas las direcciones de una librería a la vez (solo una suele ser la buena): gana la primera que trae el libro
 async function buscarEn(f: (typeof FUENTES)[number], isbn: string, intentos: Intento[]): Promise<Datos | null> {
-  let ultimo = "sin resultados";
-  for (const url of f.urls(isbn)) {
-    try {
-      const p = await traer(url);
-      if (p.status >= 400) { ultimo = `respondió ${p.status}`; continue; }
-      if (/json/i.test(p.tipo) || /^\s*\[/.test(p.texto)) { const v = leerVtex(p.texto, isbn, p.url); if (v?.titulo) { intentos.push({ fuente: f.nombre, resultado: "encontrado" }); return { ...v, fuente: f.nombre, enlace: v.enlace || p.url }; } continue; }
-      // la búsqueda a veces lleva directo a la ficha (y la página de resultados repite el número buscado: eso no cuenta)
-      const aqui = leerFicha(p.texto, p.url, isbn);
-      if (aqui.d.titulo && (aqui.coincide || (p.url !== url && aqui.esProducto && aqui.menciona))) { intentos.push({ fuente: f.nombre, resultado: "encontrado" }); return { ...aqui.d, fuente: f.nombre, enlace: p.url }; }
-      for (const e of enlaces(p.texto, p.url, isbn).slice(0, 2)) {
-        const q = await traer(e).catch(() => null); if (!q || q.status >= 400) continue;
-        const r = leerFicha(q.texto, q.url, isbn);
-        if (r.menciona && r.d.titulo) { intentos.push({ fuente: f.nombre, resultado: "encontrado" }); return { ...r.d, fuente: f.nombre, enlace: q.url }; }
-      }
-      ultimo = "no lo tiene";
-    } catch (e) { ultimo = /abort|timeout/i.test(String(e)) ? "no respondió a tiempo" : "no se pudo conectar"; }
-  }
-  intentos.push({ fuente: f.nombre, resultado: ultimo });
-  return null;
+  const motivos: string[] = [];
+  const d = await primero(f.urls(isbn).map((u) => probar(u, isbn, f.nombre, motivos)));
+  intentos.push({ fuente: f.nombre, resultado: d ? "encontrado" : (motivos.find((m) => m === "no lo tiene") || motivos[0] || "sin resultados") });
+  return d;
 }
 
 // Junta lo de varias fuentes: la primera que tenga cada dato, pero mejor un título o autor que no esté TODO EN MAYÚSCULAS
@@ -297,14 +305,18 @@ async function guardar(isbn: string, datos: Datos) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "GET") return json({ error: "Método no permitido" }, 405);
+  const q = new URL(req.url).searchParams;
+  if (q.get("ping")) return json({ ok: true }); // la app la despierta al abrir, así la primera búsqueda no espera el arranque
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   if (!token) return json({ error: "Inicia sesión" }, 401);
-  const { data: u, error: eu } = await db.auth.getUser(token);
-  if (eu || !u?.user) return json({ error: "Sesión no válida" }, 401);
-
-  const q = new URL(req.url).searchParams;
   const isbn = digitos(q.get("isbn")).slice(0, 13);
   const valido = /^97[89]\d{10}$/.test(isbn);
+  // la sesión y lo ya guardado se consultan a la vez
+  const [{ data: u, error: eu }, guardado] = await Promise.all([
+    db.auth.getUser(token),
+    valido && !q.get("url") ? Promise.resolve(db.from("libros_extra").select("datos").eq("isbn", isbn).maybeSingle()).catch(() => ({ data: null })) : Promise.resolve({ data: null }),
+  ]);
+  if (eu || !u?.user) return json({ error: "Sesión no válida" }, 401);
 
   // --- un enlace que pegó el lector
   const enlace = (q.get("url") || "").trim().slice(0, 2000);
@@ -326,18 +338,20 @@ Deno.serve(async (req) => {
 
   // --- buscar un ISBN
   if (!valido) return json({ error: "Falta un ISBN válido" }, 400);
-  try {
-    const { data: c } = await db.from("libros_extra").select("datos").eq("isbn", isbn).maybeSingle();
-    if (c?.datos?.titulo) return json({ encontrado: true, datos: c.datos, intentos: [{ fuente: "Tomo", resultado: "ya lo había encontrado otro lector" }] });
-  } catch { /* sin la tabla: se busca igual */ }
+  const c = (guardado as { data?: { datos?: Datos } | null })?.data;
+  if (c?.datos?.titulo) return json({ encontrado: true, datos: c.datos, intentos: [{ fuente: "Tomo", resultado: "ya lo había encontrado otro lector" }] });
   const intentos: Intento[] = [];
   const fuentes = FUENTES.filter((f) => !f.solo || f.solo.test(isbn));
-  // todas a la vez; con la primera que lo encuentra se espera un poco a las demás (por la portada) y como mucho 11 s en total
+  // Todas a la vez. Cuando ya hay título, autor y portada se espera solo 0.7 s más (por si la agencia trae el nombre con tildes);
+  // si falta algo (la agencia casi nunca tiene portada), como mucho 1.5 s más. Y nunca más de 11 s en total.
   const rs: Datos[] = [];
   await new Promise<void>((listo) => {
-    let espera = 0;
+    let espera = 0, completo = false;
     Promise.all(fuentes.map((f) => buscarEn(f, isbn, intentos).then((d) => {
-      if (d) { rs.push(d); if (!espera) espera = setTimeout(listo, 2500); }
+      if (!d) return; rs.push(d);
+      const j = juntar(rs);
+      if (!completo && j.titulo && j.autor && j.portadaUrl) { completo = true; clearTimeout(espera); espera = setTimeout(listo, 700); }
+      else if (!espera) espera = setTimeout(listo, 1500);
     }).catch(() => {}))).then(() => listo());
     setTimeout(listo, 11000);
   });
