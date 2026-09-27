@@ -322,6 +322,31 @@ html{background:var(--bg)}
 .rn .why::before{content:"💡";flex:none}
 .rn .pacts{margin-top:4px}
 #readNext .chips .chip{font-size:13px;padding:5px 11px}
+/* citas */
+.cita-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.cita-h h4{margin:0}
+.citas{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.citas li{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px 8px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.citas blockquote{margin:0;font-family:var(--serif);font-size:15.5px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;border-left:3px solid var(--brass);padding-left:12px;color:var(--ink)}
+.cita-m{display:flex;justify-content:space-between;align-items:center;gap:4px 12px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-3)}
+.cita-acc{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto}
+.linkbtn.warn{color:var(--warn)}
+.dlg-cita,.dlg-ancho{max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain}
+.dlg.dlg-ancho{width:min(580px,100%)}
+.dlg.dlg-cita{width:min(520px,100%)}
+.dlg-cita .cita-f,.dlg-ancho .citas,.dlg-ancho .search{align-self:stretch;text-align:left;max-width:none}
+.dlg-cita textarea{min-height:130px;font-family:var(--serif);font-size:16px;line-height:1.5}
+.dlg-cita #citaPag{max-width:120px}
+.cita-foto{align-self:stretch;display:flex;flex-direction:column;align-items:center;gap:8px}
+.cita-foto .btn{display:inline-flex;align-items:center;gap:8px}
+.cita-foto .btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cita-img{align-self:stretch;display:flex;justify-content:center;background:var(--surface-2);border-radius:12px;padding:6px}
+.cita-lienzo{position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair;line-height:0}
+.cita-lienzo canvas{display:block;border-radius:6px}
+.cita-sel{position:absolute;border:2px solid var(--brass);background:color-mix(in oklab,var(--brass) 22%,transparent);border-radius:4px;pointer-events:none}
+.cita-prev{display:block;width:min(100%,300px);aspect-ratio:4/5;border-radius:14px;box-shadow:var(--shadow);background:var(--surface-2)}
+#pgCita{align-self:center;margin-top:2px}
+.dlg-cita .chips{justify-content:center}
 /* leyendo ahora */
 .ly-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
 .ly{display:grid;grid-template-columns:46px 1fr;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px 12px 10px 10px;min-width:0}
@@ -881,8 +906,9 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 25</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 26</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
+        <button class="menu-item" id="citasBtn" type="button">Mis citas<small>Las frases que guardaste de tus libros</small></button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
         <button class="menu-item" id="exportJson" type="button">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></button>
@@ -1069,6 +1095,8 @@ function limpiarLibro(b){ if(!b||typeof b!=="object"||Array.isArray(b)) return n
   if(o.estado&&!ESTADO_OK.has(o.estado)) o.estado="por-leer";
   if("pagina" in o) o.pagina=Math.max(0,Math.min(99999,Math.round(+o.pagina||0)));
   if(o.leidoLog!=null) o.leidoLog=limpiarLog(o.leidoLog);
+  if(o.citas!=null) o.citas=Array.isArray(o.citas)?o.citas.filter(c=>c&&typeof c==="object"&&typeof c.texto==="string"&&c.texto.trim()).slice(-300)
+    .map(c=>({id:texto(c.id,40)||"c-"+Math.random().toString(36).slice(2,10),texto:texto(c.texto,2000),pagina:/^\d{1,5}$/.test(texto(c.pagina,10))?texto(c.pagina,10):"",creado:+c.creado>0?+c.creado:0})):[];
   return o; }
 // páginas leídas por día de un libro: {"2026-09-27": 35, …}
 const ESTADO_OK=new Set(["por-leer","leyendo","leido","pausado","abandonado"]);
@@ -1690,7 +1718,7 @@ function counts(){ const c={todos:S.books.length,"por-leer":0,leyendo:0,leido:0,
 // Texto de búsqueda de cada libro, sin tildes; se recalcula solo si el libro cambió
 const searchCache=new WeakMap();
 const sinTildes=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
-function searchText(b){ let t=searchCache.get(b); if(t===undefined){ t=sinTildes([b.titulo,b.autor,b.editorial,b.isbn,b.prestamo?.a,b.notas,b.genero,b.serie].join(" ")); searchCache.set(b,t); } return t; }
+function searchText(b){ let t=searchCache.get(b); if(t===undefined){ t=sinTildes([b.titulo,b.autor,b.editorial,b.isbn,b.prestamo?.a,b.notas,b.genero,b.serie,...(b.citas||[]).map(c=>c.texto)].join(" ")); searchCache.set(b,t); } return t; }
 function render(){
   renderOther();
   // si estás en otra pestaña, el estante se dibuja recién cuando vuelvas a él
@@ -2038,7 +2066,8 @@ function renderSheet(){
       <div class="f" id="leidoBox" ${b.estado==="leido"?"":"hidden"}><label for="f-leidoEn">Lo terminaste el</label><input id="f-leidoEn" type="date" value="${esc(b.leidoEn||"")}" style="max-width:220px"></div>
       <div class="f" id="paginaBox" ${EN_CURSO.has(b.estado)?"":"hidden"}><label for="f-pagina">¿En qué página vas?</label><div class="pagina-in"><input id="f-pagina" type="number" inputmode="numeric" min="0" max="99999" value="${pagActual(b)||""}" placeholder="0"><span id="paginaDe">${totalPags(b)?`de ${totalPags(b)}`:"(pon el total en Páginas)"}</span></div></div>
       <div class="f"><label>Calificación</label><div class="rate" id="rate">${[1,2,3,4,5].map(n=>`<button type="button" data-r="${n}" class="${n<=(b.calificacion||0)?"on":""}" aria-label="${n} estrella${n>1?"s":""}">★</button>`).join("")}</div></div>
-      <div class="f"><label for="f-notas">Notas</label><textarea id="f-notas" placeholder="Qué te pareció, citas, de dónde salió…">${esc(b.notas)}</textarea></div>
+      <div class="f"><label for="f-notas">Notas</label><textarea id="f-notas" placeholder="Qué te pareció, de dónde salió…">${esc(b.notas)}</textarea></div>
+      ${isNew?"":citasBox(b)}
       ${!isNew&&grupos().length?`<div class="f"><label>Grupos (misma editorial, diseño o club)</label><div class="chips" id="grpChips">${grupos().map(g=>`<button type="button" class="chip" data-g="${esc(g.id)}" aria-pressed="${(g.libros||[]).includes(b.id)}">${esc(g.nombre)}</button>`).join("")}</div></div>`:""}
       ${isNew?"":loanBox(b)}
       <div class="foot">
@@ -2120,6 +2149,7 @@ function wireSheet(){
     const si=await confirmar({titulo:`¿Quitar “${b.titulo||"este libro"}” de tu estante?`, texto:"Se borra en todos tus dispositivos y no se puede deshacer.", si:"Sí, quitar", no:"No, cancelar", peligro:true});
     if(si) del(id); });
   $("#lendBtn")&&($("#lendBtn").onclick=lend);
+  $("#citasBox")&&($("#citasBox").onclick=e=>clickCitas(e,S.openId));
   $("#returnBtn")&&($("#returnBtn").onclick=giveBack);
   $("#refetchBtn")&&($("#refetchBtn").onclick=()=>fillFromWeb(S.openId,false));
   $("#ownCover")&&$("#ownCover").addEventListener("change",async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; const id=S.openId;
@@ -2734,11 +2764,11 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#dataMenu").ope
 /* ---------- leyendo ahora: en qué página vas, racha y meta del año ---------- */
 const ICO_LIBRO=`<svg viewBox="0 0 24 24"><path d="M12 6.5C10.3 5.2 7.9 4.5 4 4.5v13c3.9 0 6.3.7 8 2 1.7-1.3 4.1-2 8-2v-13c-3.9 0-6.3.7-8 2z"/><path d="M12 6.5v13"/></svg>`;
 const ICO_META=`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></svg>`;
-// Ventana en el centro de la pantalla; devuelve la función para cerrarla
-function abrirDlg(html){
+// Ventana en el centro de la pantalla; devuelve la función para cerrarla (alCerrar: lo que se suelta al cerrarla)
+function abrirDlg(html,alCerrar){
   let root=$("#dlgRoot"); if(!root){ root=document.createElement("div"); root.id="dlgRoot"; document.body.appendChild(root); }
   const antes=document.activeElement;
-  const cerrar=()=>{ document.removeEventListener("keydown",tecla,true); root.innerHTML=""; try{ antes?.focus?.({preventScroll:true}); }catch(e){} };
+  const cerrar=()=>{ document.removeEventListener("keydown",tecla,true); root.innerHTML=""; try{ alCerrar&&alCerrar(); }catch(e){} try{ antes?.focus?.({preventScroll:true}); }catch(e){} };
   const tecla=e=>{ if(e.key==="Escape"){ e.stopPropagation(); cerrar(); } };
   document.addEventListener("keydown",tecla,true);
   root.innerHTML=`<div class="dlg-ov" id="dlgOv">${html}</div>`;
@@ -2774,6 +2804,7 @@ function anotarPagina(id){ const b=byId(id); if(!b) return;
     <div class="pagina-in pg-dlg"><label for="pgNum" class="sr">Página en la que vas</label><input id="pgNum" type="number" inputmode="numeric" min="0" max="99999" value="${p||""}" placeholder="0"><span>de</span><label for="pgTot" class="sr">Páginas en total</label><input id="pgTot" type="number" inputmode="numeric" min="1" max="99999" value="${t||""}" placeholder="¿?"></div>
     <p class="auth-msg" id="pgErr" role="alert"></p>
     <div class="dlg-acc"><button class="btn primary" type="submit">Guardar</button><button class="btn" type="button" id="pgFin">¡Lo terminé!</button><button class="btn ghost" type="button" id="pgNo">Cancelar</button></div>
+    <button class="linkbtn" type="button" id="pgCita">+ Guardar una cita de este libro</button>
   </form>`);
   const guardar=(n,totNuevo,terminado)=>{ const cur=byId(id); if(!cur){ cerrar(); return; }
     let upd={...cur}; if(totNuevo&&totNuevo!==totalPags(cur)) upd.paginas=String(totNuevo);
@@ -2792,6 +2823,7 @@ function anotarPagina(id){ const b=byId(id); if(!b) return;
     guardar(+n,+tt||0,false); };
   $("#pgFin").onclick=()=>{ const tt=$("#pgTot").value.trim(); guardar(pagActual(byId(id)||{}),/^\d{1,5}$/.test(tt)?+tt:0,true); };
   $("#pgNo").onclick=cerrar; $("#pgForm").oninput=()=>{ $("#pgErr").textContent=""; };
+  $("#pgCita").onclick=()=>{ cerrar(); abrirCita(id); };
   setTimeout(()=>{ const i=$("#pgNum"); if(i){ i.focus({preventScroll:true}); i.select?.(); } },30); }
 // Meta del año: cuántos libros quieres leer (se guarda en tu cuenta)
 function abrirMeta(){ const m=metaDelAnio();
@@ -2811,6 +2843,197 @@ function abrirMeta(){ const m=metaDelAnio();
   setTimeout(()=>{ const i=$("#metaNum"); if(i){ i.focus({preventScroll:true}); i.select?.(); } },30); }
 function ponerMeta(anio,n){ const metas={...(S.ajustes.metas||{})}; if(n) metas[anio]=n; else delete metas[anio];
   S.ajustes={...S.ajustes,metas}; saveJ(AJUSTES_KEY,S.ajustes); render(); }
+
+/* ---------- citas: frases de cada libro, escritas o copiadas de una foto, y compartidas como imagen ---------- */
+const ICO_CITA=`<svg viewBox="0 0 24 24"><path d="M4.5 11.5V7.2c0-.9.7-1.7 1.7-1.7h2.6c.9 0 1.7.8 1.7 1.7v4.3c0 3.6-1.9 5.9-4.7 7M4.5 11.5h5.9M13.5 11.5V7.2c0-.9.7-1.7 1.7-1.7h2.6c.9 0 1.7.8 1.7 1.7v4.3c0 3.6-1.9 5.9-4.7 7M13.5 11.5h5.9"/></svg>`;
+const ICO_FOTO=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>`;
+const nuevaCitaId=()=>"c-"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const citasDe=b=>(b.citas||[]).slice().sort((x,y)=>(y.creado||0)-(x.creado||0));
+function citasBox(b){ const C=citasDe(b);
+  return `<div class="box" id="citasBox"><div class="cita-h"><h4>Citas${C.length?` <span class="muted">· ${C.length}</span>`:""}</h4><button class="btn sm" type="button" data-cita="nueva">+ Agregar cita</button></div>
+    ${C.length?`<ul class="citas">${C.map(c=>`<li><blockquote>${esc(c.texto)}</blockquote><div class="cita-m"><span>${c.pagina?`Pág. ${esc(c.pagina)}`:""}</span><span class="cita-acc"><button class="linkbtn" type="button" data-cita-img="${esc(c.id)}">Compartir</button><button class="linkbtn" type="button" data-cita-edit="${esc(c.id)}">Editar</button><button class="linkbtn warn" type="button" data-cita-del="${esc(c.id)}">Borrar</button></span></div></li>`).join("")}</ul>`
+      :`<p class="origin" style="margin:0">Guarda las frases que te gustaron. Escríbelas o tómales una foto: Tomo copia el texto por ti.</p>`}</div>`; }
+// Solo se redibuja la caja de citas (la ficha no vuelve arriba ni se pierde lo que estabas escribiendo)
+function pintarCitas(id){ const box=$("#citasBox"), b=byId(id); if(!box||!b||S.openId!==id) return;
+  box.outerHTML=citasBox(b); $("#citasBox").onclick=e=>clickCitas(e,id); }
+function guardarCitas(id,citas){ const cur=byId(id); if(!cur) return; upsert({...cur,citas,actualizado:Date.now()}); pintarCitas(id); }
+async function clickCitas(e,id){
+  if(e.target.closest('[data-cita="nueva"]')) return abrirCita(id);
+  const ed=e.target.closest("[data-cita-edit]"); if(ed) return abrirCita(id,ed.dataset.citaEdit);
+  const im=e.target.closest("[data-cita-img]"); if(im){ const b=byId(id), c=(b?.citas||[]).find(x=>x.id===im.dataset.citaImg); if(c) compartirCita(b,c); return; }
+  const del=e.target.closest("[data-cita-del]"); if(del){
+    if(await confirmar({titulo:"¿Borrar esta cita?",texto:"Se borra en todos tus dispositivos.",si:"Sí, borrar",no:"No, dejarla",peligro:true})){ guardarCitas(id,(byId(id)?.citas||[]).filter(x=>x.id!==del.dataset.citaDel)); toast("Cita borrada"); } } }
+
+// Leer el texto de una foto: Tesseract, dentro del celular (la foto no se sube a ningún lado).
+// La primera vez baja el lector y el idioma español (unos 5 MB); después el navegador los guarda.
+const OCR_CDN="https://cdn.jsdelivr.net/npm/";
+let ocrP=null, ocrAvance=null;
+function cargarOCR(){
+  if(!ocrP) ocrP=new Promise((res,rej)=>{ if(window.Tesseract) return res(window.Tesseract);
+      const s=document.createElement("script"); s.src=OCR_CDN+"tesseract.js@7.0.0/dist/tesseract.min.js"; s.crossOrigin="anonymous"; s.async=true;
+      s.onload=()=>window.Tesseract?res(window.Tesseract):rej(new Error("ocr")); s.onerror=()=>{ s.remove(); rej(new Error("ocr")); }; document.head.appendChild(s); })
+    .then(T=>T.createWorker("spa",1,{workerPath:OCR_CDN+"tesseract.js@7.0.0/dist/worker.min.js",corePath:OCR_CDN+"tesseract.js-core@7.0.0",langPath:OCR_CDN+"@tesseract.js-data/spa@1.0.0/4.0.0_best_int",
+      logger:m=>{ try{ ocrAvance&&ocrAvance(m); }catch(e){} }}))
+    .catch(e=>{ ocrP=null; throw e; });
+  return ocrP; }
+// al cerrar la ventana se apaga el lector: ocupa bastante memoria en el celular
+function soltarOCR(){ const p=ocrP; ocrP=null; ocrAvance=null; if(p) p.then(w=>w.terminate(),()=>{}).catch(()=>{}); }
+// La foto a un tamaño que el lector maneja bien (y derecha, como la ves)
+function fotoACanvas(file){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(file), im=new Image();
+  im.onload=()=>{ const k=Math.min(1,2400/Math.max(im.naturalWidth,im.naturalHeight)), c=document.createElement("canvas");
+    c.width=Math.max(1,Math.round(im.naturalWidth*k)); c.height=Math.max(1,Math.round(im.naturalHeight*k)); c.getContext("2d").drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(u); res(c); };
+  im.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error("img")); }; im.src=u; }); }
+// El texto de un libro viene cortado en renglones: se une en párrafos y se juntan las palabras partidas con guion.
+// Un salto de párrafo solo se respeta si la frase anterior terminó (punto, signo de cierre…).
+function unirRenglones(t){ let out="", par=false;
+  for(const l of String(t||"").replace(/\r/g,"").split("\n").map(x=>x.replace(/\s+/g," ").trim())){
+    if(!l){ par=!!out; continue; }
+    if(!out) out=l;
+    else if(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][-‐­]$/.test(out)&&/^[a-záéíóúüñ]/.test(l)) out=out.slice(0,-1)+l; // palabra partida
+    else out+=(par&&/[.!?…:»”"')\]]$/.test(out)?"\n\n":" ")+l;
+    par=false; }
+  return out; }
+function abrirCita(id,citaId){ const b=byId(id); if(!b) return; const c=citaId?(b.citas||[]).find(x=>x.id===citaId):null;
+  const cerrar=abrirDlg(`<form class="dlg dlg-cita" id="citaForm" role="dialog" aria-modal="true" aria-labelledby="dlgT" novalidate>
+    <div class="dlg-ico" aria-hidden="true">${ICO_CITA}</div>
+    <h2 id="dlgT">${c?"Editar cita":"Nueva cita"}</h2>
+    <p>${esc(b.titulo||"Sin título")}</p>
+    ${c?"":`<div class="cita-foto">
+      <label class="btn" for="citaFile" id="citaFileBtn">${ICO_FOTO} Copiar de una foto</label><input type="file" id="citaFile" accept="image/*" class="sr">
+      <div class="cita-img" id="citaImgBox" hidden><div class="cita-lienzo" id="citaLienzo"><canvas id="citaCv" role="img" aria-label="Foto de la página"></canvas><div class="cita-sel" id="citaSel" hidden></div></div></div>
+      <p class="origin" id="citaOcr" role="status"></p>
+      <div class="pacts" id="citaOcrAcc" hidden><button class="btn primary sm" type="button" id="citaLeer">Copiar el texto</button><label class="btn ghost sm" for="citaFile">Otra foto</label></div></div>`}
+    <div class="f cita-f"><label for="citaTexto">La cita</label><textarea id="citaTexto" maxlength="2000" placeholder="Escribe o pega la frase…">${esc(c?.texto||"")}</textarea></div>
+    <div class="f cita-f"><label for="citaPag">Página (opcional)</label><input id="citaPag" inputmode="numeric" maxlength="5" value="${esc(c?.pagina||"")}"></div>
+    <p class="auth-msg" id="citaErr" role="alert"></p>
+    <div class="dlg-acc"><button class="btn primary" type="submit">Guardar cita</button><button class="btn ghost" type="button" id="citaNo">Cancelar</button></div>
+  </form>`,soltarOCR);
+  let foto=null, sel=null, leyendo=false, ultimoOcr="";
+  $("#citaNo").onclick=cerrar;
+  $("#citaForm").oninput=()=>{ $("#citaErr").textContent=""; };
+  if(!c&&EN_CURSO.has(b.estado)&&pagActual(b)) $("#citaPag").value=String(pagActual(b)); // la página en la que vas
+  const msg=t=>{ const m=$("#citaOcr"); if(m) m.textContent=t; };
+  const AYUDA="Pasa el dedo sobre la parte que quieres copiar, o cópiala toda.";
+  // elegir la foto
+  $("#citaFile")?.addEventListener("change",async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f||leyendo) return;
+    try{ foto=await fotoACanvas(f); }catch(err){ msg("No pude abrir esa imagen. Prueba con otra foto."); return; }
+    const cv=$("#citaCv"); if(!cv) return; cv.width=foto.width; cv.height=foto.height; cv.getContext("2d").drawImage(foto,0,0);
+    $("#citaImgBox").hidden=false; $("#citaOcrAcc").hidden=false; $("#citaFileBtn").hidden=true;
+    const s=Math.min(1,($("#citaImgBox").clientWidth-12)/foto.width,innerHeight*.44/foto.height);
+    cv.style.width=Math.round(foto.width*s)+"px"; cv.style.height=Math.round(foto.height*s)+"px";
+    sel=null; $("#citaSel").hidden=true; msg(AYUDA);
+    cargarOCR().catch(()=>{}); }); // mientras marcas, el lector ya se va preparando
+  // marcar la parte de la foto que se copia
+  const lz=$("#citaLienzo");
+  if(lz){ let ini=null;
+    const punto=e=>{ const r=$("#citaCv").getBoundingClientRect(); return [Math.max(0,Math.min(r.width,e.clientX-r.left)),Math.max(0,Math.min(r.height,e.clientY-r.top)),r]; };
+    lz.addEventListener("pointerdown",e=>{ if(!foto||leyendo) return; e.preventDefault(); try{ lz.setPointerCapture(e.pointerId); }catch(err){} ini=punto(e); });
+    lz.addEventListener("pointermove",e=>{ if(!ini) return; const [x,y,r]=punto(e), s=$("#citaSel");
+      const L=Math.min(ini[0],x), T=Math.min(ini[1],y), W=Math.abs(x-ini[0]), H=Math.abs(y-ini[1]), chico=W<10||H<10;
+      s.hidden=chico; Object.assign(s.style,{left:L+"px",top:T+"px",width:W+"px",height:H+"px"});
+      const k=foto.width/r.width; sel=chico?null:{left:Math.round(L*k),top:Math.round(T*k),width:Math.round(W*k),height:Math.round(H*k)}; });
+    const fin=()=>{ if(!ini) return; ini=null; msg(sel?"Listo: se copiará solo lo marcado.":AYUDA); };
+    lz.addEventListener("pointerup",fin); lz.addEventListener("pointercancel",fin); }
+  // leer el texto
+  $("#citaLeer")?.addEventListener("click",async()=>{ if(!foto||leyendo) return; leyendo=true; const btn=$("#citaLeer"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Leyendo…';
+    ocrAvance=m=>{ const st=String(m.status||""), p=Math.round((m.progress||0)*100);
+      if(st==="recognizing text") msg(`Leyendo el texto… ${p}%`);
+      else if(/traineddata/.test(st)) msg(`Preparando el español${p&&p<100?` · ${p}%`:""}… (solo la primera vez)`);
+      else msg("Preparando el lector… (solo la primera vez tarda un poco)"); };
+    msg("Preparando el lector… (solo la primera vez tarda un poco)");
+    let tope; const plazo=new Promise((_,rej)=>{ tope=setTimeout(()=>rej(new Error("tiempo")),120000); });
+    try{ const w=await Promise.race([cargarOCR(),plazo]); const r=await Promise.race([w.recognize(foto,sel?{rectangle:sel}:{}),plazo]); const t=unirRenglones(r?.data?.text).slice(0,2000);
+      if(!$("#citaTexto")) return; // cerraste la ventana mientras leía
+      if(!t){ msg("No encontré texto. Prueba con más luz, con la página derecha y más cerca."); }
+      else{ const ta=$("#citaTexto"), antes=ta.value.trim();
+        ta.value=(!antes||antes===ultimoOcr?t:antes+"\n\n"+t).slice(0,2000); ultimoOcr=ta.value.trim();
+        msg("Listo. Revisa el texto y corrige lo que haga falta."); ta.focus({preventScroll:true}); ta.scrollIntoView({block:"nearest"}); } }
+    catch(err){ if(err?.message==="tiempo") soltarOCR(); msg(navigator.onLine===false?"Para leer fotos, la primera vez necesitas internet.":"No pude leer la foto. Intenta de nuevo o escribe la cita."); }
+    finally{ clearTimeout(tope); leyendo=false; const b2=$("#citaLeer"); if(b2){ b2.disabled=false; b2.textContent="Copiar el texto"; } } });
+  $("#citaForm").onsubmit=e=>{ e.preventDefault(); const t=$("#citaTexto").value.trim(), pg=$("#citaPag").value.trim();
+    if(!t){ $("#citaErr").textContent="Escribe la cita o cópiala de una foto."; $("#citaTexto").focus(); return; }
+    if(pg&&!/^\d{1,5}$/.test(pg)){ $("#citaErr").textContent="La página debe ser un número."; $("#citaPag").focus(); return; }
+    const cur=byId(id); if(!cur){ cerrar(); return; } const lista=(cur.citas||[]).slice();
+    if(c){ const i=lista.findIndex(x=>x.id===c.id); if(i>=0) lista[i]={...lista[i],texto:t.slice(0,2000),pagina:pg}; else lista.push({...c,texto:t.slice(0,2000),pagina:pg}); }
+    else lista.push({id:nuevaCitaId(),texto:t.slice(0,2000),pagina:pg,creado:Date.now()});
+    cerrar(); guardarCitas(id,lista.slice(-300)); toast(c?"Cita guardada":"Cita agregada"); };
+  setTimeout(()=>$(c?"#citaTexto":"#citaFileBtn")?.focus({preventScroll:true}),30); }
+
+// Imagen de la cita para compartir (historias, estados de WhatsApp…): 1080 × 1350
+const TEMAS_CITA={papel:{n:"Papel",bg:"#F3EEE4",card:"#FFFCF6",borde:"#E2D9C8",ink:"#1E1912",sub:"#5B5244",acc:"#1F4D3F"},
+  noche:{n:"Noche",bg:"#0E1412",card:"#17201D",borde:"#2D3A35",ink:"#E3EAE6",sub:"#A9B7B1",acc:"#86C0AB"},
+  bosque:{n:"Bosque",bg:"#1F4D3F",card:"#24594A",borde:"#2F6A58",ink:"#FBF8F1",sub:"#CFE0D6",acc:"#E0B45A"}};
+function lineas(ctx,texto,ancho){ const out=[];
+  for(const par of String(texto).split(/\n+/)){ let l="";
+    for(const w of par.split(/\s+/).filter(Boolean)){ const p=l?l+" "+w:w; if(!l||ctx.measureText(p).width<=ancho) l=p; else { out.push(l); l=w; } }
+    if(l) out.push(l); }
+  return out; }
+function recortar(ctx,t,ancho){ t=String(t||""); if(ctx.measureText(t).width<=ancho) return t; while(t.length>1&&ctx.measureText(t+"…").width>ancho) t=t.slice(0,-1); return t.trimEnd()+"…"; }
+async function imagenCita(b,c,tema){ const T=TEMAS_CITA[tema]||TEMAS_CITA.papel, W=1080, H=1350;
+  try{ await Promise.race([Promise.all(["500 48px Literata","700 40px Literata","600 30px Figtree"].map(f=>document.fonts.load(f))),new Promise(r=>setTimeout(r,2500))]); }catch(e){}
+  const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const x=cv.getContext("2d");
+  x.fillStyle=T.bg; x.fillRect(0,0,W,H);
+  x.fillStyle=T.card; x.strokeStyle=T.borde; x.lineWidth=3; x.beginPath(); if(x.roundRect) x.roundRect(64,64,W-128,H-128,48); else x.rect(64,64,W-128,H-128); x.fill(); x.stroke();
+  x.fillStyle=T.acc; x.font='700 220px Literata, Georgia, serif'; x.fillText("“",118,330);
+  // el texto, lo más grande que quepa
+  const area={x:140,y:350,w:W-280,h:620}; let size=64, ls=[];
+  for(;size>=26;size-=2){ x.font=`500 ${size}px Literata, Georgia, serif`; ls=lineas(x,c.texto,area.w); if(ls.length*size*1.42<=area.h) break; }
+  size=Math.max(size,26); x.font=`500 ${size}px Literata, Georgia, serif`;
+  const lh=size*1.42, max=Math.max(1,Math.floor(area.h/lh)); if(ls.length>max){ ls=ls.slice(0,max); ls[max-1]=recortar(x,ls[max-1]+"…",area.w); }
+  x.fillStyle=T.ink; let y=area.y+(area.h-ls.length*lh)/2+size;
+  for(const l of ls){ x.fillText(l,area.x,y); y+=lh; }
+  // de qué libro es
+  x.fillStyle=T.acc; x.fillRect(area.x,1040,72,5);
+  x.fillStyle=T.ink; x.font='700 40px Literata, Georgia, serif'; x.fillText(recortar(x,b.titulo||"",area.w),area.x,1105);
+  x.fillStyle=T.sub; x.font='500 30px Figtree, system-ui, sans-serif';
+  x.fillText(recortar(x,[(b.autor||"").split(",")[0].trim(),c.pagina?`pág. ${c.pagina}`:""].filter(Boolean).join(" · "),area.w),area.x,1152);
+  x.fillStyle=T.acc; x.font='700 28px Figtree, system-ui, sans-serif'; x.textAlign="right"; x.fillText("Tomo",W-140,H-116); x.textAlign="left";
+  return cv; }
+const nombreArchivo=t=>"cita-"+(sinTildes(t||"tomo").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"tomo")+".png";
+async function compartirCita(b,c){ let tema="papel"; try{ tema=localStorage.getItem(NS+"citaTema")||"papel"; }catch(e){} if(!TEMAS_CITA[tema]) tema="papel";
+  const puedeCompartir=(()=>{ try{ return !!navigator.canShare&&navigator.canShare({files:[new File([""],"x.png",{type:"image/png"})]}); }catch(e){ return false; } })();
+  const cerrar=abrirDlg(`<div class="dlg dlg-cita" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+    <h2 id="dlgT">Compartir cita</h2>
+    <img class="cita-prev" id="ciPrev" alt="Vista previa de la imagen de la cita">
+    <div class="chips" role="group" aria-label="Colores">${Object.entries(TEMAS_CITA).map(([k,t])=>`<button type="button" class="chip" data-tema="${k}" aria-pressed="${k===tema}">${t.n}</button>`).join("")}</div>
+    <div class="dlg-acc"><button class="btn primary" type="button" id="ciShare">${puedeCompartir?"Compartir imagen":"Descargar imagen"}</button><button class="btn" type="button" id="ciCopy">Copiar texto</button><button class="btn ghost" type="button" id="ciNo">Cerrar</button></div>
+  </div>`,()=>{ vez++; if(url) URL.revokeObjectURL(url); url=""; });
+  let blob=null, url="", vez=0;
+  const pintar=async()=>{ const mia=++vez; const cv=await imagenCita(b,c,tema); const bl=await new Promise(r=>cv.toBlob(r,"image/png"));
+    if(mia!==vez||!$("#ciPrev")) return; blob=bl; if(url) URL.revokeObjectURL(url); url=URL.createObjectURL(bl); $("#ciPrev").src=url; };
+  $("#ciNo").onclick=cerrar;
+  document.querySelector("#dlgOv .chips").onclick=e=>{ const t=e.target.closest("[data-tema]"); if(!t) return; tema=t.dataset.tema;
+    try{ localStorage.setItem(NS+"citaTema",tema); }catch(err){}
+    document.querySelectorAll("#dlgOv [data-tema]").forEach(x=>x.setAttribute("aria-pressed",x===t)); pintar(); };
+  $("#ciCopy").onclick=()=>copyText(`“${c.texto}”\n— ${b.titulo||""}${b.autor?`, ${b.autor.split(",")[0].trim()}`:""}`,"Cita copiada");
+  $("#ciShare").onclick=async()=>{ if(!blob) return; const nombre=nombreArchivo(b.titulo), file=new File([blob],nombre,{type:"image/png"});
+    if(puedeCompartir){ try{ await navigator.share({files:[file],title:b.titulo||"Cita"}); }catch(e){} return; }
+    const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000); toast("Imagen descargada"); };
+  setTimeout(()=>$("#ciShare")?.focus({preventScroll:true}),30);
+  await pintar(); }
+// Todas tus citas, de todos tus libros
+function abrirMisCitas(){ const todas=[]; for(const b of S.books) for(const c of (b.citas||[])) todas.push({b,c});
+  todas.sort((p,q)=>(q.c.creado||0)-(p.c.creado||0)); const libros=new Set(todas.map(t=>t.b.id)).size;
+  const cerrar=abrirDlg(`<div class="dlg dlg-ancho" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+    <div class="dlg-ico" aria-hidden="true">${ICO_CITA}</div>
+    <h2 id="dlgT">Mis citas</h2>
+    ${todas.length?`<p>${todas.length} cita${todas.length===1?"":"s"} de ${libros} libro${libros===1?"":"s"}</p>
+      ${todas.length>3?`<label for="mcQ" class="sr">Buscar en tus citas</label><input id="mcQ" class="search" type="search" placeholder="Buscar en tus citas…" autocomplete="off">`:""}
+      <ul class="citas" id="mcList"></ul>`
+      :`<p>Todavía no guardas citas. Abre un libro y toca <b>+ Agregar cita</b>: puedes escribirla o copiarla de una foto.</p>`}
+    <div class="dlg-acc"><button class="btn ghost" type="button" id="mcNo">Cerrar</button></div></div>`);
+  $("#mcNo").onclick=cerrar;
+  const lista=$("#mcList"); if(!lista) return;
+  const pintar=()=>{ const q=sinTildes($("#mcQ")?.value||"").split(/\s+/).filter(Boolean);
+    const L=todas.filter(t=>{ const h=sinTildes([t.c.texto,t.b.titulo,t.b.autor].join(" ")); return q.every(w=>h.includes(w)); });
+    lista.innerHTML=L.length?L.slice(0,300).map(({b,c})=>`<li><blockquote>${esc(c.texto)}</blockquote><div class="cita-m"><button class="linkbtn" type="button" data-mc-b="${esc(b.id)}">${esc(b.titulo||"Sin título")}${c.pagina?` · pág. ${esc(c.pagina)}`:""}</button><button class="linkbtn" type="button" data-mc-b="${esc(b.id)}" data-mc-c="${esc(c.id)}">Compartir</button></div></li>`).join("")
+      :`<li class="muted">Ninguna cita coincide con tu búsqueda.</li>`; };
+  pintar(); $("#mcQ")&&($("#mcQ").oninput=pintar);
+  lista.onclick=e=>{ const t=e.target.closest("[data-mc-b]"); if(!t) return; const b=byId(t.dataset.mcB); if(!b) return;
+    if(t.dataset.mcC){ const c=(b.citas||[]).find(x=>x.id===t.dataset.mcC); if(c){ cerrar(); compartirCita(b,c); } return; }
+    cerrar(); openBook(b.id); setTimeout(()=>$("#citasBox")?.scrollIntoView({block:"start"}),60); };
+  setTimeout(()=>($("#mcQ")||$("#mcNo"))?.focus({preventScroll:true}),30); }
+$("#citasBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirMisCitas(); });
 
 /* ---------- qué leer ahora ---------- */
 const RN_MODOS=[["parati","Para ti"],["corto","Algo corto"],["genero","Cambiar de género"],["serie","Seguir una serie"],["espera","El que más espera"]];
