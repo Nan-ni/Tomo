@@ -826,7 +826,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 19</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 20</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
@@ -1040,6 +1040,10 @@ const LIBRERIAS={falta:false};
 async function librerias(params,ms=14000){ if(VER||LIBRERIAS.falta||!window.TOMO?.fnUrl) return null;
   const j=await getJson(`${window.TOMO.fnUrl}/librerias?${params}`,ms);
   if(j.__notFound){ LIBRERIAS.falta=true; return null; } return j; }
+// Se despierta al abrir Tomo y al ir a escanear, para que el primer libro peruano no espere a que la función arranque
+let libreriasDespierta=0;
+function despertarLibrerias(){ if(VER||LIBRERIAS.falta||!window.TOMO?.fnUrl||Date.now()-libreriasDespierta<240000) return; libreriasDespierta=Date.now();
+  fetch(`${window.TOMO.fnUrl}/librerias?ping=1`).then(r=>{ if(r.status===404) LIBRERIAS.falta=true; }).catch(()=>{}); }
 const yearOf=s=>{ const m=String(s||"").match(/\d{4}/); return m?m[0]:""; };
 const soloHttps=u=>/^https:\/\//i.test(u||"")?u:"#";
 const httpsify=u=>u?String(u).replace(/^http:/,"https:").replace(/&edge=curl/,""):"";
@@ -1135,10 +1139,13 @@ async function buscarTomo(id){
 // conLibrerias: si Google no lo tiene, también se pregunta a la Agencia Peruana del ISBN y a librerías (solo al agregar o buscar de nuevo).
 async function lookup(isbn, conLibrerias){
   const conEstado=pr=>pr.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
+  const valido=/^97[89]\d{10}$/.test(isbn);
+  // ISBN peruano: Google casi nunca lo tiene, así que a las librerías se les pregunta desde el principio, a la vez que a Google
+  const lP0=conLibrerias&&valido&&/^978(612|9972)/.test(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
   const oP=conEstado(openLibrary(isbn)), g=await conEstado(google(isbn));
   const gTiene=g.status==="fulfilled"&&!!g.value?.titulo;
-  // Google no lo tiene: mientras se espera a Open Library, ya se pregunta a las librerías (sin esperar de más si ellas lo encuentran)
-  const lP=conLibrerias&&!gTiene&&/^97[89]\d{10}$/.test(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
+  // Los demás: si Google no lo tiene, mientras se espera a Open Library ya se pregunta a las librerías (sin esperar de más si lo encuentran)
+  const lP=lP0||(conLibrerias&&!gTiene&&valido?librerias(`isbn=${isbn}`).catch(()=>null):null);
   const nunca=new Promise(()=>{}), lHit=lP?lP.then(l=>l?.encontrado&&l.datos?.titulo?{status:"librerias"}:nunca):nunca;
   // Open Library es lento (a veces 5-10 s): si Google ya trajo el libro, se le da menos de un segundo; si no, hasta 6 s
   const o=await Promise.race([oP, lHit, dormir(gTiene?700:6000).then(()=>({status:"tarde"}))]);
@@ -1672,7 +1679,7 @@ $("#barcodePhoto").addEventListener("change",async e=>{
 const CAM={stream:null,timer:0,busy:false,bd:null,reader:null,canvas:null,cb:null};
 // alLeer: opcional. Si viene, el código se entrega ahí (p. ej. para llenar el ISBN de una ficha) en vez de agregar un libro.
 async function abrirCamara(alLeer){
-  CAM.cb=typeof alLeer==="function"?alLeer:null;
+  CAM.cb=typeof alLeer==="function"?alLeer:null; despertarLibrerias();
   if(!navigator.mediaDevices?.getUserMedia){ $("#barcodePhoto").click(); return; }
   let root=$("#camRoot"); if(!root){ root=document.createElement("div"); root.id="camRoot"; document.body.appendChild(root); }
   root.innerHTML=`<div class="cam" role="dialog" aria-modal="true" aria-label="Escanear código de barras">
@@ -2778,6 +2785,7 @@ if(VER){ // encabezado y pie del estante compartido
 // Completar libros que quedaron sin datos (por ejemplo, sin internet al escanear)
 // Géneros de antes (Derecho, Relaciones internacionales, Shōnen…) pasan a la lista clásica
 if(!VER){ let ch=false; S.books=S.books.map(b=>{ const g=normalizarGenero(b.genero); if(g===(b.genero||"")) return b; ch=true; return {...b,genero:g,actualizado:Date.now()}; }); if(ch){ persist(); render(); } }
+if(!VER){ setTimeout(despertarLibrerias,1500); $("#isbnInput").addEventListener("focus",despertarLibrerias); }
 if(!VER) (async()=>{ await dormir(3000);
   for(const b of S.books.filter(b=>b.isbn&&!b.titulo).slice(0,40)){ await esperarTurno(); await fillFromWeb(b.id,true); }
   for(const b of S.books.filter(b=>b.isbn&&!b.amazonProbado&&!b.portadaAmazon&&autoCover(b)).slice(0,60)){ await esperarTurno(); await upgradeCover(b.id); }
