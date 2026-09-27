@@ -1149,7 +1149,7 @@ a.btn{text-decoration:none;color:inherit}
           <span class="avatar lg" data-avatar aria-hidden="true"></span>
           <div class="menu-who"><b id="menuNombre">Mi estante</b>
             <span class="menu-id">Tu ID <b class="mono" id="menuId">—</b><button class="linkbtn" type="button" id="copyIdBtn">Copiar</button></span>
-            <small class="menu-ver">Tomo · versión 36</small></div>
+            <small class="menu-ver">Tomo · versión 37</small></div>
           <button class="menu-x" type="button" id="menuX" aria-label="Cerrar el menú"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
         <small class="menu-aviso" id="menuBuscador" hidden></small>
@@ -4150,6 +4150,16 @@ if(!VER) (function(){
     const c=(L.colsTs||0)>(R.colsTs||0)?L:R, w=(L.wishTs||0)>(R.wishTs||0)?L:R, a=(L.ajustesTs||0)>(R.ajustesTs||0)?L:R;
     return {libros,borrados:bor,colecciones:c.colecciones||{},colsTs:c.colsTs||0,deseos:w.deseos||{items:[],ocultas:[]},wishTs:w.wishTs||0,ajustes:limpiarAjustes(a.ajustes),ajustesTs:a.ajustesTs||0}; }
   const firma=d=>JSON.stringify([d.libros.map(b=>b.id+":"+tiempo(b)).sort(),d.borrados,d.colecciones,d.colsTs,d.deseos,d.wishTs,d.ajustes,d.ajustesTs||0]);
+  /* Para no bajar el estante entero cada vez que abres Tomo o vuelves a él: se anota qué versión de la nube
+     tienes aquí completa (con una huella de tu estante local). Si la nube sigue en esa versión y aquí no cambió
+     nada, basta con preguntar el número de versión, que pesa unos bytes. */
+  const SYNC_KEY=NS+"nube";
+  const huella=d=>{ const s=firma(d); let a=2166136261,b=5381; for(let i=0;i<s.length;i++){ const c=s.charCodeAt(i); a=Math.imul(a^c,16777619); b=(Math.imul(b,33)^c)|0; } return (a>>>0).toString(36)+(b>>>0).toString(36)+s.length.toString(36); };
+  // la huella se toma en el mismo momento en que se envía o se mezcla: lo que cambies mientras tanto queda pendiente y se sube después
+  function anotarSync(version,h){ try{ localStorage.setItem(SYNC_KEY,JSON.stringify({uid,version,h})); }catch(e){} }
+  function versionAlDia(){ // la versión de la nube que ya está entera aquí, si desde entonces no cambiaste nada
+    try{ const g=JSON.parse(localStorage.getItem(SYNC_KEY)||"null"); if(g&&g.uid===uid&&Number.isInteger(g.version)&&g.h===huella(doc())) return g.version; }catch(e){}
+    return null; }
   function aplicar(d){
     S.books=d.libros; S.borrados=d.borrados; S.colsCfg=d.colecciones; S.colsTs=d.colsTs;
     const w=d.deseos||{}; S.wish={items:Array.isArray(w.items)?w.items:[],ocultas:Array.isArray(w.ocultas)?w.ocultas:[]}; S.wishTs=d.wishTs;
@@ -4159,16 +4169,23 @@ if(!VER) (function(){
     S.ver=(S.ver||0)+1; render(); if(S.openId&&!byId(S.openId)) closeSheet(); }
   async function traer(desdeSubir){
     N.ultimoPull=Date.now();
+    const alDia=desdeSubir||N.pend?null:versionAlDia();
+    if(alDia!=null){ // ¿cambió algo en la nube desde otro dispositivo?
+      const {data:v,error:ev}=await sb.from("estantes").select("version").eq("user_id",uid).maybeSingle();
+      if(ev) throw ev;
+      if(v&&v.version===alDia){ N.base=alDia; if(!N.pend) T.estadoNube("ok"); return; } }
     const {data,error}=await sb.from("estantes").select("datos,version").eq("user_id",uid).maybeSingle();
     if(error) throw error;
     const L=doc();
     if(!data){ // primera vez: se crea tu estante en la nube con lo que haya aquí
+      const hL=huella(L);
       const {data:ins,error:e2}=await sb.from("estantes").insert({user_id:uid,datos:L,version:1}).select("version").single();
       if(e2){ if(String(e2.code)==="23505") return traer(desdeSubir); throw e2; }
-      N.base=ins.version; if(!desdeSubir) T.estadoNube("ok"); return; }
+      N.base=ins.version; anotarSync(ins.version,hL); if(!desdeSubir) T.estadoNube("ok"); return; }
     N.base=data.version;
     const M=fusionar(L,data.datos), Rn=fusionar({colsTs:-1,wishTs:-1,ajustesTs:-1},data.datos);
     if(firma(M)!==firma(L)) aplicar(M);
+    if(firma(M)===firma(Rn)) anotarSync(data.version,huella(doc())); // aquí quedó igual que en la nube
     if(!desdeSubir){ if(firma(M)!==firma(Rn)) programar(300); else if(!N.pend) T.estadoNube("ok"); } }
   async function subir(){
     if(N.saving){ N.again=true; return; }
@@ -4178,9 +4195,10 @@ if(!VER) (function(){
       for(let intento=0;intento<4;intento++){
         if(N.base==null) await traer(true);
         N.pend=false;
-        const {data,error}=await sb.from("estantes").update({datos:doc(),version:N.base+1,actualizado:new Date().toISOString()}).eq("user_id",uid).eq("version",N.base).select("version");
+        const d=doc(), h=huella(d);
+        const {data,error}=await sb.from("estantes").update({datos:d,version:N.base+1,actualizado:new Date().toISOString()}).eq("user_id",uid).eq("version",N.base).select("version");
         if(error) throw error;
-        if(data&&data.length){ N.base=data[0].version; if(!N.pend) T.estadoNube("ok"); subirFotosPendientes(); return; }
+        if(data&&data.length){ N.base=data[0].version; anotarSync(N.base,h); if(!N.pend) T.estadoNube("ok"); subirFotosPendientes(); return; }
         await traer(true); // otro dispositivo guardó antes: mezclo lo suyo con lo mío y vuelvo a intentar
       }
       throw new Error("conflicto");
