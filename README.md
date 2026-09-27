@@ -17,6 +17,7 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 - **Colecciones de quiosco y grupos:** colecciones por entregas, y grupos por editorial, diseño o club de lectura, con lo que llevas gastado en soles.
 - **Lista de deseos:** los libros que quieres y los tomos que te faltan de tus series. Se puede copiar para mandarla por WhatsApp.
 - **Préstamos:** anota a quién le prestaste cada libro y desde cuándo.
+- **Traer desde Goodreads:** en *Mi cuenta → Traer desde Goodreads* eliges el archivo que exporta Goodreads (goodreads.com/review/import → *Export Library*). Lo leído, lo que estás leyendo y lo abandonado va al estante con la fecha, tu calificación y tu reseña; tus «Quiero leer» van a la lista de deseos (o al estante, si los tienes). Si un libro ya estaba en Tomo, solo se completa lo que falta, y traerlo dos veces no duplica nada.
 - **Apariencia:** en *Mi cuenta → Apariencia* eliges el modo (automático, claro u oscuro) y el color de la app (Bosque, Océano, Ciruela, Terracota, Rosa o Grafito). Se guarda en tu cuenta y se aplica al abrir, sin parpadeo.
 - **Buscar y filtrar:** el buscador va primero; debajo, el tipo (libros, mangas…) y el estado. En el celular, género, agrupar, orden y vista están en el botón *Filtros* (un punto avisa si alguno está activo).
 - **Estados de lectura:** Por leer, Leyendo, Leído, Pausado y Abandonado, cada uno con su filtro.
