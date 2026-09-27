@@ -245,7 +245,12 @@
     else if (esIOS) aviso("En Safari toca Compartir ⬆︎ y luego “Agregar a pantalla de inicio”.");
     else aviso("Abre el menú del navegador y elige “Instalar Tomo”.");
   });
-  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    // Versión nueva: el service worker la instaló por detrás mientras usabas la de antes; la app ofrece recargar
+    const habia = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", () => { if (habia) { T.nuevaVersion = true; window.dispatchEvent(new Event("tomo-nueva-version")); } });
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 
   // ---------- fotos de portada en la nube (carpeta privada de cada lector) ----------
   const BUCKET = "portadas";
@@ -334,11 +339,25 @@
     try { const s = JSON.parse(localStorage.getItem("tomo.sesion") || "null"); return s && s.user && s.user.id && s.refresh_token ? s : null; }
     catch (e) { return null; }
   };
+  const perfilDe = (uid) => { try { return JSON.parse(localStorage.getItem("tomo.perfil." + uid) || "null"); } catch (e) { return null; } };
   (async () => {
     pag("boot");
     const guardada = sesionGuardada();
     // Sin internet no se puede renovar la sesión (vence cada hora): se abre con la guardada y se renueva sola al volver la conexión
     if (guardada && navigator.onLine === false) return entrar(guardada, true);
+    // Ya entraste antes en este dispositivo: el estante se abre al instante con lo guardado, y la sesión y el perfil
+    // se renuevan por detrás (si la sesión ya no vale, Supabase avisa y se vuelve a la pantalla de ingreso)
+    const pl = guardada && perfilDe(guardada.user.id);
+    if (pl && pl.codigo && !pl.debe_cambiar) {
+      entrar(guardada, true);
+      sb.auth.getSession().then(async ({ data }) => {
+        if (!data?.session) return; // sin red: sigue con la guardada; sesión vencida: onAuthStateChange recarga
+        T.token = data.session.access_token;
+        const p = await cargarPerfil();
+        if (p && p.codigo) { T.perfil = p; $("#menuId").textContent = p.codigo; if (p.debe_cambiar) abrirCambio(true); }
+      }, () => {});
+      return;
+    }
     // Con internet lento o que no responde, no se espera más de 5 s
     const r = await Promise.race([
       sb.auth.getSession().then((x) => x, (error) => ({ data: {}, error })),
