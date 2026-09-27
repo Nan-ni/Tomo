@@ -701,6 +701,11 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 
 /* resultados de "Búscalo por título" con su portada */
 .hist li.ts-it{align-items:center;gap:10px}
+.pega{display:flex;flex-direction:column;gap:8px;margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.pega .linkbtn{font-size:inherit}
+#url-q{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238C8272' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1'/%3E%3Cpath d='M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1'/%3E%3C/svg%3E")}
+#tsLib summary{cursor:pointer;color:var(--accent);font-weight:600}
+.lib-list{margin:6px 0 0;padding-left:18px}
 .ts-it img,.ts-it .ts-sin{width:34px;height:51px;flex:none;border-radius:3px;object-fit:cover;background:var(--surface-2)}
 .ts-it span{flex:1;min-width:0}
 
@@ -821,7 +826,7 @@ a.btn{text-decoration:none;color:inherit}
     <details class="menu" id="dataMenu">
       <summary class="btn ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 00-16 0M12 13a5 5 0 100-10 5 5 0 000 10z"/></svg><span>Mi cuenta</span></summary>
       <div class="menu-pop">
-        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 18</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
+        <div class="menu-id"><span>Tu ID</span><b class="mono" id="menuId">—</b><small class="menu-ver">Tomo · versión 19</small><small class="menu-ver menu-aviso" id="menuBuscador" hidden></small></div>
         <button class="menu-item" id="autoBtn" type="button" hidden>Activar copia automática</button>
         <button class="menu-item" id="shareBtn" type="button">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></button>
         <button class="menu-item" id="feedbackBtn" type="button">Enviar comentario<small>Cuéntanos un error o una idea</small></button>
@@ -1029,6 +1034,12 @@ async function gb(params){
 async function getJson(url,ms=15000){ const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
   try{ const r=await fetch(url,{signal:ctl.signal,headers:url.startsWith(window.TOMO.fnUrl)?await window.TOMO.authHeaders():undefined}); if(r.status===404) return {__notFound:true};
     if(!r.ok){ const e=new Error("http "+r.status); e.status=r.status; throw e; } return await r.json(); } finally{ clearTimeout(t); } }
+// Función "librerias" de Supabase: para los ISBN que Google y Open Library no tienen (muchos peruanos) busca en la Agencia
+// Peruana del ISBN y en librerías, y lee el enlace de una tienda que pegues. Si no está publicada (404), no se vuelve a llamar.
+const LIBRERIAS={falta:false};
+async function librerias(params,ms=14000){ if(VER||LIBRERIAS.falta||!window.TOMO?.fnUrl) return null;
+  const j=await getJson(`${window.TOMO.fnUrl}/librerias?${params}`,ms);
+  if(j.__notFound){ LIBRERIAS.falta=true; return null; } return j; }
 const yearOf=s=>{ const m=String(s||"").match(/\d{4}/); return m?m[0]:""; };
 const soloHttps=u=>/^https:\/\//i.test(u||"")?u:"#";
 const httpsify=u=>u?String(u).replace(/^http:/,"https:").replace(/&edge=curl/,""):"";
@@ -1120,18 +1131,28 @@ async function buscarTomo(id){
   const upd={...cur,tomoRevisado:true};
   if(num&&num!==cur.tomo){ upd.tomo=num; upd.tomoEstimado=false; upd.actualizado=Date.now(); }
   upsert(upd); }
-// Devuelve {data, found, reached, googleOk, googleProblem}. googleOk: Google Books contestó (aunque sea "no lo tengo").
-async function lookup(isbn){
+// Devuelve {data, found, reached, googleOk, googleProblem, fuente, librerias}. googleOk: Google Books contestó (aunque sea "no lo tengo").
+// conLibrerias: si Google no lo tiene, también se pregunta a la Agencia Peruana del ISBN y a librerías (solo al agregar o buscar de nuevo).
+async function lookup(isbn, conLibrerias){
   const conEstado=pr=>pr.then(value=>({status:"fulfilled",value}),reason=>({status:"rejected",reason}));
   const oP=conEstado(openLibrary(isbn)), g=await conEstado(google(isbn));
+  const gTiene=g.status==="fulfilled"&&!!g.value?.titulo;
+  // Google no lo tiene: mientras se espera a Open Library, ya se pregunta a las librerías (sin esperar de más si ellas lo encuentran)
+  const lP=conLibrerias&&!gTiene&&/^97[89]\d{10}$/.test(isbn)?librerias(`isbn=${isbn}`).catch(()=>null):null;
+  const nunca=new Promise(()=>{}), lHit=lP?lP.then(l=>l?.encontrado&&l.datos?.titulo?{status:"librerias"}:nunca):nunca;
   // Open Library es lento (a veces 5-10 s): si Google ya trajo el libro, se le da menos de un segundo; si no, hasta 6 s
-  const o=await Promise.race([oP, dormir(g.status==="fulfilled"&&g.value?.titulo?700:6000).then(()=>({status:"tarde"}))]);
+  const o=await Promise.race([oP, lHit, dormir(gTiene?700:6000).then(()=>({status:"tarde"}))]);
   const out={}; let reached=false, googleOk=false, googleProblem="";
   if(g.status==="fulfilled"){ if(!g.value.skipped){ reached=googleOk=true; Object.assign(out,g.value); } }
   else { const st=g.reason?.status; googleProblem=(st===429?"Google Books llegó a su límite de hoy":"Google Books no respondió")+(g.reason?.detalle?` (${g.reason.detalle})`:""); }
   if(o.status==="fulfilled"){ reached=true; const ol=o.value||{}; const gc=out.categorias||[]; for(const k in ol) if(!out[k]&&ol[k]) out[k]=ol[k]; out.categorias=gc.concat(ol.categorias||[]); }
   else if(o.reason?.status) reached=true;
-  return {data:out, found:!!out.titulo, reached, googleOk, googleProblem};
+  let lib=null, fuente="";
+  if(!out.titulo&&lP){ lib=await lP; if(lib) reached=true;
+    if(lib?.encontrado&&lib.datos?.titulo){ const d=lib.datos; fuente=String(d.fuente||"");
+      for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl"]) if(!out[k]&&d[k]) out[k]=String(d[k]);
+      out.baseTitle=out.baseTitle||out.titulo; out.categorias=out.categorias||[]; } }
+  return {data:out, found:!!out.titulo, reached, googleOk, googleProblem, fuente, librerias:lib};
 }
 // Búsqueda por título: Google en español, Google en general y Open Library a la vez; sin repetidos y ordenados para que salga
 // primero el libro cuyo título es lo que escribiste (aunque agregues el autor: "La tregua Mario"), luego en español y con portada.
@@ -1371,10 +1392,12 @@ async function fillFromWeb(id, quiet){
   const b=byId(id); if(!b?.isbn) return;
   if(!quiet) marcarAccion();
   S.pending.add(id); render(); if(S.openId===id) renderSheet();
-  let r; try{ r=await lookup(b.isbn); }catch(e){ r={found:false,reached:false,data:{}}; }
-  S.diag=S.diag||{};
-  if(r.found) delete S.diag[id];
-  else S.diag[id]=r.googleOk?"Google Books y Open Library respondieron que no tienen este ISBN.":`${r.googleProblem||"No pude conectarme a las bases de libros"}. Toca “Buscar de nuevo por ISBN” en un rato.`;
+  let r; try{ r=await lookup(b.isbn,true); }catch(e){ r={found:false,reached:false,data:{}}; }
+  S.diag=S.diag||{}; S.diagLib=S.diagLib||{};
+  if(r.found){ delete S.diag[id]; delete S.diagLib[id]; }
+  else { S.diag[id]=(r.googleOk?"Google Books y Open Library respondieron que no tienen este ISBN.":`${r.googleProblem||"No pude conectarme a las bases de libros"}. Toca “Buscar de nuevo por ISBN” en un rato.`)
+      +(r.librerias?.intentos?.length?" Tampoco apareció en librerías.":"");
+    if(r.librerias?.intentos?.length) S.diagLib[id]=r.librerias.intentos; }
   S.pending.delete(id);
   const cur=byId(id); if(!cur){ render(); return; }
   const upd={...cur, actualizado:Date.now()}; if(r.reached) upd.buscado=true;
@@ -1403,12 +1426,12 @@ async function fillFromWeb(id, quiet){
 // Mensaje bajo el escáner según lo que encontró la búsqueda
 function avisarBusqueda(id,b,upd,r){
   const tip = r.googleProblem ? ` ${r.googleProblem}` : (!gKey() ? ` Con una clave de Google Books (en “Ajustes de búsqueda”) se encuentran muchos más libros.` : "");
-  if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}`,"ok");
+  if(r.found) setStatus(`Agregado: <b>${esc(upd.titulo)}</b>${upd.tomo&&upd.tomoEstimado?` · ${numLabel(upd).toLowerCase()} ${esc(upd.tomo)} (deducido del ISBN, revísalo)`:""}${upd.autor?" · "+esc(upd.autor):""}${r.fuente?` · datos de ${esc(r.fuente)}`:""}`,"ok");
   else if(!r.reached || !r.googleOk){ // no es que no exista: Google no llegó a contestar
     const otraVez=!fillFromWeb.reintento?.has(id); (fillFromWeb.reintento||(fillFromWeb.reintento=new Set())).add(id);
     setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero ${esc(r.googleProblem||"no pude conectarme a las bases de libros")}. ${otraVez?"Lo vuelvo a intentar solo en unos segundos.":"Usa “Buscar de nuevo por ISBN” en su ficha más tarde."}`,"err");
     if(otraVez) setTimeout(()=>{ const x=byId(id); if(x&&!x.titulo&&!S.pending.has(id)){ BUSCADOR.pausaHasta=0; fillFromWeb(id,false); } },15000); } // el reintento vuelve a probar el buscador de Tomo
-  else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}.${esc(tip)} Búscalo por título aquí abajo.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
+  else { setStatus(`Guardé <span class="mono">${esc(fmtIsbn(b.isbn))}</span>, pero no aparece en ${gKey()?"Google Books ni Open Library":"Open Library"}${r.librerias?.intentos?.length?" ni en librerías":""}.${esc(tip)} Búscalo por título o pega el enlace de una tienda en su ficha.`,"err"); if(!S.openId&&!S.draft){ openBook(id); setTimeout(()=>$("#ts-q")?.focus(),50); } } // no tapar la ficha que estás usando
 }
 
 /* ---------- fotos de portada propias (IndexedDB) ---------- */
@@ -1746,7 +1769,6 @@ function renderSheet(){
           <input id="f-titulo" class="title" value="${esc(b.titulo)}" placeholder="${busy?"Buscando…":"Título del libro"}">
           <div class="mono" style="font-size:13px;color:var(--ink-2);margin-top:6px">${esc(fmtIsbn(b.isbn))}</div>
           ${o?`<div class="origin">Grupo ISBN ${esc(o.g)} · ${esc(o.name)}</div>`:""}
-          ${b.isbn?`<a class="linkbtn" style="margin-top:6px;display:inline-block" href="https://www.google.com/search?q=${encodeURIComponent(b.isbn)}" target="_blank" rel="noopener">Buscar este ISBN en la web ↗</a>`:""}
           ${!isNew?`<label class="linkbtn" for="ownCover" style="margin-top:6px;cursor:pointer">${b.portadaLocal?"Cambiar foto de portada":"Subir foto de portada"}</label><input type="file" id="ownCover" accept="image/*" class="sr">`:""}
           ${!isNew&&b.portadaLocal?`<button class="linkbtn" id="rmOwnCover" style="margin-top:6px">Quitar mi foto</button>`:""}
           ${b.portadaOtraEd&&!b.portadaLocal?`<div class="origin">Portada de otra edición</div>`:""}
@@ -1758,8 +1780,15 @@ function renderSheet(){
       <div class="box" id="titleSearch">
         <h4>¿No aparece? Búscalo por título</h4>
         ${!isNew&&S.diag?.[b.id]?`<p class="origin" id="tsDiag" style="margin:0">${esc(S.diag[b.id])}</p>`:""}
+        ${!isNew&&S.diagLib?.[b.id]?`<details class="origin" id="tsLib"><summary>Dónde busqué</summary><ul class="lib-list">${S.diagLib[b.id].map(i=>`<li>${esc(i.fuente)}: ${esc(i.resultado)}</li>`).join("")}</ul></details>`:""}
         <form id="tsForm" style="display:flex;gap:8px"><label for="ts-q" class="sr">Título y autor</label><input id="ts-q" class="search" style="max-width:none" placeholder="Ej.: La ciudad y los perros Vargas Llosa" value="${esc(b.titulo?"":"")}"><button class="btn" type="submit">Buscar</button></form>
         <div id="tsRes" class="hist"></div>
+        ${LIBRERIAS.falta?"":`<div class="pega" id="pegaBox">
+          <h4>¿Lo viste en una tienda? Pega el enlace</h4>
+          <p class="origin" style="margin:0">${b.isbn?`Abre <a class="linkbtn" href="https://www.google.com/search?q=${encodeURIComponent(b.isbn)}" target="_blank" rel="noopener" id="googleIsbn">el ISBN en Google ↗</a>, entra`:"Entra"} a la página del libro (Crisol, Buscalibre, la editorial…), copia el enlace y pégalo aquí: Tomo trae el título, el autor y la portada.</p>
+          <form id="urlForm" novalidate style="display:flex;gap:8px"><label for="url-q" class="sr">Enlace de la página del libro</label><input id="url-q" class="search" type="url" inputmode="url" autocomplete="off" style="max-width:none" placeholder="https://…"><button class="btn" type="submit" id="urlBtn">Traer datos</button></form>
+          <p class="origin" id="urlMsg" role="status" style="margin:0"></p>
+        </div>`}
       </div>
       <div class="form">
         <div class="f full"><label>Tipo</label><div class="seg" id="tipoSeg">${TIPOS.map(([k,l])=>`<button type="button" data-tp="${k}" aria-pressed="${tipoOf(b)===k}">${l}</button>`).join("")}</div></div>
@@ -1866,6 +1895,22 @@ function wireSheet(){
     try{ const res=await searchTitle(q); S.tsRes=res;
       box.innerHTML=res.length?res.map((r,i)=>`<li class="ts-it">${r.portadaUrl?`<img src="${esc(coverSrc(r.portadaUrl))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">`:`<i class="ts-sin" aria-hidden="true"></i>`}<span><b style="color:var(--ink)">${esc(r.titulo)}</b><br>${esc(r.autor||"")}${r.editorial?" · "+esc(r.editorial):""}${r.anio?" · "+esc(r.anio):""}</span><button class="btn" data-pick="${i}" type="button">Usar</button></li>`).join(""):`<li>Sin resultados. Escribe los datos a mano.</li>`;
     }catch(err){ box.innerHTML=`<li>No hay conexión con Google Books. Intenta más tarde.</li>`; } };
+  // Enlace de una tienda: la función "librerias" lee la página y se copian los datos a la ficha (como "Usar" en la búsqueda por título)
+  $("#urlForm")&&($("#urlForm").onsubmit=async e=>{ e.preventDefault(); const inp=$("#url-q"), msg=$("#urlMsg"), btn=$("#urlBtn"); let u=inp.value.trim();
+    if(!u&&navigator.clipboard?.readText){ try{ u=(await navigator.clipboard.readText()).trim(); }catch(err){} }
+    const m=u.match(/https?:\/\/[^\s<>"']+/i);
+    if(!m){ msg.textContent="Pega el enlace completo de la página del libro (empieza con https://)."; inp.focus(); return; }
+    u=m[0]; inp.value=u; const b=current(), guardar=S.draft?"Guardar en el estante":"Guardar cambios";
+    marcarAccion(); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Leyendo…'; msg.textContent="";
+    let j=null; try{ j=await librerias(`url=${encodeURIComponent(u)}${b?.isbn?`&isbn=${b.isbn}`:""}`,15000); }catch(err){}
+    if(!$("#urlForm")) return; // se cerró la ficha
+    btn.disabled=false; btn.textContent="Traer datos";
+    if(!j){ msg.textContent=LIBRERIAS.falta?"Esta opción todavía no está activa.":navigator.onLine===false?"Sin conexión. Intenta cuando tengas internet.":"No pude leer esa página ahora. Intenta de nuevo en un rato."; return; }
+    if(!j.encontrado){ msg.textContent=j.error||"No encontré los datos del libro en esa página."; return; }
+    const d=j.datos||{};
+    for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl"]){ const el=$("#f-"+k); if(el&&d[k]) el.value=d[k]; }
+    msg.textContent=j.coincide===false?`Ojo: esa página no menciona tu ISBN, puede ser otra edición. Revisa los datos y toca “${guardar}”.`:`Listo: datos de ${d.fuente||"la tienda"}. Revisa y toca “${guardar}”.`;
+    toast("Datos copiados. Revisa y guarda."); });
   $("#tsRes").onclick=e=>{ const p=e.target.closest("[data-pick]"); if(!p) return; const r=S.tsRes[+p.dataset.pick];
     for(const k of ["titulo","autor","editorial","anio","paginas","portadaUrl","genero"]){ const el=$("#f-"+k); if(el && r[k] && (k!=="genero"||!el.value)) el.value=r[k]; }
     const t=detectTipo(r); if(t && !$("#tipoSeg").dataset.v){ $("#tipoSeg").querySelector(`[data-tp="${t}"]`)?.click(); }
