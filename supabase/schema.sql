@@ -116,3 +116,24 @@ revoke all on public.compartidos from anon;
 -- el enlace lo inventa la base de datos (al azar), no el lector
 revoke insert on public.compartidos from authenticated;
 grant insert (user_id) on public.compartidos to authenticated;
+
+-- ---------------------------------------------------------------------
+--  Comentarios: lo que los lectores envían desde "Mi cuenta → Enviar comentario".
+--  Cada lector solo puede enviar (no ver ni cambiar). Tú los lees en
+--  Table Editor → comentarios, o en el SQL Editor.
+-- ---------------------------------------------------------------------
+create table if not exists public.comentarios (
+  id       uuid primary key default gen_random_uuid(),
+  user_id  uuid not null default auth.uid() references auth.users on delete cascade,
+  tipo     text not null default 'otro' check (tipo in ('idea','error','otro')),
+  texto    text not null check (char_length(texto) between 1 and 2000),
+  contexto jsonb not null default '{}'::jsonb,
+  leido    boolean not null default false,
+  creado   timestamptz not null default now()
+);
+alter table public.comentarios enable row level security;
+drop policy if exists "enviar comentario" on public.comentarios;
+create policy "enviar comentario" on public.comentarios
+  for insert to authenticated with check (user_id = (select auth.uid()));
+revoke all on public.comentarios from anon;
+revoke select, update, delete on public.comentarios from authenticated;
