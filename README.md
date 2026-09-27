@@ -17,6 +17,8 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 - **Colecciones de quiosco y grupos:** colecciones por entregas, y grupos por editorial, diseño o club de lectura, con lo que llevas gastado en soles.
 - **Lista de deseos:** los libros que quieres y los tomos que te faltan de tus series. Se puede copiar para mandarla por WhatsApp.
 - **Préstamos:** anota a quién le prestaste cada libro y desde cuándo.
+- **Apariencia:** en *Mi cuenta → Apariencia* eliges el modo (automático, claro u oscuro) y el color de la app (Bosque, Océano, Ciruela, Terracota, Rosa o Grafito). Se guarda en tu cuenta y se aplica al abrir, sin parpadeo.
+- **Buscar y filtrar:** el buscador va primero; debajo, el tipo (libros, mangas…) y el estado. En el celular, género, agrupar, orden y vista están en el botón *Filtros* (un punto avisa si alguno está activo).
 - **Estados de lectura:** Por leer, Leyendo, Leído, Pausado y Abandonado, cada uno con su filtro.
 - **Leyendo ahora:** arriba del estante, los libros que estás leyendo con su barra de avance y el botón *Anotar página*. Al llegar a la última página, el libro queda como Leído.
 - **Citas:** en la ficha de cada libro, guarda las frases que te gustaron. Puedes escribirlas o **copiarlas de una foto**: marcas con el dedo la parte de la página y Tomo lee el texto dentro del mismo celular, sin subir la foto a ningún lado (usa Tesseract; la primera vez baja unos 5 MB). Después se comparten como imagen para historias o WhatsApp, en tres colores, y se ven todas juntas en *Mi cuenta → Mis citas*.
