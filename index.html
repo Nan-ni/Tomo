@@ -649,6 +649,36 @@ select{padding:8px 30px 8px 11px;appearance:none;-webkit-appearance:none;backgro
 .btn.ch-act.on{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
 .btn.ch-act.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn.ch-act svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* Colecciones apiladas */
+.col-barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.col-buscar{flex:1;min-width:170px;position:relative;display:flex}
+.col-buscar svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:17px;height:17px;fill:none;stroke:var(--ink-3);stroke-width:2;stroke-linecap:round;pointer-events:none}
+.col-buscar input{width:100%;max-width:none;padding-left:38px}
+.seg.col-vista{display:inline-grid;grid-template-columns:repeat(2,auto);flex:none}
+.col-vista button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;min-height:40px}
+.col-vista svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.pilas{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:22px 14px;margin-top:12px}
+@media (min-width:700px){.pilas{grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:28px 22px}}
+.pila{display:flex;flex-direction:column;gap:3px;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font:inherit;min-width:0;border-radius:10px}
+.pila:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.pila-libros{position:relative;display:block;padding:12px 12px 0 0}
+.pila-f{position:relative;z-index:2;display:block;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.pila-f .cover{width:100%}
+.pila:hover .pila-f,.pila:focus-visible .pila-f{transform:translateY(-4px) rotate(-.8deg)}
+.pila-libros::before,.pila-libros::after{content:"";position:absolute;left:0;bottom:0;width:calc(100% - 12px);aspect-ratio:2/3;border-radius:3px 7px 7px 3px;border:1px solid var(--line);box-shadow:var(--book)}
+.pila-libros::before{z-index:1;transform:translate(6px,-6px);background:color-mix(in oklab,var(--surface-2) 88%,var(--ink) 12%)}
+.pila-libros::after{z-index:0;transform:translate(12px,-12px);background:color-mix(in oklab,var(--surface-2) 94%,var(--ink) 6%)}
+.capas-0 .pila-libros::before,.capas-0 .pila-libros::after,.capas-1 .pila-libros::after{display:none}
+.pila-n{position:absolute;left:7px;top:19px;z-index:3;background:rgba(15,10,5,.68);color:#fff;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;font-variant-numeric:tabular-nums;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.pila-ok{position:absolute;top:18px;right:18px;z-index:3;width:24px;height:24px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.pila-ok svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.pila-t{font-family:var(--serif);font-weight:700;font-size:14.5px;line-height:1.25;margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.pila-s{font-size:12.5px;color:var(--ink-3);line-height:1.3}
+.pila-prog{display:block;height:4px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:3px}
+.pila-prog i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.col-nav{display:flex;align-items:center;gap:8px}
+.col-nav .btn{min-height:42px;padding:8px 16px 8px 12px;font-size:14px}
+@media (max-width:560px){.col-vista button span{display:none}.col-vista button{padding:8px 11px;min-width:44px}.col-buscar{min-width:0}}
 .prog{height:10px;background:var(--surface-2)}
 .prog i{background:linear-gradient(90deg,var(--accent),color-mix(in oklab,var(--accent) 70%,var(--brass)))}
 .nextrow{border-radius:14px;padding:12px 14px;background:var(--accent-soft);border:1px solid color-mix(in oklab,var(--accent) 18%,transparent)}
@@ -1119,7 +1149,7 @@ a.btn{text-decoration:none;color:inherit}
           <span class="avatar lg" data-avatar aria-hidden="true"></span>
           <div class="menu-who"><b id="menuNombre">Mi estante</b>
             <span class="menu-id">Tu ID <b class="mono" id="menuId">—</b><button class="linkbtn" type="button" id="copyIdBtn">Copiar</button></span>
-            <small class="menu-ver">Tomo · versión 35</small></div>
+            <small class="menu-ver">Tomo · versión 36</small></div>
           <button class="menu-x" type="button" id="menuX" aria-label="Cerrar el menú"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
         <small class="menu-aviso" id="menuBuscador" hidden></small>
@@ -3001,10 +3031,13 @@ function setView(v){ S.view=v; try{ localStorage.setItem(NS+"view",v); }catch(e)
   if(v==="estante"&&S.estanteDirty) render(); else renderOther();
   if(v==="estante") enfocarIsbn(); }
 $("#views").addEventListener("click",e=>{ const b=e.target.closest("[data-v]"); if(b) setView(b.dataset.v); });
-function renderOther(){ if(!S.colsCfg) return; // aún cargando
+// ¿Estás escribiendo en Colecciones (editar, precios, el total)? Entonces lo que llega de fondo espera: redibujar borraría lo escrito
+const escribiendoEnCols=()=>{ const ae=document.activeElement, v=$("#v-colecciones");
+  return !!S.colEdit||!!(ae&&v&&v.contains(ae)&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.id!=="colQ"); };
+function renderOther(yo){ if(!S.colsCfg) return; // aún cargando (yo: lo pediste tú, no espera)
   const nw=S.wish.items.length+faltantes().filter(s=>!s.oculta).length;
   const tab=$('#views [data-v="deseos"] .tl'); if(tab) tab.innerHTML=`<span class="tl-l">Lista de deseos</span><span class="tl-s">Deseos</span>${nw?`<span class="n">${nw}</span>`:""}`;
-  if(S.view==="colecciones") renderCols(); else if(S.view==="deseos") renderWish(); else if(S.view==="stats") renderStats(); }
+  if(S.view==="colecciones"){ if(!yo&&escribiendoEnCols()) colsPronto(); else renderCols(); } else if(S.view==="deseos") renderWish(); else if(S.view==="stats") renderStats(); }
 
 /* ---------- vista: colecciones ---------- */
 S.priceEdit=null; S.pick=null; S.pickQ="";
@@ -3104,7 +3137,10 @@ async function detectarPendientes(){ if(detectando||!navigator.onLine||S.view!==
 // Mientras se buscan los totales de las series, Colecciones se redibuja como mucho cada 1,5 s (no una vez por serie)
 let colsTimer=0, colsUltimo=0;
 function colsPronto(){ if(S.view!=="colecciones"||colsTimer) return; const espera=Math.max(0,1500-(Date.now()-colsUltimo));
-  colsTimer=setTimeout(()=>{ colsTimer=0; colsUltimo=Date.now(); if(S.view==="colecciones") renderCols(); },espera); }
+  colsTimer=setTimeout(()=>{ colsTimer=0; colsUltimo=Date.now(); if(S.view!=="colecciones") return;
+    // si estás escribiendo (editar, precios, el total), se espera: redibujar borraría lo que escribiste
+    if(escribiendoEnCols()){ colsPronto(); return; }
+    renderCols(); },espera); }
 function detHtml(c,maxH){ if(c.distribuye) return "";
   const d=c.det, fuente=!porTomos(c.tipo)?"Wikidata":"AniList", u=unidad(c), tot=+c.total||0, tag=numTag(c).toLowerCase(), cid=esc(c.id);
   const pedirTotal=txt=>`<form class="det-form" data-form="total" data-col="${cid}" novalidate><label for="dt-${cid}">${txt}</label>
@@ -3136,18 +3172,63 @@ function detHtml(c,maxH){ if(c.distribuye) return "";
       ${tiene?`<span class="pill leido">La tienes</span>`:enDeseos?`<span class="pill">En tu lista de deseos</span>`:`<button class="btn sm" type="button" data-act="deseoSigue" data-i="${i}" data-col="${cid}">A mi lista de deseos</button>`}</span>`); }
   return `<div class="det">${lin.map(l=>`<div>${l}</div>`).join("")}${forms.join("")}</div>`; }
 
+/* Colecciones apiladas: cada una es una portada con sus libros detrás; al tocarla se abre entera.
+   Así encuentras una rápido sin bajar por todas. «Abiertas» las muestra todas como antes. */
+S.colVista="pilas"; try{ const v=localStorage.getItem(NS+"colVista"); if(v==="abiertas") S.colVista=v; }catch(e){}
+S.colAbierta=null; S.colQ="";
+function resumenCol(c){ // lo que tienes, lo que falta y la portada de adelante
+  if(c.clase==="grupo"){ const L=(c.libros||[]).map(byId).filter(Boolean), total=+c.total||0, w=unidad(c);
+    const frente=L.find(b=>b.portadaUrl||b.portadaLocal)||L[0];
+    return {n:L.length,total,pct:total?Math.min(100,Math.round(L.length/total*100)):0,frente,
+      txt:L.length?`${L.length}${total?` de ${total}`:""} ${L.length===1&&!total?w[0]:w[1]}`:"Sin libros todavía",completa:!!total&&L.length>=total}; }
+  const have=tomosDe(c), sinNum=sinNumeroDe(c), ns=[...have.keys()].sort((a,b)=>a-b), maxH=ns.length?ns[ns.length-1]:0;
+  const total=Math.max(+c.total||0,maxH*(+c.total?1:0)), tiene=have.size, w=unidad(c), tag=numTag(c).toLowerCase();
+  let sig=0; if(total){ for(let n=1;n<=total;n++) if(!have.has(n)){ sig=n; break; } } else sig=maxH+1;
+  const conPortada=ns.find(n=>have.get(n).portadaUrl||have.get(n).portadaLocal);
+  const cat=catSrc(`${c.id}-${ns[0]||1}`);
+  const frente=conPortada!==undefined?have.get(conPortada):cat?{_cat:cat}:(have.get(ns[0])||sinNum[0]);
+  const completa=!!total&&tiene>=total, n=tiene+sinNum.length;
+  const txt=!n?`Ninguna ${w[0]} todavía`:`${total?`${tiene} de ${total}`:`${n} ${n===1?w[0]:w[1]}`}${completa?" · completa":sig&&tiene?` · sigue ${c.distribuye?"el n.º":tag==="tomo"?"el tomo":"el n.º"}\u00a0${sig}`:""}`;
+  return {n,total,pct:total?Math.min(100,Math.round(tiene/total*100)):0,frente,txt,completa}; }
+function pilaHtml(c){ const r=resumenCol(c), capas=Math.min(2,Math.max(0,r.n-1));
+  const frente=r.frente?coverHtml(r.frente):coverHtml({id:c.id,titulo:c.nombre});
+  return `<button type="button" class="pila capas-${capas}" data-pila="${esc(c.id)}" aria-label="${esc(c.nombre)}: ${esc(r.txt)}">
+    <span class="pila-libros"><span class="pila-f">${frente}</span>${r.completa?`<span class="pila-ok" aria-hidden="true">${ICO_OK}</span>`:r.n?`<span class="pila-n">${r.total?`${r.pct}%`:r.n}</span>`:""}</span>
+    <span class="pila-t">${esc(c.nombre)}</span><span class="pila-s">${esc(r.txt)}</span>
+    ${r.total?`<span class="pila-prog" aria-hidden="true"><i style="width:${r.pct}%"></i></span>`:""}</button>`; }
+const colFiltro=L=>{ const q=normSerie(S.colQ); return q?L.filter(c=>normSerie([c.nombre,c.editorial,c.nombreBusqueda].join(" ")).includes(q)):L; };
+function pilasHtml(series,grps){ const fs=colFiltro(series), fg=colFiltro(grps);
+  if(S.colQ&&!fs.length&&!fg.length) return `<p class="w-vacio">Ninguna colección se llama así.</p>`;
+  return `${fs.length?`<h3 class="sech">Series y colecciones numeradas${S.colQ?"":` · ${series.length}`}</h3><div class="pilas">${fs.map(pilaHtml).join("")}</div>`:""}
+    ${fg.length||!S.colQ?`<h3 class="sech">Grupos: misma editorial, diseño o club</h3>${fg.length?`<div class="pilas">${fg.map(pilaHtml).join("")}</div>`
+      :`<p class="muted" style="margin:0">Crea un grupo para juntar libros que van juntos aunque no estén numerados, por ejemplo los de un mismo sello o de tu club de lectura.</p>`}`:""}`; }
+function abrirColeccion(id){ S.colAbierta=id; renderCols(); const v=$("#v-colecciones"); if(v) window.scrollTo({top:Math.max(0,v.getBoundingClientRect().top+scrollY-70)}); }
+function cerrarColeccion(){ const id=S.colAbierta; S.colAbierta=null; if(S.colEdit===id) S.colEdit=null; if(S.priceEdit===id) S.priceEdit=null; if(S.pick===id) S.pick=null;
+  renderCols(); const el=id&&document.querySelector(`[data-pila="${CSS.escape(id)}"]`); if(el){ el.scrollIntoView({block:"center"}); el.focus({preventScroll:true}); } }
 function renderCols(){
   const all=colecciones(), vis=all.filter(c=>!c.oculta), ocultas=all.filter(c=>c.oculta);
   const series=vis.filter(c=>c.clase==="serie"), grps=vis.filter(c=>c.clase==="grupo");
   const orden=(a,b)=>((b.distribuye?1:0)-(a.distribuye?1:0))||a.nombre.localeCompare(b.nombre,"es");
+  series.sort(orden); grps.sort(orden);
+  const pilas=S.colVista==="pilas", buscaba=document.activeElement?.id==="colQ"?[document.activeElement.selectionStart,document.activeElement.selectionEnd]:null, pilaFoco=document.activeElement?.dataset?.pila;
+  // lo que estás editando o eligiendo queda abierto (en pilas)
+  if(pilas){ const marcada=[S.pick,S.priceEdit,S.colEdit!=="__new"&&S.colEdit].find(x=>x&&vis.some(c=>c.id===x)); if(marcada) S.colAbierta=marcada; }
+  const abierta=pilas&&S.colAbierta?vis.find(c=>c.id===S.colAbierta):null; if(!abierta) S.colAbierta=null;
+  const cambiar=`<div class="seg col-vista" role="group" aria-label="Cómo ver las colecciones"><button type="button" data-colvista="pilas" aria-pressed="${pilas}" aria-label="Ver en pilas" title="Ver en pilas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="9" rx="1.5"/><rect x="13" y="4" width="7" height="9" rx="1.5"/><path d="M4 17h7M13 17h7M4 20h7M13 20h7"/></svg><span>Pilas</span></button><button type="button" data-colvista="abiertas" aria-pressed="${!pilas}" aria-label="Ver todas abiertas" title="Ver todas abiertas"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/></svg><span>Abiertas</span></button></div>`;
   $("#v-colecciones").innerHTML=`
-    <div class="vhead"><div><h2>Colecciones</h2><p>Tus colecciones de quiosco, tus series de mangas y libros, y tus grupos por editorial, diseño o club. Con lo que tienes, lo que falta y cuánto llevas gastado.</p></div>
+    ${abierta?"":`<div class="vhead"><div><h2>Colecciones</h2><p>Tus series, colecciones de quiosco y grupos: lo que tienes, lo que falta y cuánto llevas gastado.</p></div>
       <button class="btn" type="button" data-act="newcol">+ Nueva colección o grupo</button></div>
-    ${S.colEdit==="__new"?colForm(null):""}
-    ${series.length?`<h3 class="sech">Series y colecciones numeradas</h3>${seriesTanda(series.sort(orden))}`:""}
-    <h3 class="sech">Grupos: misma editorial, diseño o club</h3>
-    ${grps.length?grps.sort(orden).map(grupoCard).join(""):`<p class="muted" style="margin:0">Crea un grupo para juntar libros que van juntos aunque no estén numerados, por ejemplo los de un mismo sello o de tu club de lectura.</p>`}
-    ${ocultas.length?`<p class="muted">Ocultas: ${ocultas.map(c=>`${esc(c.nombre)} <button class="linkbtn" data-act="unhide" data-col="${esc(c.id)}">Mostrar</button>`).join(" · ")}</p>`:""}`;
+    ${S.colEdit==="__new"?colForm(null):""}`}
+    ${abierta?`<div class="col-nav"><button type="button" class="btn sm ch-act" data-act="cerrarCol"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Colecciones</button></div>
+      ${abierta.clase==="grupo"?grupoCard(abierta):serieCard(abierta)}`
+    :`<div class="col-barra">${series.length+grps.length>=4?`<label class="col-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg><span class="sr">Buscar colección</span><input id="colQ" class="search" type="search" placeholder="Buscar colección" value="${esc(S.colQ)}" autocomplete="off"></label>`:""}${cambiar}</div>
+      ${pilas?`<div id="pilasRoot">${pilasHtml(series,grps)}</div>`
+      :`${series.length?`<h3 class="sech">Series y colecciones numeradas</h3>${seriesTanda(colFiltro(series))}`:""}
+        <h3 class="sech">Grupos: misma editorial, diseño o club</h3>
+        ${grps.length?colFiltro(grps).map(grupoCard).join(""):`<p class="muted" style="margin:0">Crea un grupo para juntar libros que van juntos aunque no estén numerados, por ejemplo los de un mismo sello o de tu club de lectura.</p>`}`}
+      ${ocultas.length?`<p class="muted">Ocultas: ${ocultas.map(c=>`${esc(c.nombre)} <button class="linkbtn" data-act="unhide" data-col="${esc(c.id)}">Mostrar</button>`).join(" · ")}</p>`:""}`}`;
+  if(buscaba){ const q=$("#colQ"); if(q){ q.focus({preventScroll:true}); try{ q.setSelectionRange(buscaba[0],buscaba[1]); }catch(e){} } }
+  if(pilaFoco) document.querySelector(`[data-pila="${CSS.escape(pilaFoco)}"]`)?.focus({preventScroll:true}); // un redibujo de fondo no te quita el lugar
   if(S.pick){ const q=$("#pk-q"); if(q&&document.activeElement!==q&&S.pickFocus){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); S.pickFocus=false; } }
   vigilarSeries(); setTimeout(detectarPendientes,900); }
 // Muchas series: se dibujan de a 10 (la que estás editando siempre entra) y las demás al bajar
@@ -3259,6 +3340,9 @@ function colForm(c){ const n=!c, g=n?(S.newClase==="grupo"):c.clase==="grupo", w
   </form>`; }
 $("#v-colecciones").addEventListener("click",e=>{
   if(e.target.closest('[data-act="masSeries"]')){ masSeries(); return; }
+  const pl=e.target.closest("[data-pila]"); if(pl){ abrirColeccion(pl.dataset.pila); return; }
+  if(e.target.closest('[data-act="cerrarCol"]')){ cerrarColeccion(); return; }
+  const cv=e.target.closest("[data-colvista]"); if(cv){ S.colVista=cv.dataset.colvista; S.colAbierta=null; try{ localStorage.setItem(NS+"colVista",S.colVista); }catch(err){} renderCols(); return; }
   const o=e.target.closest("[data-open]"); if(o){ openBook(o.dataset.open); return; }
   const bu=e.target.closest("[data-buy]"); if(bu){ const c=colecciones().find(x=>x.id===bu.dataset.col); if(c) nuevaEntrega(c,+bu.dataset.buy); return; }
   const ad=e.target.closest("[data-addto]"); if(ad){ toggleGrupo(ad.dataset.addto,ad.dataset.book); S.pickFocus=true; renderCols(); return; }
@@ -3275,11 +3359,11 @@ $("#v-colecciones").addEventListener("click",e=>{
   else if(act==="delgrp"){ const g=colecciones().find(x=>x.id===id);
     confirmar({titulo:`¿Borrar el grupo “${g?.nombre||""}”?`, texto:"Tus libros no se borran: siguen en tu estante.", si:"Sí, borrar grupo", no:"No, cancelar", peligro:true}).then(si=>{ if(!si) return;
       const cfg={...S.colsCfg}; delete cfg[id]; S.colsCfg=cfg; saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderOther(); toast("Grupo borrado. Tus libros siguen en el estante."); }); }
-  else if(act==="hide"){ setCfg({oculta:true}); renderOther(); toast("Oculta. Puedes volver a mostrarla abajo."); }
-  else if(act==="unhide"){ setCfg({oculta:false}); renderOther(); }
+  else if(act==="hide"){ setCfg({oculta:true}); renderOther(true); toast("Oculta. Puedes volver a mostrarla abajo."); }
+  else if(act==="unhide"){ setCfg({oculta:false}); renderOther(true); }
   else if(act==="more"){ S.colOpen.add(id); renderCols(); }
   else if(act==="less"){ S.colOpen.delete(id); renderCols(); }
-  else if(act==="usarTotal"){ setCfg({total:+a.dataset.n,totalManual:true,totalAuto:false}); renderOther(); toast(`Total: ${a.dataset.n}`); }
+  else if(act==="usarTotal"){ setCfg({total:+a.dataset.n,totalManual:true,totalAuto:false}); renderOther(true); toast(`Total: ${a.dataset.n}`); }
   else if(act==="pedirTotal"){ const f=document.querySelector(`#dt-${CSS.escape(id)}`); if(f){ f.scrollIntoView({block:"center",behavior:"smooth"}); f.focus({preventScroll:true}); return; }
     S.colEdit=id; renderCols(); const t=$("#cf-total"); if(t){ t.scrollIntoView({block:"center"}); t.focus({preventScroll:true}); } }
   else if(act==="noEsSerie"){ const cf={...(S.colsCfg[id]||{})}, c=colecciones().find(x=>x.id===id);
@@ -3301,6 +3385,9 @@ $("#v-colecciones").addEventListener("change",e=>{ const p=e.target.closest("[da
   if(val && !/^\d+(\.\d{1,2})?$/.test(val)){ toast("El precio debe ser un número, por ejemplo 45.90."); p.focus(); return; }
   const nuevo=val?(+val).toFixed(2):""; if(nuevo!==b.precio) b.precioFuente=""; b.precio=nuevo; b.actualizado=Date.now(); p.value=b.precio; persist(); });
 $("#v-colecciones").addEventListener("keydown",e=>{ const p=e.target.closest("[data-price]"); if(p&&e.key==="Enter"){ e.preventDefault(); const all=[...document.querySelectorAll("#v-colecciones .pin")]; (all[all.indexOf(p)+1]||p).focus(); } });
+$("#v-colecciones").addEventListener("input",e=>{ if(e.target.id!=="colQ") return; S.colQ=e.target.value;
+  if(S.colVista==="pilas"){ const all=colecciones().filter(c=>!c.oculta), r=$("#pilasRoot"); if(r) r.innerHTML=pilasHtml(all.filter(c=>c.clase==="serie").sort((a,b)=>((b.distribuye?1:0)-(a.distribuye?1:0))||a.nombre.localeCompare(b.nombre,"es")),all.filter(c=>c.clase==="grupo").sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"))); }
+  else renderCols(); });
 $("#v-colecciones").addEventListener("input",e=>{ if(e.target.id!=="pk-q") return; S.pickQ=e.target.value; const c=colecciones().find(x=>x.id===S.pick); if(!c) return;
   const tmp=document.createElement("div"); tmp.innerHTML=pickerHtml(c); $("#pk-list").replaceWith(tmp.querySelector("#pk-list")); });
 $("#v-colecciones").addEventListener("submit",e=>{ e.preventDefault();
@@ -3313,7 +3400,7 @@ $("#v-colecciones").addEventListener("submit",e=>{ e.preventDefault();
       if(n<mx){ toast(`Ya tienes el ${numTag(c).toLowerCase()} ${mx}: el total no puede ser menor.`); inp?.focus(); return; }
       Object.assign(cf,{total:n,totalManual:true,totalAuto:false}); toast(`${c.nombre}: ${n} ${unidad(c)[1]}`); }
     else { if(!val){ inp?.focus(); return; } cf.nombreBusqueda=val.slice(0,200); delete cf.det; if(!cf.totalManual) cf.totalAuto=true; }
-    S.colsCfg={...S.colsCfg,[id]:cf}; saveJ(COLS_KEY,S.colsCfg); renderOther(); if(df.dataset.form==="orig") detectarPendientes(); return; }
+    S.colsCfg={...S.colsCfg,[id]:cf}; saveJ(COLS_KEY,S.colsCfg); renderOther(true); if(df.dataset.form==="orig") detectarPendientes(); return; }
   const v=id=>($("#"+id)?.value||"").trim(); const total=v("cf-total").replace(/\D/g,""), precio=v("cf-precio").replace(/^S\/\s*/i,"").replace(",",".");
   if(precio && isNaN(+precio)){ toast("El precio debe ser un número, por ejemplo 39.90."); return; }
   const patch={total:total?+total:0, precio:precio?+precio:0, frecuencia:v("cf-frec"), nota:v("cf-nota")};
@@ -3322,13 +3409,14 @@ $("#v-colecciones").addEventListener("submit",e=>{ e.preventDefault();
     const id=(g?"g-":"p-")+normSerie(nombre).replace(/ /g,"-")+"-"+Date.now().toString(36);
     S.colsCfg={...S.colsCfg,[id]:{id,propia:true,clase:g?"grupo":"serie",nombre,editorial:v("cf-editorial"),tipo:v("cf-tipo")||(g?"libro":"manga"),autor:"",genero:"",...(g?{libros:[]}:{}),...patch}};
     if(g){ S.pick=id; S.pickQ=""; S.pickFocus=true; toast(`Grupo “${nombre}” creado. Ahora elige sus libros.`); }
-    else toast(`Colección “${nombre}” creada. Sus tomos se unen por el nombre de la serie.`); }
+    else toast(`Colección “${nombre}” creada. Sus tomos se unen por el nombre de la serie.`);
+    S.colAbierta=id; }
   else { const id=S.colEdit, c=colecciones().find(x=>x.id===id);
     if($("#cf-orig")) patch.nombreBusqueda=v("cf-orig");
     // si cambiaste el total a mano, manda el tuyo; si lo vaciaste, Tomo vuelve a calcularlo
     if(c && (+patch.total||0)!==(+c.total||0)){ patch.totalManual=!!patch.total; patch.totalAuto=false; }
     S.colsCfg={...S.colsCfg,[id]:{...(S.colsCfg[id]||{}),...patch}}; toast("Guardado"); }
-  saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderOther(); });
+  saveJ(COLS_KEY,S.colsCfg); S.colEdit=null; renderOther(true); });
 
 /* ---------- vista: lista de deseos ---------- */
 function faltantes(){ const series=new Map();
@@ -3408,6 +3496,7 @@ $("#viewMode").addEventListener("click",e=>{ const b=e.target.closest("[data-vm]
 applyVm();
 document.addEventListener("click",e=>{ const m=$("#dataMenu"); if(!m.open) return;
   if(!m.contains(e.target)||e.target===m) m.open=false; /* e.target===m: tocaste el fondo oscuro del panel */ else if(e.target.closest("button.menu-item,label.menu-item")&&e.target.closest("#autoBtn")===null) setTimeout(()=>m.open=false,0); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&S.view==="colecciones"&&S.colAbierta&&!$("#dataMenu").open&&!document.querySelector(".sheet,.dlg,.overlay,.welcome")&&!e.target.closest?.("input,textarea,select")) cerrarColeccion(); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("#dataMenu").open){ $("#dataMenu").open=false; $("#dataMenu > summary").focus({preventScroll:true}); } });
 $("#menuX").addEventListener("click",()=>{ $("#dataMenu").open=false; });
 $("#syncState").addEventListener("click",()=>{ const t=$("#syncState").title; if(t) toast(t); }); // en el celular solo se ve la nube: al tocarla dice qué pasa
