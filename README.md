@@ -11,7 +11,7 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 ## ✨ Qué puedes hacer
 
 - **Agregar libros en segundos:** con la cámara del celular, con un lector de códigos USB o escribiendo el ISBN. Título, autor, editorial, páginas y portada se completan solos.
-- **Libros peruanos:** si Google Books y Open Library no tienen el ISBN, Tomo lo busca en la Agencia Peruana del ISBN y en librerías (Crisol, Buscalibre, SBS…). Y si lo ves en una tienda, pegas el enlace en la ficha y se llena solo. Lo que se encuentra queda listo para el siguiente lector que lo escanee.
+- **Libros de Perú, Colombia, México y Chile** (y ediciones de clubes como **Tinta**, que no se venden en tiendas): si Google Books y Open Library no tienen el ISBN, Tomo lo busca en la agencia del ISBN del país del libro y en librerías (Crisol, Buscalibre, SBS…). Si no aparece en ninguna parte, una foto de la página del título llena el título, el autor y la editorial. Y si lo ves en una tienda, pegas el enlace en la ficha y se llena solo. Lo que se encuentra queda listo para el siguiente lector que lo escanee.
 - **Mangas, manhwas y manhuas por tomos:** Tomo distingue el manga (Japón), el manhwa (Corea) y el manhua (China) por el país de origen que dice AniList.
 - **Colecciones por tomos:** ves qué tomos tienes, cuáles te faltan y cuál sigue. Tomo busca cuántos tomos tiene la serie y si continúa en otra.
 - **Colecciones de quiosco y grupos:** colecciones por entregas, y grupos por editorial, diseño o club de lectura, con lo que llevas gastado en soles.
@@ -46,7 +46,7 @@ Es una app sin instalación ni compilación: HTML, CSS y JavaScript que se sirve
 | Página | GitHub Pages |
 | Cuentas, base de datos y fotos | Supabase (Auth, Postgres con reglas por lector, Storage y Edge Functions) |
 | Correos | Brevo |
-| Datos de libros | Google Books, Open Library, AniList, Wikidata, la Agencia Peruana del ISBN y librerías peruanas |
+| Datos de libros | Google Books, Open Library, AniList, Wikidata, las agencias del ISBN de Perú, Colombia, México y Chile, y librerías |
 | Lector de códigos | BarcodeDetector del navegador o ZXing |
 
 ## 📁 Archivos
