@@ -137,3 +137,19 @@ create policy "enviar comentario" on public.comentarios
   for insert to authenticated with check (user_id = (select auth.uid()));
 revoke all on public.comentarios from anon;
 revoke select, update, delete on public.comentarios from authenticated;
+
+-- ---------------------------------------------------------------------
+--  Libros que Google Books y Open Library no tienen (muchos peruanos):
+--  la función "librerias" guarda aquí lo que encontró en la Agencia del
+--  ISBN, en librerías o en el enlace que pegó un lector. Así el siguiente
+--  que escanee ese ISBN lo tiene al instante. Solo la función la usa.
+-- ---------------------------------------------------------------------
+create table if not exists public.libros_extra (
+  isbn        text primary key check (isbn ~ '^97[89][0-9]{10}$'),
+  datos       jsonb not null,
+  fuente      text,
+  creado      timestamptz not null default now(),
+  actualizado timestamptz not null default now()
+);
+alter table public.libros_extra enable row level security;
+revoke all on public.libros_extra from anon, authenticated;

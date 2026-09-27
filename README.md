@@ -11,6 +11,7 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 ## ✨ Qué puedes hacer
 
 - **Agregar libros en segundos:** con la cámara del celular, con un lector de códigos USB o escribiendo el ISBN. Título, autor, editorial, páginas y portada se completan solos.
+- **Libros peruanos:** si Google Books y Open Library no tienen el ISBN, Tomo lo busca en la Agencia Peruana del ISBN y en librerías (Crisol, Buscalibre, SBS…). Y si lo ves en una tienda, pegas el enlace en la ficha y se llena solo. Lo que se encuentra queda listo para el siguiente lector que lo escanee.
 - **Mangas y colecciones por tomos:** ves qué tomos tienes, cuáles te faltan y cuál sigue. Tomo busca cuántos tomos tiene la serie y si continúa en otra.
 - **Colecciones de quiosco y grupos:** colecciones por entregas, y grupos por editorial, diseño o club de lectura, con lo que llevas gastado en soles.
 - **Lista de deseos:** los libros que quieres y los tomos que te faltan de tus series. Se puede copiar para mandarla por WhatsApp.
@@ -32,7 +33,7 @@ Es una app sin instalación ni compilación: HTML, CSS y JavaScript que se sirve
 | Página | GitHub Pages |
 | Cuentas, base de datos y fotos | Supabase (Auth, Postgres con reglas por lector, Storage y Edge Functions) |
 | Correos | Brevo |
-| Datos de libros | Google Books, Open Library, AniList y Wikidata |
+| Datos de libros | Google Books, Open Library, AniList, Wikidata, la Agencia Peruana del ISBN y librerías peruanas |
 | Lector de códigos | BarcodeDetector del navegador o ZXing |
 
 ## 📁 Archivos
@@ -45,7 +46,7 @@ Es una app sin instalación ni compilación: HTML, CSS y JavaScript que se sirve
 | `config.js` | Dirección y clave **pública** de Supabase |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Lo que permite instalarla como app y abrirla sin internet |
 | `supabase/schema.sql` | Tablas y reglas de seguridad de la base de datos |
-| `supabase/functions/` | Funciones del servidor: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido` y `comentario` |
+| `supabase/functions/` | Funciones del servidor: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido`, `comentario` y `librerias` |
 
 La carpeta `supabase/` no se publica en la página: es el código que se copia en el panel de Supabase.
 
@@ -69,7 +70,7 @@ La carpeta `supabase/` no se publica en la página: es el código que se copia e
 ### 2. Supabase
 1. **SQL Editor → New query:** pega `supabase/schema.sql` y pulsa **Run**. Se puede ejecutar más de una vez sin borrar nada.
 2. **Authentication → Sign In / Providers:** deja **Email** activado y desactiva **“Allow new users to sign up”**. Las cuentas solo las crea la función `aprobar`.
-3. **Edge Functions → Deploy a new function → Via Editor**, una por cada carpeta de `supabase/functions/`: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido` y `comentario`. Usa el nombre exacto, pega su `index.ts`, pulsa **Deploy** y, en sus ajustes, **desactiva “Enforce JWT verification”**.
+3. **Edge Functions → Deploy a new function → Via Editor**, una por cada carpeta de `supabase/functions/`: `solicitar`, `aprobar`, `olvide`, `libros`, `compartido`, `comentario` y `librerias`. Usa el nombre exacto, pega su `index.ts`, pulsa **Deploy** y, en sus ajustes, **desactiva “Enforce JWT verification”**.
 4. **Edge Functions → Secrets:**
 
    | Nombre | Valor |
