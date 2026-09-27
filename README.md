@@ -1,6 +1,6 @@
 # 📚 Tomo · tu estante en el bolsillo
 
-**Tomo** es una app web para organizar tu colección de **libros, mangas, manhwas y cómics**. Escaneas el código de barras y el libro se agrega solo, con título, autor y portada. Funciona en el celular y en la computadora, se instala como app y abre aunque no haya internet.
+**Tomo** es una app web para organizar tu colección de **libros, mangas, manhwas, manhuas y cómics**. Escaneas el código de barras y el libro se agrega solo, con título, autor y portada. Funciona en el celular y en la computadora, se instala como app y abre aunque no haya internet.
 
 👉 **[nan-ni.github.io/Tomo](https://nan-ni.github.io/Tomo/)**
 
@@ -12,7 +12,8 @@ Por ahora es **por invitación**: entra a la página, toca **“Solicitar una cu
 
 - **Agregar libros en segundos:** con la cámara del celular, con un lector de códigos USB o escribiendo el ISBN. Título, autor, editorial, páginas y portada se completan solos.
 - **Libros peruanos:** si Google Books y Open Library no tienen el ISBN, Tomo lo busca en la Agencia Peruana del ISBN y en librerías (Crisol, Buscalibre, SBS…). Y si lo ves en una tienda, pegas el enlace en la ficha y se llena solo. Lo que se encuentra queda listo para el siguiente lector que lo escanee.
-- **Mangas y colecciones por tomos:** ves qué tomos tienes, cuáles te faltan y cuál sigue. Tomo busca cuántos tomos tiene la serie y si continúa en otra.
+- **Mangas, manhwas y manhuas por tomos:** Tomo distingue el manga (Japón), el manhwa (Corea) y el manhua (China) por el país de origen que dice AniList.
+- **Colecciones por tomos:** ves qué tomos tienes, cuáles te faltan y cuál sigue. Tomo busca cuántos tomos tiene la serie y si continúa en otra.
 - **Colecciones de quiosco y grupos:** colecciones por entregas, y grupos por editorial, diseño o club de lectura, con lo que llevas gastado en soles.
 - **Lista de deseos:** los libros que quieres y los tomos que te faltan de tus series. Se puede copiar para mandarla por WhatsApp.
 - **Préstamos:** anota a quién le prestaste cada libro y desde cuándo.
