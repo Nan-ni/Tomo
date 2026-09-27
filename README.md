@@ -109,6 +109,7 @@ Sube el número de `VERSION` en `sw.js` (y el de “Tomo · versión N” en `in
 
 ### Límites del plan gratuito
 - **Supabase:** 500 MB de base de datos y 1 GB de fotos. Si nadie lo usa en 7 días se pausa; se reactiva con *Restore*.
+- **Supabase, datos que salen (egress):** 5 GB al mes. Al abrir Tomo o volver a él, primero se pregunta solo el número de versión del estante; se baja entero únicamente si cambió desde otro dispositivo.
 - **Brevo:** 300 correos al día (unas 150 cuentas nuevas por día).
 - **GitHub Pages:** el repositorio debe ser público.
 
