@@ -59,6 +59,8 @@ Es una app sin instalación ni compilación: HTML, CSS y JavaScript que se sirve
 | Archivo | Para qué sirve |
 |---|---|
 | `index.html` | La app: estante, colecciones, lista de deseos y estadísticas |
+| `css/tomo.css` | El diseño base y el estilo Clásico |
+| `css/lomos.css`, `css/vinetas.css` | Los estilos Lomos y Viñetas (solo se activan si los eliges en Apariencia) |
 | `cuenta.js` | Ingreso, solicitudes, contraseñas, compartir y guardado en la nube |
 | `aprobar.html` | Página para aprobar o rechazar solicitudes (el enlace llega al correo del administrador) |
 | `config.js` | Dirección y clave **pública** de Supabase |
