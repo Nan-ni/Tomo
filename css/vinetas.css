@@ -1,0 +1,169 @@
+/* Tomo · estilo Viñetas (Mi cuenta → Apariencia → Estilo). Todo va dentro de :root[data-estilo="vinetas"]. */
+/* ---------- Viñetas: impreso como una página de manga. Papel, tinta, un solo color (magenta) y trama ---------- */
+:root[data-estilo="vinetas"]{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#EDEDED; --line:#000000;
+  --ink:#000000; --ink-2:#262626; --ink-3:#525252;
+  --accent:#D1006F; --accent-ink:#FFFFFF; --accent-soft:#FFE1F0;
+  --brass:#000000; --warn:#C00067; --warn-soft:#FFE1F0; --ok:#000000; --ok-soft:#EDEDED;
+  --read:#000000; --read-soft:#EDEDED;
+  --trama:radial-gradient(circle,var(--ink) .95px,transparent 1.25px) 0 0/5px 5px;
+  --trama-s:radial-gradient(circle,var(--ink) .7px,transparent 1px) 0 0/5px 5px;
+  --tinta:2.5px solid var(--ink);
+  --shadow:none; --shadow-lg:none; --book:none; --r:0px;
+  --serif:"Dela Gothic One","Zen Kaku Gothic New",sans-serif;
+  --sans:"Zen Kaku Gothic New",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Zen Kaku Gothic New",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-synthesis:none;
+}
+@media (prefers-color-scheme:dark){
+  :root[data-estilo="vinetas"]:not([data-theme="light"]){
+    --bg:#000000; --surface:#000000; --surface-2:#1F1F1F; --line:#FFFFFF;
+    --ink:#FFFFFF; --ink-2:#E0E0E0; --ink-3:#B0B0B0;
+    --accent:#FF4FAE; --accent-ink:#000000; --accent-soft:#3D0F29;
+    --brass:#FFFFFF; --warn:#FF4FAE; --warn-soft:#3D0F29; --ok:#FFFFFF; --ok-soft:#1F1F1F;
+    --read:#FFFFFF; --read-soft:#1F1F1F;
+  }
+}
+:root[data-estilo="vinetas"][data-theme="dark"]{
+  --bg:#000000; --surface:#000000; --surface-2:#1F1F1F; --line:#FFFFFF;
+  --ink:#FFFFFF; --ink-2:#E0E0E0; --ink-3:#B0B0B0;
+  --accent:#FF4FAE; --accent-ink:#000000; --accent-soft:#3D0F29;
+  --brass:#FFFFFF; --warn:#FF4FAE; --warn-soft:#3D0F29; --ok:#FFFFFF; --ok-soft:#1F1F1F;
+  --read:#FFFFFF; --read-soft:#1F1F1F;
+}
+/* impreso: sin sombras, sin esquinas redondeadas, sin desenfoques ni degradados */
+:root[data-estilo="vinetas"] *:not(.cam-frame){box-shadow:none!important}
+:root[data-estilo="vinetas"] *:not(.avatar):not(.spin):not(.usb-dot):not(.sb-dot):not(.sync i){border-radius:0!important}
+:root[data-estilo="vinetas"] :is(.views,.sheet-head,.sheet>.foot,.overlay,.dlg-ov,.pila-n){-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+:root[data-estilo="vinetas"] .auth-bg{display:none}
+:root[data-estilo="vinetas"] :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:root[data-estilo="vinetas"] :is(h1,h2,h3,h4){font-weight:400;letter-spacing:-.01em}
+:root[data-estilo="vinetas"] :is(.label,.menu-sec,.stat span,.ver-datos dt,.sech){text-transform:none;letter-spacing:0}
+:root[data-estilo="vinetas"] .sech{font:400 18px/1.2 var(--serif);color:var(--ink);margin:12px 0 -4px}
+:root[data-estilo="vinetas"] .menu-sec{font-weight:700;color:var(--ink);font-size:13px}
+/* viñetas: borde grueso para lo principal, fino para lo de adentro */
+:root[data-estilo="vinetas"] :is(.panel,.dock,.stat,.dlg,.menu-pop,.welcome,.auth-card,.nueva-ver,.empty,.pila){border:var(--tinta);background:var(--surface)}
+:root[data-estilo="vinetas"] #list:not(.gallery) .card{border:var(--tinta)}
+:root[data-estilo="vinetas"] :is(.box,.kpi,.det,.nextrow,.ver-datos div,.rn .why,.loan-now,.ai-note){border:1.5px solid var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .loan-now{background:var(--accent-soft)}
+:root[data-estilo="vinetas"] :is(.search,select,.f input,.f textarea,.f select,.welcome input,.det-fila input,.w-fila input,.w-fila2 input,.pg-dlg input,.share-link,.pin){border:2px solid var(--ink);background-color:var(--surface)}
+:root[data-estilo="vinetas"] :is(.search,select,.f input,.f textarea,.f select,.welcome input,.pg-dlg input):focus{outline:3px solid var(--accent);outline-offset:0}
+:root[data-estilo="vinetas"] .btn{border:1.5px solid var(--ink);background:var(--surface);color:var(--ink)}
+:root[data-estilo="vinetas"] .btn:hover{background:var(--surface-2);border-color:var(--ink)}
+:root[data-estilo="vinetas"] .btn.primary{background:var(--accent);border:2px solid var(--ink);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .btn.primary:hover{background:var(--accent);filter:none;text-decoration:underline;text-underline-offset:3px}
+:root[data-estilo="vinetas"] .btn.ghost{border-color:transparent;background:none}
+:root[data-estilo="vinetas"] .btn.danger-fill{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .btn.ch-act.on,:root[data-estilo="vinetas"] .btn.ch-act.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .chip{border:1.5px solid var(--ink);color:var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .seg{border:1.5px solid var(--ink);background:var(--surface);padding:0;gap:0}
+:root[data-estilo="vinetas"] .seg button{background:var(--surface);color:var(--ink)}
+:root[data-estilo="vinetas"] .seg button+button{border-left:1.5px solid var(--ink)!important}
+:root[data-estilo="vinetas"] .seg button[aria-pressed="true"],:root[data-estilo="vinetas"] #tipoSeg button[aria-pressed="true"],:root[data-estilo="vinetas"] #seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .pill{border:1.5px solid var(--ink);background:var(--surface);color:var(--ink)}
+:root[data-estilo="vinetas"] :is(.pill.tomo,.pill.leido){background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .pill.loan{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .pill.nodata{border-style:dashed}
+:root[data-estilo="vinetas"] .stars{color:var(--ink)}
+/* cabecera */
+:root[data-estilo="vinetas"] .top .logo{display:none}
+:root[data-estilo="vinetas"] .brand>div::before{content:"tomo";display:block;font:400 24px/1 var(--serif);letter-spacing:-.01em;color:var(--ink);margin-bottom:12px}
+:root[data-estilo="vinetas"] .top{align-items:flex-start}
+:root[data-estilo="vinetas"] .top h1{font-size:clamp(26px,5.4vw,44px);line-height:1.1;white-space:normal;overflow-wrap:anywhere}
+:root[data-estilo="vinetas"]:not(.solo-ver) #estSub{display:none}
+:root[data-estilo="vinetas"] .logo{background:var(--ink)}
+:root[data-estilo="vinetas"] .logo svg{fill:var(--bg);stroke:var(--bg)}
+:root[data-estilo="vinetas"] .cuenta-btn{border:2px solid var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .menu[open]>.cuenta-btn{background:var(--surface-2);border-color:var(--ink)}
+:root[data-estilo="vinetas"] .avatar{background:var(--ink);color:var(--bg);font-family:var(--serif);font-weight:400}
+:root[data-estilo="vinetas"] .sync{background:none;border:1.5px solid var(--ink);color:var(--ink)}
+@media (max-width:560px){:root[data-estilo="vinetas"] .sync{border:0}}
+:root[data-estilo="vinetas"] .sync[data-s="ok"] i{background:var(--ink)}
+:root[data-estilo="vinetas"] .sync[data-s="sync"] i,:root[data-estilo="vinetas"] .sync[data-s="pend"] i{background:var(--accent)}
+/* pestañas: cuadros unidos; el de la sección donde estás, en negro */
+:root[data-estilo="vinetas"] .views{background:var(--bg);border-bottom:var(--tinta);gap:0}
+:root[data-estilo="vinetas"] .views button{border:2px solid var(--ink);margin:0 0 0 -2px;padding:8px 14px;color:var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .views button:first-child{margin-left:0}
+:root[data-estilo="vinetas"] .views button:hover{background:var(--surface-2);color:var(--ink)}
+:root[data-estilo="vinetas"] .views button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+:root[data-estilo="vinetas"] .views button .n{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:560px){
+  :root[data-estilo="vinetas"] .views{padding:0 0 env(safe-area-inset-bottom,0px);gap:0;border-top:var(--tinta);border-bottom:0;background:var(--surface)}
+  :root[data-estilo="vinetas"] .views button{border:0;border-left:2px solid var(--ink);margin:0;min-height:60px}
+  :root[data-estilo="vinetas"] .views button:first-child{border-left:0}
+  :root[data-estilo="vinetas"] .views button[aria-selected="true"] svg{stroke:var(--accent)}
+}
+/* agregar */
+:root[data-estilo="vinetas"] .dock{background:var(--surface)}
+:root[data-estilo="vinetas"] .dock .field{border:2px solid var(--ink);background:var(--surface);padding:0 0 0 12px;gap:8px}
+:root[data-estilo="vinetas"] .dock .field .btn.primary{align-self:stretch;border:0;border-left:2px solid var(--ink);padding:0 20px}
+:root[data-estilo="vinetas"] .dock .actions .btn{background:var(--surface)}
+:root[data-estilo="vinetas"] .dock input:focus-visible{outline:none}
+:root[data-estilo="vinetas"] .dock .field:focus-within{outline:3px solid var(--accent);outline-offset:1px}
+:root[data-estilo="vinetas"] .settings{border-top:1.5px solid var(--ink)}
+/* resumen: números en la letra de los títulos; el primero en negro */
+:root[data-estilo="vinetas"] .stat::before{display:none}
+:root[data-estilo="vinetas"] .stat b{font-family:var(--serif);font-weight:400}
+:root[data-estilo="vinetas"] .stat span{font-weight:700;color:var(--ink)}
+:root[data-estilo="vinetas"] .stat:first-child{background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .stat:first-child span{color:var(--bg)}
+/* avance: trama y magenta */
+:root[data-estilo="vinetas"] .prog{height:14px;border:2px solid var(--ink);background:var(--trama-s),var(--surface)}
+:root[data-estilo="vinetas"] .prog i{background:var(--accent);border-right:2px solid var(--ink)}
+:root[data-estilo="vinetas"] .ly-t .prog{height:12px}
+:root[data-estilo="vinetas"] .cols30 .c i{background:var(--ink)}
+:root[data-estilo="vinetas"] .cols30 .c.hoy i{background:var(--accent)}
+/* leyendo ahora: cada libro en su viñeta, y la portada se sale del cuadro */
+:root[data-estilo="vinetas"] #leyendoBox{border:0;padding:0;background:none}
+:root[data-estilo="vinetas"] .ly-list{gap:14px 12px}
+:root[data-estilo="vinetas"] .ly{grid-template-columns:76px 1fr;border:var(--tinta);background:var(--surface);padding:12px 12px 12px 10px;margin-top:26px;align-items:start}
+:root[data-estilo="vinetas"] .ly .cover{width:76px;transform:rotate(-4deg);margin:-34px 0 0 -4px}
+:root[data-estilo="vinetas"] .ly-t h4{font:400 16px/1.25 var(--serif);white-space:normal}
+:root[data-estilo="vinetas"] #readNext{background:var(--surface)}
+:root[data-estilo="vinetas"] .racha{color:var(--ink)}
+/* portadas: con borde de tinta; sin portada, trama con el título en un recuadro */
+:root[data-estilo="vinetas"] .cover{border:2px solid var(--ink);background:var(--trama-s),var(--surface)!important}
+:root[data-estilo="vinetas"] .cover::after{display:none}
+:root[data-estilo="vinetas"] .cover .ph{inset:auto 5px 5px 5px;display:block;background:var(--surface);color:var(--ink);border:1.5px solid var(--ink);text-shadow:none;font:400 10.5px/1.2 var(--serif);padding:4px 5px;max-height:calc(100% - 10px);overflow:hidden}
+:root[data-estilo="vinetas"] .tile .cover.ghost{background:var(--trama-s),var(--surface)!important;border-style:dashed}
+:root[data-estilo="vinetas"] #list.gallery .card:hover .cover{transform:translateY(-4px)}
+:root[data-estilo="vinetas"] .ghead{border-bottom:var(--tinta);padding-bottom:6px}
+:root[data-estilo="vinetas"] .group+.group{border-top:0}
+/* colecciones: cada una en su viñeta, con una tira por tomo (negra si lo tienes, trama si falta, magenta el que sigue) */
+:root[data-estilo="vinetas"] .pilas{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+@media (min-width:700px){:root[data-estilo="vinetas"] .pilas{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}}
+:root[data-estilo="vinetas"] .pila{padding:12px}
+:root[data-estilo="vinetas"] .pila-libros::before,:root[data-estilo="vinetas"] .pila-libros::after{border:2px solid var(--ink);background:var(--surface);border-radius:0}
+:root[data-estilo="vinetas"] .pila-n{background:var(--ink);color:var(--bg);top:14px;left:2px}
+:root[data-estilo="vinetas"] .pila-ok{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .pila-t{font:400 15px/1.25 var(--serif)}
+:root[data-estilo="vinetas"] .pila-s{color:var(--ink-2)}
+:root[data-estilo="vinetas"] .pila-prog{display:none}
+:root[data-estilo="vinetas"] .pila-run{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px}
+:root[data-estilo="vinetas"] .pr{flex:1 1 0;min-width:5px;max-width:18px;height:14px;border:1.5px solid var(--ink);font-size:0;font-style:normal}
+:root[data-estilo="vinetas"] .pr.si{background:var(--ink)}
+:root[data-estilo="vinetas"] .pr.no{background:var(--trama-s),var(--surface)}
+:root[data-estilo="vinetas"] .pr.sig{background:var(--accent)}
+/* más de 12 tomos: una sola barra dividida por tomo */
+:root[data-estilo="vinetas"] .pila-run.mas12{flex-wrap:nowrap;gap:1px;border:1.5px solid var(--ink);background:var(--ink)}
+:root[data-estilo="vinetas"] .pila-run.mas12 .pr{border:0;min-width:0;max-width:none;height:13px}
+/* números anchos (S/ 254.30) dentro de su cuadro */
+:root[data-estilo="vinetas"] .kpi b{font-size:19px;letter-spacing:-.01em}
+@media (max-width:380px){:root[data-estilo="vinetas"] .kpi b{font-size:16px}}
+/* ficha, menú, avisos */
+:root[data-estilo="vinetas"] .sheet{border-left:var(--tinta)}
+:root[data-estilo="vinetas"] .sheet-head{border-bottom:var(--tinta);background:var(--surface)}
+:root[data-estilo="vinetas"] .sheet>.foot{border-top:var(--tinta);background:var(--surface)}
+:root[data-estilo="vinetas"] .x{border:1.5px solid var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .mi-ico{background:var(--surface);border:1.5px solid var(--ink);color:var(--ink)}
+:root[data-estilo="vinetas"] .menu-item:hover .mi-ico{background:var(--surface-2)}
+:root[data-estilo="vinetas"] .menu-head{border-bottom:var(--tinta)}
+:root[data-estilo="vinetas"] .menu-item.salir{border-top:1.5px solid var(--ink)}
+:root[data-estilo="vinetas"] .dlg-ico{background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .dlg-ico.warn{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .toast{border:2px solid var(--bg);outline:2px solid var(--ink)}
+:root[data-estilo="vinetas"] .toast-acc{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .welcome-prev{font-weight:400}
+:root[data-estilo="vinetas"] .rate button.on{color:var(--accent)}
+:root[data-estilo="vinetas"] .est[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}

@@ -1,0 +1,170 @@
+/* Tomo · estilo Lomos (Mi cuenta → Apariencia → Estilo). Todo va dentro de :root[data-estilo="lomos"], salvo el dibujo del lomo. */
+/* ---------- Lomos: tu estante como en tu casa. Pared, tablas de madera y lomos del color de cada portada ---------- */
+:root[data-estilo="lomos"]{
+  --bg:#E3E6E0; --surface:#F6F7F3; --surface-2:#D8DDD5; --line:#C3CAC1;
+  --ink:#1A1F22; --ink-2:#4B5357; --ink-3:#5F686C;
+  --accent:#1F4A3A; --accent-ink:#F4F7F5; --accent-soft:#D2DFD6;
+  --brass:#80570C; --warn:#8E2C3A; --warn-soft:#F1DCDF; --ok:#2B6A48; --ok-soft:#D3E5D9;
+  --read:#33557F; --read-soft:#DAE3EE;
+  --madera:#6E4B33; --mostaza:#D9A43A; --cinta:#8E2C3A;
+  --shadow:none; --shadow-lg:0 14px 34px -14px rgba(26,31,34,.4);
+  --book:1px 1px 0 rgba(0,0,0,.06),0 8px 14px -8px rgba(40,25,10,.55);
+  --r:8px;
+  --serif:"Sofia Sans Extra Condensed","Sofia Sans","Arial Narrow",sans-serif;
+  --sans:"Sofia Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Sofia Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root[data-estilo="lomos"]:not([data-theme="light"]){
+    --bg:#1A1E1C; --surface:#222725; --surface-2:#2B312E; --line:#3A423E;
+    --ink:#E9EDEA; --ink-2:#B6BEBA; --ink-3:#98A19D;
+    --accent:#8CC5AE; --accent-ink:#0F1E18; --accent-soft:#223A31;
+    --brass:#E2B560; --warn:#E89AA6; --warn-soft:#3B2328; --ok:#80CC9D; --ok-soft:#1A2F21;
+    --read:#9FB9E0; --read-soft:#1E2838;
+    --madera:#7A5439; --mostaza:#E2B560; --cinta:#C94B5C;
+    --shadow-lg:0 14px 34px -14px rgba(0,0,0,.7);
+    --book:0 8px 14px -8px rgba(0,0,0,.85);
+  }
+}
+:root[data-estilo="lomos"][data-theme="dark"]{
+  --bg:#1A1E1C; --surface:#222725; --surface-2:#2B312E; --line:#3A423E;
+  --ink:#E9EDEA; --ink-2:#B6BEBA; --ink-3:#98A19D;
+  --accent:#8CC5AE; --accent-ink:#0F1E18; --accent-soft:#223A31;
+  --brass:#E2B560; --warn:#E89AA6; --warn-soft:#3B2328; --ok:#80CC9D; --ok-soft:#1A2F21;
+  --read:#9FB9E0; --read-soft:#1E2838;
+  --madera:#7A5439; --mostaza:#E2B560; --cinta:#C94B5C;
+  --shadow-lg:0 14px 34px -14px rgba(0,0,0,.7);
+  --book:0 8px 14px -8px rgba(0,0,0,.85);
+}
+:root[data-estilo="lomos"] body{font-size:15.5px}
+:root[data-estilo="lomos"] :is(h1,h2,h3){font-weight:800;letter-spacing:0}
+:root[data-estilo="lomos"] :is(.label,.menu-sec,.stat span,.ver-datos dt){text-transform:none;letter-spacing:0}
+:root[data-estilo="lomos"] .sech{font:800 23px/1.1 var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);margin:14px 0 -2px}
+:root[data-estilo="lomos"] .menu-sec{font-size:13px;font-weight:700}
+:root[data-estilo="lomos"] .auth-bg{display:none}
+/* cabecera: la marca «tomo» sobre su tabla y el nombre del estante grande */
+:root[data-estilo="lomos"] .top{align-items:flex-start}
+:root[data-estilo="lomos"] .top .logo{display:none}
+:root[data-estilo="lomos"] .brand>div::before{content:"tomo";display:block;width:max-content;font:800 23px/1 var(--serif);letter-spacing:.01em;color:var(--ink);padding-bottom:5px;margin-bottom:12px;border-bottom:4px solid var(--madera)}
+:root[data-estilo="lomos"] .top h1{font-size:clamp(34px,6vw,50px);line-height:1;white-space:normal;overflow-wrap:anywhere}
+:root[data-estilo="lomos"]:not(.solo-ver) #estSub{display:none}
+:root[data-estilo="lomos"] .logo{border-radius:9px;box-shadow:none}
+:root[data-estilo="lomos"] .avatar{font-family:var(--serif);font-weight:800;font-size:18px}
+:root[data-estilo="lomos"] .avatar.lg{font-size:24px}
+:root[data-estilo="lomos"] .cuenta-btn{box-shadow:none}
+:root[data-estilo="lomos"] .sync{background:none}
+/* pestañas: texto sin píldoras; el marcapáginas cuelga sobre la sección donde estás */
+:root[data-estilo="lomos"] .views{gap:22px;-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}
+:root[data-estilo="lomos"] .views button{border-radius:0;padding:12px 1px;background:none;position:relative;color:var(--ink-2)}
+:root[data-estilo="lomos"] .views button:hover{background:none;color:var(--ink)}
+:root[data-estilo="lomos"] .views button[aria-selected="true"]{background:none;color:var(--ink);border-bottom-color:transparent}
+:root[data-estilo="lomos"] .views button[aria-selected="true"]::before{content:"";position:absolute;top:-10px;left:50%;margin-left:-7px;width:14px;height:17px;background:var(--cinta);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
+@media (max-width:560px){
+  :root[data-estilo="lomos"] .views{gap:2px;background:var(--surface)}
+  :root[data-estilo="lomos"] .views button{padding:9px 2px 6px}
+  :root[data-estilo="lomos"] .views button[aria-selected="true"]{color:var(--accent)}
+  :root[data-estilo="lomos"] .views button[aria-selected="true"]::before{top:-6px;width:13px;height:14px;margin-left:-6.5px}
+}
+/* agregar: sin caja; el campo del ISBN y dos enlaces */
+:root[data-estilo="lomos"] .dock{background:none;border:0;box-shadow:none;padding:0}
+:root[data-estilo="lomos"] .dock .field{background:var(--surface);border:1.5px solid var(--line);border-radius:10px}
+:root[data-estilo="lomos"] .dock .field .btn.primary{border-radius:7px}
+:root[data-estilo="lomos"] .dock .actions{gap:4px 18px}
+:root[data-estilo="lomos"] .dock .actions .btn{flex:none;background:none;border-color:transparent;color:var(--accent);padding:8px 4px}
+:root[data-estilo="lomos"] .dock .actions .btn:hover{background:none;text-decoration:underline;text-underline-offset:3px}
+/* resumen: una línea de números, sin cajitas */
+:root[data-estilo="lomos"] .stats{display:flex;flex-wrap:wrap;gap:4px 24px}
+:root[data-estilo="lomos"] .stat{background:none;border:0;border-radius:0;padding:0;display:flex;align-items:baseline;gap:6px;overflow:visible}
+:root[data-estilo="lomos"] .stat::before{display:none}
+:root[data-estilo="lomos"] .stat b{font:800 32px/1 var(--serif);letter-spacing:0}
+:root[data-estilo="lomos"] .stat span{font-size:15px;font-weight:500;color:var(--ink-2)}
+/* secciones: hojas de papel, sin sombra; lo de arriba del estante va directo sobre la pared */
+:root[data-estilo="lomos"] .panel{border-radius:8px;box-shadow:none}
+:root[data-estilo="lomos"] :is(#leyendoBox,#readNext){background:none;border:0;padding:0;box-shadow:none}
+:root[data-estilo="lomos"] #avisoBox{background:none;border:0;border-left:4px solid var(--warn);border-radius:0;box-shadow:none;padding:2px 0 2px 16px}
+:root[data-estilo="lomos"] .panel h3{font-size:25px}
+:root[data-estilo="lomos"] .vhead h2{font-size:clamp(32px,5vw,42px)}
+:root[data-estilo="lomos"] .ly{background:none;border:0;border-radius:0;padding:0;grid-template-columns:62px 1fr;gap:14px;align-items:start}
+:root[data-estilo="lomos"] .ly .cover{width:62px}
+:root[data-estilo="lomos"] .ly-t h4{font:600 16.5px/1.25 var(--sans)}
+:root[data-estilo="lomos"] .prog{background:var(--surface-2)}
+:root[data-estilo="lomos"] .prog i{background:var(--mostaza)}
+:root[data-estilo="lomos"] .rn .why{background:none;border:0;border-left:3px solid var(--mostaza);border-radius:0;padding:2px 0 2px 10px}
+:root[data-estilo="lomos"] .racha{color:var(--brass)}
+:root[data-estilo="lomos"] .kpi{background:none;border:0;border-top:2px solid var(--line);border-radius:0;padding:8px 2px 0}
+:root[data-estilo="lomos"] .kpi b{font:800 30px/1.05 var(--serif)}
+:root[data-estilo="lomos"] .kpi-btn{border-top-style:dashed}
+:root[data-estilo="lomos"] .kpi-btn:hover,:root[data-estilo="lomos"] .kpi-btn:focus-visible{background:none;border-top-color:var(--accent)}
+/* controles */
+:root[data-estilo="lomos"] .btn{border-radius:7px}
+:root[data-estilo="lomos"] .btn.primary{box-shadow:none}
+:root[data-estilo="lomos"] .chip{border-radius:6px}
+:root[data-estilo="lomos"] .seg{border-radius:9px}
+:root[data-estilo="lomos"] .seg button{border-radius:6px}
+:root[data-estilo="lomos"] :is(.search,select,.f input,.f textarea,.f select){border-radius:8px}
+:root[data-estilo="lomos"] .card{border-radius:8px;box-shadow:none}
+:root[data-estilo="lomos"] .card:hover{box-shadow:none;transform:none;border-color:var(--ink-3)}
+:root[data-estilo="lomos"] .pill{border-radius:5px}
+:root[data-estilo="lomos"] .ghead{border-bottom:0}
+:root[data-estilo="lomos"] .ghead h2{font-size:27px}
+:root[data-estilo="lomos"] .group+.group{border-top:0;padding-top:4px}
+:root[data-estilo="lomos"] #readNext{background:none}
+:root[data-estilo="lomos"] :is(.dlg,.welcome,.auth-card,.menu-pop){border-radius:14px}
+:root[data-estilo="lomos"] .toast{border-radius:9px}
+:root[data-estilo="lomos"] .sheet{border-radius:14px 0 0 14px}
+@media (max-width:560px){:root[data-estilo="lomos"] .sheet{border-radius:0}}
+/* el estante lomo a lomo: cada fila apoyada en su tabla */
+:root[data-estilo="lomos"] #list.lomos .grid{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 2px;--alto:158px;padding:0 6px 14px;margin:0 -6px;
+  background:repeating-linear-gradient(to bottom,transparent 0 var(--alto),var(--madera) var(--alto) calc(var(--alto) + 8px),transparent calc(var(--alto) + 8px) calc(var(--alto) + 14px))}
+:root[data-estilo="lomos"] #list.lomos .card{display:flex;align-items:flex-end;height:var(--alto);padding:0;border:0;border-radius:0;background:none;box-shadow:none;transform:none;min-width:0;grid-template-columns:none}
+:root[data-estilo="lomos"] #list.lomos .card>.cover,:root[data-estilo="lomos"] #list.lomos .card>.meta{display:none}
+:root[data-estilo="lomos"] #list.lomos .lomo{display:flex}
+:root[data-estilo="lomos"] #viewMode .vm-lomos{display:grid}
+.lomo{--lomo:#555;flex-direction:column;align-items:center;width:var(--w);height:var(--h);background:var(--lomo);color:#F4F1EA;border-radius:2px 2px 0 0;overflow:hidden;position:relative;flex:none;
+  box-shadow:inset 2px 0 0 rgba(255,255,255,.14),inset -2px 0 0 rgba(0,0,0,.2);transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.lomo.claro{color:#1A1F22}
+.lomo-n{font:800 13px/1 var(--serif);padding:6px 0 4px;width:100%;text-align:center;border-bottom:1.5px solid currentColor;flex:none}
+.lomo-t{writing-mode:vertical-rl;transform:rotate(180deg);font:600 12px/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:calc(100% - 24px);padding:9px 0}
+.lomo::after{content:"";position:absolute;left:0;right:0;bottom:11px;height:2px;background:currentColor;opacity:.3}
+:root[data-estilo="lomos"] #list.lomos .card:hover .lomo{transform:translateY(-7px)}
+:root[data-estilo="lomos"] #list.lomos .card:focus-visible{outline:none}
+:root[data-estilo="lomos"] #list.lomos .card:focus-visible .lomo{transform:translateY(-7px);outline:2px solid var(--accent);outline-offset:2px}
+/* colecciones: cada serie en su tabla; lo que falta es un hueco con su número y el que sigue queda marcado */
+:root[data-estilo="lomos"] .pilas{display:flex;flex-direction:column;gap:30px;margin-top:14px}
+:root[data-estilo="lomos"] .pila{display:grid;grid-template-columns:58px minmax(0,1fr) auto;grid-template-areas:"t t s" "f r r";align-items:end;gap:10px 12px;padding-bottom:8px;position:relative;border-radius:0}
+:root[data-estilo="lomos"] .pila::after{content:"";position:absolute;left:-6px;right:-6px;bottom:0;height:8px;background:var(--madera);border-radius:1px}
+:root[data-estilo="lomos"] .pila-libros{grid-area:f;padding:0}
+:root[data-estilo="lomos"] .pila-libros::before,:root[data-estilo="lomos"] .pila-libros::after{display:none}
+:root[data-estilo="lomos"] :is(.pila-n,.pila-ok,.pila-prog){display:none}
+:root[data-estilo="lomos"] .pila-f .cover{width:58px}
+:root[data-estilo="lomos"] .pila:hover .pila-f,:root[data-estilo="lomos"] .pila:focus-visible .pila-f{transform:none}
+:root[data-estilo="lomos"] .pila:focus-visible{outline-offset:6px}
+:root[data-estilo="lomos"] .pila-t{grid-area:t;font:800 25px/1.05 var(--serif);margin:0;-webkit-line-clamp:1}
+:root[data-estilo="lomos"] .pila-s{grid-area:s;font-size:15px;color:var(--ink-2);text-align:right;align-self:baseline}
+:root[data-estilo="lomos"] .pila-run{grid-area:r;display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 1.5px;min-width:0}
+:root[data-estilo="lomos"] .pr{flex:1 1 0;min-width:9px;max-width:28px;height:90px;display:flex;justify-content:center;padding-top:5px;border-radius:2px 2px 0 0;font:800 11.5px/1 var(--serif);font-style:normal;overflow:hidden}
+:root[data-estilo="lomos"] .pr b{font:inherit}
+:root[data-estilo="lomos"] .pr.si{background:var(--lomo);color:#F4F1EA;box-shadow:inset 1.5px 0 0 rgba(255,255,255,.14),inset -1.5px 0 0 rgba(0,0,0,.2)}
+:root[data-estilo="lomos"] .pr.si.claro{color:#1A1F22}
+:root[data-estilo="lomos"] .pr.no{border:1.5px dashed color-mix(in oklab,var(--ink-3) 75%,transparent);border-bottom:0;color:var(--ink-3)}
+:root[data-estilo="lomos"] .pr.sig{border:1.5px solid var(--mostaza);border-bottom:0;background:color-mix(in oklab,var(--mostaza) 18%,transparent);color:var(--ink)}
+/* muchos tomos (más de 24): todos en una sola tabla, más finos; el número solo en el que sigue */
+:root[data-estilo="lomos"] .pila-run.mas24{flex-wrap:nowrap;gap:0}
+:root[data-estilo="lomos"] .pila-run.mas24 .pr{min-width:0;max-width:none;padding-top:0;box-shadow:inset -1px 0 0 rgba(0,0,0,.22)}
+:root[data-estilo="lomos"] .pila-run.mas24 .pr b{display:none}
+:root[data-estilo="lomos"] .pila-run.mas24 .pr.no{border:0;background:color-mix(in oklab,var(--ink-3) 16%,transparent);box-shadow:inset -1px 0 0 var(--bg)}
+:root[data-estilo="lomos"] .pila-run.mas24 .pr.sig{flex:0 0 22px;padding-top:5px}
+:root[data-estilo="lomos"] .pila-run.mas24 .pr.sig b{display:inline}
+/* en la computadora, la cinta cuelga de una línea */
+@media (min-width:561px){:root[data-estilo="lomos"] .views{border-top:1px solid var(--line)}}
+/* resumen en celulares angostos: cuatro columnas, el número arriba */
+@media (max-width:420px){
+  :root[data-estilo="lomos"] .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 10px}
+  :root[data-estilo="lomos"] .stat{flex-direction:column;align-items:flex-start;gap:2px}
+  :root[data-estilo="lomos"] .stat b{font-size:28px}
+  :root[data-estilo="lomos"] .stat span{font-size:13.5px;line-height:1.2}
+}
+@media (max-width:560px){
+  :root[data-estilo="lomos"] .pila{grid-template-columns:58px minmax(0,1fr);grid-template-areas:"t t" "s s" "f r";gap:4px 10px}
+  :root[data-estilo="lomos"] .pila-s{text-align:left;margin-bottom:6px}
+}
