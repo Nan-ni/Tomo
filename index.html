@@ -6,7 +6,7 @@
 <title>Tomo</title>
 <meta name="description" content="Tomo: tu estante de libros, mangas, manhwas, manhuas y cómics.">
 <meta name="theme-color" content="#1F4D3F">
-<script>/* tema elegido en Mi cuenta → Apariencia: se aplica antes de pintar, sin parpadeo */try{var tt=JSON.parse(localStorage.getItem("tomo.tema")||"{}"),rr=document.documentElement;if(tt.modo==="claro")rr.dataset.theme="light";else if(tt.modo==="oscuro")rr.dataset.theme="dark";if(/^(oceano|ciruela|terracota|rosa|grafito)$/.test(tt.color))rr.dataset.color=tt.color;}catch(e){}</script>
+<script>/* tema elegido en Mi cuenta → Apariencia: se aplica antes de pintar, sin parpadeo */try{var tt=JSON.parse(localStorage.getItem("tomo.tema")||"{}"),rr=document.documentElement;if(tt.modo==="claro")rr.dataset.theme="light";else if(tt.modo==="oscuro")rr.dataset.theme="dark";var ee=/^(lomos|vinetas)$/.test(tt.estilo)?tt.estilo:"";if(ee){rr.dataset.estilo=ee;var fl=document.createElement("link");fl.rel="stylesheet";fl.id="fuentesEstilo";fl.href=ee==="lomos"?"https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&display=swap":"https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap";document.head.appendChild(fl);}else if(/^(oceano|ciruela|terracota|rosa|grafito)$/.test(tt.color))rr.dataset.color=tt.color;}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1048,6 +1048,354 @@ a.btn{text-decoration:none;color:inherit}
   .stat .sl-s{display:inline}
 }
 @media (max-width:339px){ .sb-fbtn .sb-fl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)} .sb-fbtn{padding-inline:11px} }
+/* =====================================================================
+   Estilos (Mi cuenta → Apariencia → Estilo). Clásico es el de siempre y no necesita nada de aquí.
+   ===================================================================== */
+.lomo,.pila-run,#viewMode .vm-lomos{display:none}
+/* las muestras del diálogo: colores fijos, se ven igual con cualquier tema */
+.estilos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.est{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px 10px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);cursor:pointer;min-width:0;font:inherit}
+.est span{font-weight:700;font-size:14px}
+.est small{font-size:11.5px;line-height:1.25;color:var(--ink-3);text-align:center}
+.est[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.est:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.est-prev{position:relative;display:block;width:100%;height:56px;border-radius:7px;overflow:hidden;margin-bottom:4px}
+.est-prev b{position:absolute;display:block}
+.ep-clasico{background:#F3EEE4;box-shadow:inset 0 0 0 1px #E2D9C8}
+.ep-clasico b:nth-child(1){left:9px;top:9px;width:24px;height:36px;border-radius:2px 4px 4px 2px;background:linear-gradient(160deg,#35598A,#1F3A5E);box-shadow:0 3px 6px -2px rgba(40,25,10,.5)}
+.ep-clasico b:nth-child(2){left:40px;top:11px;right:9px;height:8px;border-radius:4px;background:#1F4D3F}
+.ep-clasico b:nth-child(3){left:40px;top:24px;right:18px;height:5px;border-radius:3px;background:#CFC5B2}
+.ep-clasico b:nth-child(4){left:40px;top:34px;right:26px;height:5px;border-radius:3px;background:#CFC5B2}
+.ep-lomos{background:#E3E6E0;box-shadow:inset 0 0 0 1px #C3CAC1}
+.ep-lomos::after{content:"";position:absolute;left:4px;right:4px;bottom:7px;height:5px;background:#6E4B33;border-radius:1px}
+.ep-lomos b{bottom:12px;width:11px;border-radius:1px 1px 0 0}
+.ep-lomos b:nth-child(1){left:14px;height:34px;background:#7B2E3B}
+.ep-lomos b:nth-child(2){left:26px;height:38px;background:#2E4A6B}
+.ep-lomos b:nth-child(3){left:38px;height:31px;background:#B8862B}
+.ep-lomos b:nth-child(4){left:50px;height:36px;background:#2F5A45}
+.ep-vinetas{background:#fff;box-shadow:inset 0 0 0 2px #000}
+.ep-vinetas b{border:2px solid #000}
+.ep-vinetas b:nth-child(1){left:7px;top:7px;width:30px;bottom:7px;background:radial-gradient(circle,#000 .7px,transparent 1px) 0 0/4px 4px,#fff}
+.ep-vinetas b:nth-child(2){left:41px;top:7px;right:7px;height:19px;background:#E6007E}
+.ep-vinetas b:nth-child(3){left:41px;top:30px;right:7px;bottom:7px;background:#fff}
+.ep-vinetas b:nth-child(4){display:none}
+
+/* ---------- Lomos: tu estante como en tu casa. Pared, tablas de madera y lomos del color de cada portada ---------- */
+:root[data-estilo="lomos"]{
+  --bg:#E3E6E0; --surface:#F6F7F3; --surface-2:#D8DDD5; --line:#C3CAC1;
+  --ink:#1A1F22; --ink-2:#4B5357; --ink-3:#5F686C;
+  --accent:#1F4A3A; --accent-ink:#F4F7F5; --accent-soft:#D2DFD6;
+  --brass:#80570C; --warn:#8E2C3A; --warn-soft:#F1DCDF; --ok:#2B6A48; --ok-soft:#D3E5D9;
+  --read:#33557F; --read-soft:#DAE3EE;
+  --madera:#6E4B33; --mostaza:#D9A43A; --cinta:#8E2C3A;
+  --shadow:none; --shadow-lg:0 14px 34px -14px rgba(26,31,34,.4);
+  --book:1px 1px 0 rgba(0,0,0,.06),0 8px 14px -8px rgba(40,25,10,.55);
+  --r:8px;
+  --serif:"Sofia Sans Extra Condensed","Sofia Sans","Arial Narrow",sans-serif;
+  --sans:"Sofia Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Sofia Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root[data-estilo="lomos"]:not([data-theme="light"]){
+    --bg:#1A1E1C; --surface:#222725; --surface-2:#2B312E; --line:#3A423E;
+    --ink:#E9EDEA; --ink-2:#B6BEBA; --ink-3:#98A19D;
+    --accent:#8CC5AE; --accent-ink:#0F1E18; --accent-soft:#223A31;
+    --brass:#E2B560; --warn:#E89AA6; --warn-soft:#3B2328; --ok:#80CC9D; --ok-soft:#1A2F21;
+    --read:#9FB9E0; --read-soft:#1E2838;
+    --madera:#7A5439; --mostaza:#E2B560; --cinta:#C94B5C;
+    --shadow-lg:0 14px 34px -14px rgba(0,0,0,.7);
+    --book:0 8px 14px -8px rgba(0,0,0,.85);
+  }
+}
+:root[data-estilo="lomos"][data-theme="dark"]{
+  --bg:#1A1E1C; --surface:#222725; --surface-2:#2B312E; --line:#3A423E;
+  --ink:#E9EDEA; --ink-2:#B6BEBA; --ink-3:#98A19D;
+  --accent:#8CC5AE; --accent-ink:#0F1E18; --accent-soft:#223A31;
+  --brass:#E2B560; --warn:#E89AA6; --warn-soft:#3B2328; --ok:#80CC9D; --ok-soft:#1A2F21;
+  --read:#9FB9E0; --read-soft:#1E2838;
+  --madera:#7A5439; --mostaza:#E2B560; --cinta:#C94B5C;
+  --shadow-lg:0 14px 34px -14px rgba(0,0,0,.7);
+  --book:0 8px 14px -8px rgba(0,0,0,.85);
+}
+:root[data-estilo="lomos"] body{font-size:15.5px}
+:root[data-estilo="lomos"] :is(h1,h2,h3){font-weight:800;letter-spacing:0}
+:root[data-estilo="lomos"] :is(.label,.menu-sec,.stat span,.ver-datos dt){text-transform:none;letter-spacing:0}
+:root[data-estilo="lomos"] .sech{font:800 23px/1.1 var(--serif);letter-spacing:0;text-transform:none;color:var(--ink);margin:14px 0 -2px}
+:root[data-estilo="lomos"] .menu-sec{font-size:13px;font-weight:700}
+:root[data-estilo="lomos"] .auth-bg{display:none}
+/* cabecera: la marca «tomo» sobre su tabla y el nombre del estante grande */
+:root[data-estilo="lomos"] .top{align-items:flex-start}
+:root[data-estilo="lomos"] .top .logo{display:none}
+:root[data-estilo="lomos"] .brand>div::before{content:"tomo";display:block;width:max-content;font:800 23px/1 var(--serif);letter-spacing:.01em;color:var(--ink);padding-bottom:5px;margin-bottom:12px;border-bottom:4px solid var(--madera)}
+:root[data-estilo="lomos"] .top h1{font-size:clamp(34px,6vw,50px);line-height:1;white-space:normal;overflow-wrap:anywhere}
+:root[data-estilo="lomos"]:not(.solo-ver) #estSub{display:none}
+:root[data-estilo="lomos"] .logo{border-radius:9px;box-shadow:none}
+:root[data-estilo="lomos"] .avatar{font-family:var(--serif);font-weight:800;font-size:18px}
+:root[data-estilo="lomos"] .avatar.lg{font-size:24px}
+:root[data-estilo="lomos"] .cuenta-btn{box-shadow:none}
+:root[data-estilo="lomos"] .sync{background:none}
+/* pestañas: texto sin píldoras; el marcapáginas cuelga sobre la sección donde estás */
+:root[data-estilo="lomos"] .views{gap:22px;-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--bg)}
+:root[data-estilo="lomos"] .views button{border-radius:0;padding:12px 1px;background:none;position:relative;color:var(--ink-2)}
+:root[data-estilo="lomos"] .views button:hover{background:none;color:var(--ink)}
+:root[data-estilo="lomos"] .views button[aria-selected="true"]{background:none;color:var(--ink);border-bottom-color:transparent}
+:root[data-estilo="lomos"] .views button[aria-selected="true"]::before{content:"";position:absolute;top:-10px;left:50%;margin-left:-7px;width:14px;height:17px;background:var(--cinta);clip-path:polygon(0 0,100% 0,100% 100%,50% 72%,0 100%)}
+@media (max-width:560px){
+  :root[data-estilo="lomos"] .views{gap:2px;background:var(--surface)}
+  :root[data-estilo="lomos"] .views button{padding:9px 2px 6px}
+  :root[data-estilo="lomos"] .views button[aria-selected="true"]{color:var(--accent)}
+  :root[data-estilo="lomos"] .views button[aria-selected="true"]::before{top:-6px;width:13px;height:14px;margin-left:-6.5px}
+}
+/* agregar: sin caja; el campo del ISBN y dos enlaces */
+:root[data-estilo="lomos"] .dock{background:none;border:0;box-shadow:none;padding:0}
+:root[data-estilo="lomos"] .dock .field{background:var(--surface);border:1.5px solid var(--line);border-radius:10px}
+:root[data-estilo="lomos"] .dock .field .btn.primary{border-radius:7px}
+:root[data-estilo="lomos"] .dock .actions{gap:4px 18px}
+:root[data-estilo="lomos"] .dock .actions .btn{flex:none;background:none;border-color:transparent;color:var(--accent);padding:8px 4px}
+:root[data-estilo="lomos"] .dock .actions .btn:hover{background:none;text-decoration:underline;text-underline-offset:3px}
+/* resumen: una línea de números, sin cajitas */
+:root[data-estilo="lomos"] .stats{display:flex;flex-wrap:wrap;gap:4px 24px}
+:root[data-estilo="lomos"] .stat{background:none;border:0;border-radius:0;padding:0;display:flex;align-items:baseline;gap:6px;overflow:visible}
+:root[data-estilo="lomos"] .stat::before{display:none}
+:root[data-estilo="lomos"] .stat b{font:800 32px/1 var(--serif);letter-spacing:0}
+:root[data-estilo="lomos"] .stat span{font-size:15px;font-weight:500;color:var(--ink-2)}
+/* secciones: hojas de papel, sin sombra; lo de arriba del estante va directo sobre la pared */
+:root[data-estilo="lomos"] .panel{border-radius:8px;box-shadow:none}
+:root[data-estilo="lomos"] :is(#leyendoBox,#readNext){background:none;border:0;padding:0;box-shadow:none}
+:root[data-estilo="lomos"] #avisoBox{background:none;border:0;border-left:4px solid var(--warn);border-radius:0;box-shadow:none;padding:2px 0 2px 16px}
+:root[data-estilo="lomos"] .panel h3{font-size:25px}
+:root[data-estilo="lomos"] .vhead h2{font-size:clamp(32px,5vw,42px)}
+:root[data-estilo="lomos"] .ly{background:none;border:0;border-radius:0;padding:0;grid-template-columns:62px 1fr;gap:14px;align-items:start}
+:root[data-estilo="lomos"] .ly .cover{width:62px}
+:root[data-estilo="lomos"] .ly-t h4{font:600 16.5px/1.25 var(--sans)}
+:root[data-estilo="lomos"] .prog{background:var(--surface-2)}
+:root[data-estilo="lomos"] .prog i{background:var(--mostaza)}
+:root[data-estilo="lomos"] .rn .why{background:none;border:0;border-left:3px solid var(--mostaza);border-radius:0;padding:2px 0 2px 10px}
+:root[data-estilo="lomos"] .racha{color:var(--brass)}
+:root[data-estilo="lomos"] .kpi{background:none;border:0;border-top:2px solid var(--line);border-radius:0;padding:8px 2px 0}
+:root[data-estilo="lomos"] .kpi b{font:800 30px/1.05 var(--serif)}
+:root[data-estilo="lomos"] .kpi-btn{border-top-style:dashed}
+:root[data-estilo="lomos"] .kpi-btn:hover,:root[data-estilo="lomos"] .kpi-btn:focus-visible{background:none;border-top-color:var(--accent)}
+/* controles */
+:root[data-estilo="lomos"] .btn{border-radius:7px}
+:root[data-estilo="lomos"] .btn.primary{box-shadow:none}
+:root[data-estilo="lomos"] .chip{border-radius:6px}
+:root[data-estilo="lomos"] .seg{border-radius:9px}
+:root[data-estilo="lomos"] .seg button{border-radius:6px}
+:root[data-estilo="lomos"] :is(.search,select,.f input,.f textarea,.f select){border-radius:8px}
+:root[data-estilo="lomos"] .card{border-radius:8px;box-shadow:none}
+:root[data-estilo="lomos"] .card:hover{box-shadow:none;transform:none;border-color:var(--ink-3)}
+:root[data-estilo="lomos"] .pill{border-radius:5px}
+:root[data-estilo="lomos"] .ghead{border-bottom:0}
+:root[data-estilo="lomos"] .ghead h2{font-size:27px}
+:root[data-estilo="lomos"] .group+.group{border-top:0;padding-top:4px}
+:root[data-estilo="lomos"] #readNext{background:none}
+:root[data-estilo="lomos"] :is(.dlg,.welcome,.auth-card,.menu-pop){border-radius:14px}
+:root[data-estilo="lomos"] .toast{border-radius:9px}
+:root[data-estilo="lomos"] .sheet{border-radius:14px 0 0 14px}
+@media (max-width:560px){:root[data-estilo="lomos"] .sheet{border-radius:0}}
+/* el estante lomo a lomo: cada fila apoyada en su tabla */
+:root[data-estilo="lomos"] #list.lomos .grid{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 2px;--alto:158px;padding:0 6px 14px;margin:0 -6px;
+  background:repeating-linear-gradient(to bottom,transparent 0 var(--alto),var(--madera) var(--alto) calc(var(--alto) + 8px),transparent calc(var(--alto) + 8px) calc(var(--alto) + 14px))}
+:root[data-estilo="lomos"] #list.lomos .card{display:flex;align-items:flex-end;height:var(--alto);padding:0;border:0;border-radius:0;background:none;box-shadow:none;transform:none;min-width:0;grid-template-columns:none}
+:root[data-estilo="lomos"] #list.lomos .card>.cover,:root[data-estilo="lomos"] #list.lomos .card>.meta{display:none}
+:root[data-estilo="lomos"] #list.lomos .lomo{display:flex}
+:root[data-estilo="lomos"] #viewMode .vm-lomos{display:grid}
+.lomo{--lomo:#555;flex-direction:column;align-items:center;width:var(--w);height:var(--h);background:var(--lomo);color:#F4F1EA;border-radius:2px 2px 0 0;overflow:hidden;position:relative;flex:none;
+  box-shadow:inset 2px 0 0 rgba(255,255,255,.14),inset -2px 0 0 rgba(0,0,0,.2);transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.lomo.claro{color:#1A1F22}
+.lomo-n{font:800 13px/1 var(--serif);padding:6px 0 4px;width:100%;text-align:center;border-bottom:1.5px solid currentColor;flex:none}
+.lomo-t{writing-mode:vertical-rl;transform:rotate(180deg);font:600 12px/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:calc(100% - 24px);padding:9px 0}
+.lomo::after{content:"";position:absolute;left:0;right:0;bottom:11px;height:2px;background:currentColor;opacity:.3}
+:root[data-estilo="lomos"] #list.lomos .card:hover .lomo{transform:translateY(-7px)}
+:root[data-estilo="lomos"] #list.lomos .card:focus-visible{outline:none}
+:root[data-estilo="lomos"] #list.lomos .card:focus-visible .lomo{transform:translateY(-7px);outline:2px solid var(--accent);outline-offset:2px}
+/* colecciones: cada serie en su tabla; lo que falta es un hueco con su número y el que sigue queda marcado */
+:root[data-estilo="lomos"] .pilas{display:flex;flex-direction:column;gap:30px;margin-top:14px}
+:root[data-estilo="lomos"] .pila{display:grid;grid-template-columns:58px minmax(0,1fr) auto;grid-template-areas:"t t s" "f r r";align-items:end;gap:10px 12px;padding-bottom:8px;position:relative;border-radius:0}
+:root[data-estilo="lomos"] .pila::after{content:"";position:absolute;left:-6px;right:-6px;bottom:0;height:8px;background:var(--madera);border-radius:1px}
+:root[data-estilo="lomos"] .pila-libros{grid-area:f;padding:0}
+:root[data-estilo="lomos"] .pila-libros::before,:root[data-estilo="lomos"] .pila-libros::after{display:none}
+:root[data-estilo="lomos"] :is(.pila-n,.pila-ok,.pila-prog){display:none}
+:root[data-estilo="lomos"] .pila-f .cover{width:58px}
+:root[data-estilo="lomos"] .pila:hover .pila-f,:root[data-estilo="lomos"] .pila:focus-visible .pila-f{transform:none}
+:root[data-estilo="lomos"] .pila:focus-visible{outline-offset:6px}
+:root[data-estilo="lomos"] .pila-t{grid-area:t;font:800 25px/1.05 var(--serif);margin:0;-webkit-line-clamp:1}
+:root[data-estilo="lomos"] .pila-s{grid-area:s;font-size:15px;color:var(--ink-2);text-align:right;align-self:baseline}
+:root[data-estilo="lomos"] .pila-run{grid-area:r;display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 1.5px;min-width:0}
+:root[data-estilo="lomos"] .pr{flex:1 1 0;min-width:9px;max-width:28px;height:90px;display:flex;justify-content:center;padding-top:5px;border-radius:2px 2px 0 0;font:800 11.5px/1 var(--serif);font-style:normal;overflow:hidden}
+:root[data-estilo="lomos"] .pr b{font:inherit}
+:root[data-estilo="lomos"] .pr.si{background:var(--lomo);color:#F4F1EA;box-shadow:inset 1.5px 0 0 rgba(255,255,255,.14),inset -1.5px 0 0 rgba(0,0,0,.2)}
+:root[data-estilo="lomos"] .pr.si.claro{color:#1A1F22}
+:root[data-estilo="lomos"] .pr.no{border:1.5px dashed color-mix(in oklab,var(--ink-3) 75%,transparent);border-bottom:0;color:var(--ink-3)}
+:root[data-estilo="lomos"] .pr.sig{border:1.5px solid var(--mostaza);border-bottom:0;background:color-mix(in oklab,var(--mostaza) 18%,transparent);color:var(--ink)}
+@media (max-width:560px){
+  :root[data-estilo="lomos"] .pila{grid-template-columns:58px minmax(0,1fr);grid-template-areas:"t t" "s s" "f r";gap:4px 10px}
+  :root[data-estilo="lomos"] .pila-s{text-align:left;margin-bottom:6px}
+}
+
+/* ---------- Viñetas: impreso como una página de manga. Papel, tinta, un solo color (magenta) y trama ---------- */
+:root[data-estilo="vinetas"]{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#EDEDED; --line:#000000;
+  --ink:#000000; --ink-2:#262626; --ink-3:#525252;
+  --accent:#D1006F; --accent-ink:#FFFFFF; --accent-soft:#FFE1F0;
+  --brass:#000000; --warn:#C00067; --warn-soft:#FFE1F0; --ok:#000000; --ok-soft:#EDEDED;
+  --read:#000000; --read-soft:#EDEDED;
+  --trama:radial-gradient(circle,var(--ink) .95px,transparent 1.25px) 0 0/5px 5px;
+  --trama-s:radial-gradient(circle,var(--ink) .7px,transparent 1px) 0 0/5px 5px;
+  --tinta:2.5px solid var(--ink);
+  --shadow:none; --shadow-lg:none; --book:none; --r:0px;
+  --serif:"Dela Gothic One","Zen Kaku Gothic New",sans-serif;
+  --sans:"Zen Kaku Gothic New",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Zen Kaku Gothic New",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-synthesis:none;
+}
+@media (prefers-color-scheme:dark){
+  :root[data-estilo="vinetas"]:not([data-theme="light"]){
+    --bg:#000000; --surface:#000000; --surface-2:#1F1F1F; --line:#FFFFFF;
+    --ink:#FFFFFF; --ink-2:#E0E0E0; --ink-3:#B0B0B0;
+    --accent:#FF4FAE; --accent-ink:#000000; --accent-soft:#3D0F29;
+    --brass:#FFFFFF; --warn:#FF4FAE; --warn-soft:#3D0F29; --ok:#FFFFFF; --ok-soft:#1F1F1F;
+    --read:#FFFFFF; --read-soft:#1F1F1F;
+  }
+}
+:root[data-estilo="vinetas"][data-theme="dark"]{
+  --bg:#000000; --surface:#000000; --surface-2:#1F1F1F; --line:#FFFFFF;
+  --ink:#FFFFFF; --ink-2:#E0E0E0; --ink-3:#B0B0B0;
+  --accent:#FF4FAE; --accent-ink:#000000; --accent-soft:#3D0F29;
+  --brass:#FFFFFF; --warn:#FF4FAE; --warn-soft:#3D0F29; --ok:#FFFFFF; --ok-soft:#1F1F1F;
+  --read:#FFFFFF; --read-soft:#1F1F1F;
+}
+/* impreso: sin sombras, sin esquinas redondeadas, sin desenfoques ni degradados */
+:root[data-estilo="vinetas"] *:not(.cam-frame){box-shadow:none!important}
+:root[data-estilo="vinetas"] *:not(.avatar):not(.spin):not(.usb-dot):not(.sb-dot):not(.sync i){border-radius:0!important}
+:root[data-estilo="vinetas"] :is(.views,.sheet-head,.sheet>.foot,.overlay,.dlg-ov,.pila-n){-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+:root[data-estilo="vinetas"] .auth-bg{display:none}
+:root[data-estilo="vinetas"] :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+:root[data-estilo="vinetas"] :is(h1,h2,h3,h4){font-weight:400;letter-spacing:-.01em}
+:root[data-estilo="vinetas"] :is(.label,.menu-sec,.stat span,.ver-datos dt,.sech){text-transform:none;letter-spacing:0}
+:root[data-estilo="vinetas"] .sech{font:400 18px/1.2 var(--serif);color:var(--ink);margin:12px 0 -4px}
+:root[data-estilo="vinetas"] .menu-sec{font-weight:700;color:var(--ink);font-size:13px}
+/* viñetas: borde grueso para lo principal, fino para lo de adentro */
+:root[data-estilo="vinetas"] :is(.panel,.dock,.stat,.dlg,.menu-pop,.welcome,.auth-card,.nueva-ver,.empty,.pila){border:var(--tinta);background:var(--surface)}
+:root[data-estilo="vinetas"] #list:not(.gallery) .card{border:var(--tinta)}
+:root[data-estilo="vinetas"] :is(.box,.kpi,.det,.nextrow,.ver-datos div,.rn .why,.loan-now,.ai-note){border:1.5px solid var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .loan-now{background:var(--accent-soft)}
+:root[data-estilo="vinetas"] :is(.search,select,.f input,.f textarea,.f select,.welcome input,.det-fila input,.w-fila input,.w-fila2 input,.pg-dlg input,.share-link,.pin){border:2px solid var(--ink);background-color:var(--surface)}
+:root[data-estilo="vinetas"] :is(.search,select,.f input,.f textarea,.f select,.welcome input,.pg-dlg input):focus{outline:3px solid var(--accent);outline-offset:0}
+:root[data-estilo="vinetas"] .btn{border:1.5px solid var(--ink);background:var(--surface);color:var(--ink)}
+:root[data-estilo="vinetas"] .btn:hover{background:var(--surface-2);border-color:var(--ink)}
+:root[data-estilo="vinetas"] .btn.primary{background:var(--accent);border:2px solid var(--ink);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .btn.primary:hover{background:var(--accent);filter:none;text-decoration:underline;text-underline-offset:3px}
+:root[data-estilo="vinetas"] .btn.ghost{border-color:transparent;background:none}
+:root[data-estilo="vinetas"] .btn.danger-fill{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .btn.ch-act.on,:root[data-estilo="vinetas"] .btn.ch-act.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .chip{border:1.5px solid var(--ink);color:var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .seg{border:1.5px solid var(--ink);background:var(--surface);padding:0;gap:0}
+:root[data-estilo="vinetas"] .seg button{background:var(--surface);color:var(--ink)}
+:root[data-estilo="vinetas"] .seg button+button{border-left:1.5px solid var(--ink)!important}
+:root[data-estilo="vinetas"] .seg button[aria-pressed="true"],:root[data-estilo="vinetas"] #tipoSeg button[aria-pressed="true"],:root[data-estilo="vinetas"] #seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .pill{border:1.5px solid var(--ink);background:var(--surface);color:var(--ink)}
+:root[data-estilo="vinetas"] :is(.pill.tomo,.pill.leido){background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .pill.loan{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .pill.nodata{border-style:dashed}
+:root[data-estilo="vinetas"] .stars{color:var(--ink)}
+/* cabecera */
+:root[data-estilo="vinetas"] .top .logo{display:none}
+:root[data-estilo="vinetas"] .brand>div::before{content:"tomo";display:block;font:400 24px/1 var(--serif);letter-spacing:-.01em;color:var(--ink);margin-bottom:12px}
+:root[data-estilo="vinetas"] .top{align-items:flex-start}
+:root[data-estilo="vinetas"] .top h1{font-size:clamp(26px,5.4vw,44px);line-height:1.1;white-space:normal;overflow-wrap:anywhere}
+:root[data-estilo="vinetas"]:not(.solo-ver) #estSub{display:none}
+:root[data-estilo="vinetas"] .logo{background:var(--ink)}
+:root[data-estilo="vinetas"] .logo svg{fill:var(--bg);stroke:var(--bg)}
+:root[data-estilo="vinetas"] .cuenta-btn{border:2px solid var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .menu[open]>.cuenta-btn{background:var(--surface-2);border-color:var(--ink)}
+:root[data-estilo="vinetas"] .avatar{background:var(--ink);color:var(--bg);font-family:var(--serif);font-weight:400}
+:root[data-estilo="vinetas"] .sync{background:none;border:1.5px solid var(--ink);color:var(--ink)}
+@media (max-width:560px){:root[data-estilo="vinetas"] .sync{border:0}}
+:root[data-estilo="vinetas"] .sync[data-s="ok"] i{background:var(--ink)}
+:root[data-estilo="vinetas"] .sync[data-s="sync"] i,:root[data-estilo="vinetas"] .sync[data-s="pend"] i{background:var(--accent)}
+/* pestañas: cuadros unidos; el de la sección donde estás, en negro */
+:root[data-estilo="vinetas"] .views{background:var(--bg);border-bottom:var(--tinta);gap:0}
+:root[data-estilo="vinetas"] .views button{border:2px solid var(--ink);margin:0 0 0 -2px;padding:8px 14px;color:var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .views button:first-child{margin-left:0}
+:root[data-estilo="vinetas"] .views button:hover{background:var(--surface-2);color:var(--ink)}
+:root[data-estilo="vinetas"] .views button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+:root[data-estilo="vinetas"] .views button .n{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:560px){
+  :root[data-estilo="vinetas"] .views{padding:0 0 env(safe-area-inset-bottom,0px);gap:0;border-top:var(--tinta);border-bottom:0;background:var(--surface)}
+  :root[data-estilo="vinetas"] .views button{border:0;border-left:2px solid var(--ink);margin:0;min-height:60px}
+  :root[data-estilo="vinetas"] .views button:first-child{border-left:0}
+  :root[data-estilo="vinetas"] .views button[aria-selected="true"] svg{stroke:var(--accent)}
+}
+/* agregar */
+:root[data-estilo="vinetas"] .dock{background:var(--surface)}
+:root[data-estilo="vinetas"] .dock .field{border:2px solid var(--ink);background:var(--surface);padding:0 0 0 12px;gap:8px}
+:root[data-estilo="vinetas"] .dock .field .btn.primary{align-self:stretch;border:0;border-left:2px solid var(--ink);padding:0 20px}
+:root[data-estilo="vinetas"] .dock .actions .btn{background:var(--surface)}
+:root[data-estilo="vinetas"] .dock input:focus-visible{outline:none}
+:root[data-estilo="vinetas"] .dock .field:focus-within{outline:3px solid var(--accent);outline-offset:1px}
+:root[data-estilo="vinetas"] .settings{border-top:1.5px solid var(--ink)}
+/* resumen: números en la letra de los títulos; el primero en negro */
+:root[data-estilo="vinetas"] .stat::before{display:none}
+:root[data-estilo="vinetas"] .stat b{font-family:var(--serif);font-weight:400}
+:root[data-estilo="vinetas"] .stat span{font-weight:700;color:var(--ink)}
+:root[data-estilo="vinetas"] .stat:first-child{background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .stat:first-child span{color:var(--bg)}
+/* avance: trama y magenta */
+:root[data-estilo="vinetas"] .prog{height:14px;border:2px solid var(--ink);background:var(--trama-s),var(--surface)}
+:root[data-estilo="vinetas"] .prog i{background:var(--accent);border-right:2px solid var(--ink)}
+:root[data-estilo="vinetas"] .ly-t .prog{height:12px}
+:root[data-estilo="vinetas"] .cols30 .c i{background:var(--ink)}
+:root[data-estilo="vinetas"] .cols30 .c.hoy i{background:var(--accent)}
+/* leyendo ahora: cada libro en su viñeta, y la portada se sale del cuadro */
+:root[data-estilo="vinetas"] #leyendoBox{border:0;padding:0;background:none}
+:root[data-estilo="vinetas"] .ly-list{gap:14px 12px}
+:root[data-estilo="vinetas"] .ly{grid-template-columns:76px 1fr;border:var(--tinta);background:var(--surface);padding:12px 12px 12px 10px;margin-top:26px;align-items:start}
+:root[data-estilo="vinetas"] .ly .cover{width:76px;transform:rotate(-4deg);margin:-34px 0 0 -4px}
+:root[data-estilo="vinetas"] .ly-t h4{font:400 16px/1.25 var(--serif);white-space:normal}
+:root[data-estilo="vinetas"] #readNext{background:var(--surface)}
+:root[data-estilo="vinetas"] .racha{color:var(--ink)}
+/* portadas: con borde de tinta; sin portada, trama con el título en un recuadro */
+:root[data-estilo="vinetas"] .cover{border:2px solid var(--ink);background:var(--trama-s),var(--surface)!important}
+:root[data-estilo="vinetas"] .cover::after{display:none}
+:root[data-estilo="vinetas"] .cover .ph{inset:auto 5px 5px 5px;display:block;background:var(--surface);color:var(--ink);border:1.5px solid var(--ink);text-shadow:none;font:400 10.5px/1.2 var(--serif);padding:4px 5px;max-height:calc(100% - 10px);overflow:hidden}
+:root[data-estilo="vinetas"] .tile .cover.ghost{background:var(--trama-s),var(--surface)!important;border-style:dashed}
+:root[data-estilo="vinetas"] #list.gallery .card:hover .cover{transform:translateY(-4px)}
+:root[data-estilo="vinetas"] .ghead{border-bottom:var(--tinta);padding-bottom:6px}
+:root[data-estilo="vinetas"] .group+.group{border-top:0}
+/* colecciones: cada una en su viñeta, con una tira por tomo (negra si lo tienes, trama si falta, magenta el que sigue) */
+:root[data-estilo="vinetas"] .pilas{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+@media (min-width:700px){:root[data-estilo="vinetas"] .pilas{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}}
+:root[data-estilo="vinetas"] .pila{padding:12px}
+:root[data-estilo="vinetas"] .pila-libros::before,:root[data-estilo="vinetas"] .pila-libros::after{border:2px solid var(--ink);background:var(--surface);border-radius:0}
+:root[data-estilo="vinetas"] .pila-n{background:var(--ink);color:var(--bg);top:14px;left:2px}
+:root[data-estilo="vinetas"] .pila-ok{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .pila-t{font:400 15px/1.25 var(--serif)}
+:root[data-estilo="vinetas"] .pila-s{color:var(--ink-2)}
+:root[data-estilo="vinetas"] .pila-prog{display:none}
+:root[data-estilo="vinetas"] .pila-run{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px}
+:root[data-estilo="vinetas"] .pr{flex:1 1 0;min-width:5px;max-width:18px;height:14px;border:1.5px solid var(--ink);font-size:0;font-style:normal}
+:root[data-estilo="vinetas"] .pr.si{background:var(--ink)}
+:root[data-estilo="vinetas"] .pr.no{background:var(--trama-s),var(--surface)}
+:root[data-estilo="vinetas"] .pr.sig{background:var(--accent)}
+/* ficha, menú, avisos */
+:root[data-estilo="vinetas"] .sheet{border-left:var(--tinta)}
+:root[data-estilo="vinetas"] .sheet-head{border-bottom:var(--tinta);background:var(--surface)}
+:root[data-estilo="vinetas"] .sheet>.foot{border-top:var(--tinta);background:var(--surface)}
+:root[data-estilo="vinetas"] .x{border:1.5px solid var(--ink);background:var(--surface)}
+:root[data-estilo="vinetas"] .mi-ico{background:var(--surface);border:1.5px solid var(--ink);color:var(--ink)}
+:root[data-estilo="vinetas"] .menu-item:hover .mi-ico{background:var(--surface-2)}
+:root[data-estilo="vinetas"] .menu-head{border-bottom:var(--tinta)}
+:root[data-estilo="vinetas"] .menu-item.salir{border-top:1.5px solid var(--ink)}
+:root[data-estilo="vinetas"] .dlg-ico{background:var(--ink);color:var(--bg)}
+:root[data-estilo="vinetas"] .dlg-ico.warn{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .toast{border:2px solid var(--bg);outline:2px solid var(--ink)}
+:root[data-estilo="vinetas"] .toast-acc{background:var(--accent);color:var(--accent-ink)}
+:root[data-estilo="vinetas"] .welcome-prev{font-weight:400}
+:root[data-estilo="vinetas"] .rate button.on{color:var(--accent)}
+:root[data-estilo="vinetas"] .est[aria-pressed="true"]{border-color:var(--ink);background:var(--surface-2)}
 </style>
 </head>
 <body>
@@ -1149,14 +1497,14 @@ a.btn{text-decoration:none;color:inherit}
           <span class="avatar lg" data-avatar aria-hidden="true"></span>
           <div class="menu-who"><b id="menuNombre">Mi estante</b>
             <span class="menu-id">Tu ID <b class="mono" id="menuId">—</b><button class="linkbtn" type="button" id="copyIdBtn">Copiar</button></span>
-            <small class="menu-ver">Tomo · versión 37</small></div>
+            <small class="menu-ver">Tomo · versión 38</small></div>
           <button class="menu-x" type="button" id="menuX" aria-label="Cerrar el menú"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
         <small class="menu-aviso" id="menuBuscador" hidden></small>
         <div class="menu-sec">Tu estante</div>
         <button class="menu-item" id="citasBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h5v5c0 2.5-1.3 4.2-4 5M14 8h5v5c0 2.5-1.3 4.2-4 5"/></svg></i><span class="mi-t">Mis citas<small>Las frases que guardaste de tus libros</small></span></button>
         <button class="menu-item" id="shareBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></i><span class="mi-t">Compartir mi estante<small>Un enlace para que lo vean sin cuenta</small></span></button>
-        <button class="menu-item" id="temaBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 000-17z" fill="currentColor" stroke="none"/></svg></i><span class="mi-t">Apariencia<small>Modo claro u oscuro y colores</small></span></button>
+        <button class="menu-item" id="temaBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 000-17z" fill="currentColor" stroke="none"/></svg></i><span class="mi-t">Apariencia<small>Estilo, modo claro u oscuro y colores</small></span></button>
         <button class="menu-item" id="renameBtn" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></i><span class="mi-t">Cambiar nombre<small>El que aparece arriba de tu estante</small></span></button>
         <div class="menu-sec">Tus datos</div>
         <button class="menu-item" id="exportJson" type="button"><i class="mi-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></i><span class="mi-t">Copia de seguridad<small>Descarga un archivo con todo tu estante</small></span></button>
@@ -1248,6 +1596,7 @@ a.btn{text-decoration:none;color:inherit}
       </select>
         <div class="seg vmode" id="viewMode" role="group" aria-label="Vista">
         <button type="button" data-vm="portadas" title="Ver portadas" aria-label="Ver portadas"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="10" rx="1.2"/><rect x="13.5" y="3" width="7.5" height="10" rx="1.2"/><path d="M3 17h7.5M13.5 17H21M3 20.5h5M13.5 20.5h5"/></svg></button>
+        <button type="button" data-vm="lomos" class="vm-lomos" title="Ver lomos" aria-label="Ver lomos"><svg viewBox="0 0 24 24"><path d="M5 4v15M9 6v13M13 4v15M16.5 7l3 12M3 20h18"/></svg></button>
         <button type="button" data-vm="lista" title="Ver lista" aria-label="Ver lista"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="4" height="6" rx=".8"/><rect x="3" y="14" width="4" height="6" rx=".8"/><path d="M10 6h11M10 9h7M10 16h11M10 19h7"/></svg></button>
       </div>
       </div>
@@ -1992,6 +2341,43 @@ function shrinkImage(file,max=700){ return new Promise((res,rej)=>{ const url=UR
 const blobToDataUrl=b=>new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(b); });
 const dataUrlToBlob=d=>fetch(d).then(r=>r.blob());
 
+/* ---------- Lomos: el estante lomo a lomo; el color de cada lomo sale de su portada ----------
+   Mientras no se sabe (o si la página de la portada no deja leerla), el lomo usa un color de tela según el título.
+   Los colores se recuerdan en este dispositivo para no volver a leer cada portada. */
+function srcPortada(b){ if(b._cat) return b._cat; if(b.portadaLocal){ const u=localUrls.get(b.id); if(u) return u; } return coverSrc(b.portadaUrl); }
+function lomoHtml(b,busy){ const t=tipoOf(b), enSerie=porTomos(t)&&!!b.serie, pags=+b.paginas||0, h=hue(b.isbn||b.titulo||b.id), src=srcPortada(b);
+  const w=enSerie?24:pags?Math.round(20+Math.min(pags,800)/800*16):23+h%7, alto=enSerie?132:pags?Math.round(114+Math.min(pags,700)/700*36):122+h%6*5;
+  const txt=busy&&!b.titulo?"Buscando…":enSerie?b.serie:(b.titulo||"Sin título");
+  return `<span class="lomo" style="--w:${w}px;--h:${alto}px;--lomo:hsl(${h} 30% 33%)"${src?` data-lc="${esc(src)}"`:""} title="${esc(b.titulo||txt)}">${b.tomo?`<b class="lomo-n">${esc(b.tomo)}</b>`:""}<span class="lomo-t">${esc(txt)}</span></span>`; }
+const LOMO_KEY=NS+"lomos.v1"; let lomoMem=null, lomoObs=null, lomoActivos=0; const lomoCola=[];
+function lomoCache(){ if(!lomoMem){ try{ lomoMem=JSON.parse(localStorage.getItem(LOMO_KEY)||"{}")||{}; }catch(e){ lomoMem={}; } } return lomoMem; }
+function lomoGuardar(){ clearTimeout(lomoGuardar.t); lomoGuardar.t=setTimeout(()=>{ try{ const c=lomoCache(), ks=Object.keys(c); if(ks.length>2500) for(const k of ks.slice(0,ks.length-2500)) delete c[k]; localStorage.setItem(LOMO_KEY,JSON.stringify(c)); }catch(e){} },1000); }
+function lomoPintar(el,col){ el.dataset.lok="1"; const m=/^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$/.exec(col||""); if(!m) return;
+  el.style.setProperty("--lomo",col); el.classList.toggle("claro",.299*m[1]+.587*m[2]+.114*m[3]>150); }
+// lo que se sabe de una portada: su color, "" si no se pudo leer (se reintenta a la semana) o undefined si nunca se probó
+function lomoSabido(c,src){ const v=c[src]; if(v===undefined) return undefined; if(typeof v==="string"&&v[0]==="!") return Date.now()-(+v.slice(1)||0)<7*864e5?"":undefined; return v; }
+function lomoColor(src){ return new Promise(ok=>{ const im=new Image(); let fin=false; const listo=v=>{ if(!fin){ fin=true; ok(v); } };
+  try{ if(!/^(blob:|data:)/.test(src)&&new URL(src,location.href).origin!==location.origin) im.crossOrigin="anonymous"; }catch(e){}
+  im.referrerPolicy="no-referrer"; im.decoding="async";
+  im.onload=()=>{ try{ const c=document.createElement("canvas"); c.width=c.height=10; const x=c.getContext("2d",{willReadFrequently:true}); x.drawImage(im,0,0,10,10);
+      const d=x.getImageData(0,0,10,10).data; let r=0,g=0,b=0; for(let i=0;i<d.length;i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; } const n=d.length/4; r/=n; g/=n; b/=n;
+      const m=(r+g+b)/3; listo(`rgb(${[r,g,b].map(q=>Math.max(0,Math.min(255,Math.round((m+(q-m)*1.3)*.84)))).join(",")})`); // un poco más viva y oscura, como tela
+    }catch(e){ listo(""); } }; // la página no deja leer la imagen: queda el color de tela
+  im.onerror=()=>listo(""); setTimeout(()=>listo(""),15000); im.src=src; }); }
+function lomoSiguiente(){ const c=lomoCache();
+  while(lomoActivos<4&&lomoCola.length){ const el=lomoCola.shift(), src=el.dataset.lc; if(!src||el.dataset.lok) continue;
+    const ya=lomoSabido(c,src); if(ya!==undefined){ lomoPintar(el,ya); continue; }
+    lomoActivos++;
+    lomoColor(src).then(col=>{ lomoActivos--; if(!src.startsWith("blob:")){ c[src]=col||"!"+Date.now(); lomoGuardar(); }
+      for(const x of document.querySelectorAll("[data-lc]")) if(x.dataset.lc===src) lomoPintar(x,col);
+      lomoSiguiente(); }); } }
+function pintarLomos(root){ if(estiloActual()!=="lomos"||!root) return; const c=lomoCache();
+  if(!lomoObs&&"IntersectionObserver" in window) lomoObs=new IntersectionObserver(es=>{ for(const e of es) if(e.isIntersecting){ lomoObs.unobserve(e.target); lomoCola.push(e.target); } lomoSiguiente(); },{rootMargin:"400px 0px"});
+  lomoObs?.disconnect(); // lo que ya no está en pantalla (se redibujó) no queda vigilado
+  for(const el of root.querySelectorAll("[data-lc]:not([data-lok])")){ const ya=lomoSabido(c,el.dataset.lc);
+    if(ya!==undefined) lomoPintar(el,ya); else if(lomoObs) lomoObs.observe(el); else lomoCola.push(el); }
+  if(!lomoObs) lomoSiguiente(); }
+
 /* ---------- vista ---------- */
 function hue(s){let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h%360;}
 function coverHtml(b){
@@ -2023,7 +2409,7 @@ function render(){
   if(S.view&&S.view!=="estante"){ S.estanteDirty=true; return; }
   S.estanteDirty=false;
   const c=counts();
-  $("#stats").innerHTML=[['<span class="sl-l">En el estante</span><span class="sl-s">Libros</span>',c.todos],["Leídos",c.leido],["Leyendo",c.leyendo],VER?["Por leer",c["por-leer"]]:["Prestados",c.prestados]].map(([l,n])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
+  $("#stats").innerHTML=[['<span class="sl-l">En el estante</span><span class="sl-s">'+(c.todos===1?"Libro":"Libros")+'</span>',c.todos],[c.leido===1?"Leído":"Leídos",c.leido],["Leyendo",c.leyendo],VER?["Por leer",c["por-leer"]]:[c.prestados===1?"Prestado":"Prestados",c.prestados]].map(([l,n])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join("");
   if(typeof renderAviso==="function") renderAviso();
   if(typeof renderLeyendo==="function") renderLeyendo();
   if(typeof renderReadNext==="function") renderReadNext();
@@ -2056,7 +2442,7 @@ function render(){
   $("#genero").innerHTML=`<option value="">${acadF?"Todas las áreas":"Todos los géneros"}</option>`+gens.map(g=>`<option ${S.genero===g?"selected":""}>${esc(g)}</option>`).join("")+(delTipo.some(b=>!b.genero)?`<option value="__sin" ${S.genero==="__sin"?"selected":""}>${acadF?"Sin área":"Sin género"}</option>`:"");
   pintarFiltrosBtn();
   // Si no cambió nada de lo que muestra la lista (p. ej. al volver de otra pestaña), no se rehace: las portadas no se vuelven a cargar
-  const firma=[S.q,S.tipo,S.genero,S.filter,S.sort,S.group,S.ver,S.fotosVer||0,[...S.pending].join(","),today()].join("\u0001");
+  const firma=[S.q,S.tipo,S.genero,S.filter,S.sort,S.group,S.ver,S.fotosVer||0,[...S.pending].join(","),today(),vmVisible()].join("\u0001");
   if(firma===S.listaFirma&&list.childElementCount) return;
   S.listaFirma=firma;
   let arr=S.books.filter(b=>{
@@ -2071,6 +2457,7 @@ function render(){
   const coll=new Intl.Collator("es",{sensitivity:"base"});
   arr.sort((a,b)=>S.sort==="title"?coll.compare(a.titulo||"~",b.titulo||"~"):S.sort==="author"?coll.compare(a.autor||"~",b.autor||"~"):S.sort==="rating"?((b.calificacion||0)-(a.calificacion||0)||(b.creado||0)-(a.creado||0)):(b.creado||0)-(a.creado||0));
   if(!arr.length){ list.innerHTML=`<p class="none">Ningún libro coincide con este filtro.</p>`; return; }
+  if(vmVisible()==="lomos") arr=juntarSeries(arr);
   const g=S.group;
   // Se dibuja de a tandas (lo que entra en pantalla y un poco más; el resto al bajar). Si cambia la búsqueda o el filtro, se
   // vuelve a la primera tanda; si solo cambió un libro, se dibujan las mismas que ya estaban (no se pierde dónde ibas).
@@ -2098,7 +2485,7 @@ function render(){
 }
 function cardHtml(b){ const busy=S.pending.has(b.id); return `
     <button class="card" data-id="${esc(b.id)}">
-      ${coverHtml(b)}
+      ${coverHtml(b)}${lomoHtml(b,busy)}
       <div class="meta">
         <h3>${b.titulo?esc(b.titulo):busy?'<span style="color:var(--ink-3)"><span class="spin"></span> Buscando datos…</span>':'<span style="color:var(--ink-3)">Sin título</span>'}</h3>
         <div class="by">${esc(b.autor||(busy?"":"Autor desconocido"))}</div>
@@ -2128,6 +2515,7 @@ function pintarLista(cuantos){ const L=S.lista, list=$("#list"); if(!L) return;
   if(resto>0) html+=`<div class="mas-libros" id="masLibros"><button class="btn" type="button" data-mas>Mostrar ${Math.min(resto,TANDA)} más · quedan ${resto}</button></div>`;
   if(html) list.insertAdjacentHTML("beforeend",html);
   S.lim=Math.max(S.lim,L.n);
+  if(list.classList.contains("lomos")) pintarLomos(list);
   vigilarMas(); }
 // Al acercarte al final se agrega la tanda siguiente sola (el botón queda por si el navegador no avisa)
 let masObs=null;
@@ -2960,17 +3348,26 @@ if(!Array.isArray(S.wish.items)) S.wish.items=[]; if(!Array.isArray(S.wish.ocult
 // Apariencia: modo (automático, claro u oscuro) y color. Se guarda en tu cuenta y, para abrir sin parpadeo, en este dispositivo.
 const MODOS=[["auto","Automático"],["claro","Claro"],["oscuro","Oscuro"]];
 const COLORES=[["bosque","Bosque","#1F4D3F","#8CC5AE"],["oceano","Océano","#1F4E79","#8DB8E8"],["ciruela","Ciruela","#5E3A78","#C3A6DC"],["terracota","Terracota","#9A3F22","#EDA285"],["rosa","Rosa","#A13A63","#F0A3C0"],["grafito","Grafito","#2F3A45","#B9C4CF"]];
-function limpiarTema(t){ t=t&&typeof t==="object"?t:{}; return {modo:MODOS.some(m=>m[0]===t.modo)?t.modo:"auto",color:COLORES.some(c=>c[0]===t.color)?t.color:"bosque"}; }
+// Estilo: el diseño completo. Clásico es el de siempre; Lomos y Viñetas traen sus propios colores y tipografías.
+const ESTILOS=[["clasico","Clásico","El de siempre"],["lomos","Lomos","Tu estante, lomo a lomo"],["vinetas","Viñetas","Como una página de manga"]];
+const FUENTES_ESTILO={lomos:"https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&display=swap",vinetas:"https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"};
+function limpiarTema(t){ t=t&&typeof t==="object"?t:{}; return {modo:MODOS.some(m=>m[0]===t.modo)?t.modo:"auto",color:COLORES.some(c=>c[0]===t.color)?t.color:"bosque",estilo:ESTILOS.some(e=>e[0]===t.estilo)?t.estilo:"clasico"}; }
+const estiloActual=()=>document.documentElement.dataset.estilo||"clasico";
+function cargarFuentesEstilo(e){ const u=FUENTES_ESTILO[e]; let l=document.getElementById("fuentesEstilo");
+  if(!u){ l?.remove(); return; } if(l&&l.getAttribute("href")===u) return;
+  if(!l){ l=document.createElement("link"); l.rel="stylesheet"; l.id="fuentesEstilo"; document.head.appendChild(l); } l.href=u; }
 function temaActual(){ if(S.ajustes?.tema) return limpiarTema(S.ajustes.tema); try{ return limpiarTema(JSON.parse(localStorage.getItem("tomo.tema")||"{}")); }catch(e){ return limpiarTema({}); } }
 const esOscuro=()=>{ const t=document.documentElement.dataset.theme; return t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches; };
 // la barra de arriba del celular: del color de la app (o del fondo, en modo oscuro)
 function pintarBarra(){ const m=document.querySelector('meta[name="theme-color"]'); if(!m) return; const cs=getComputedStyle(document.documentElement);
-  m.content=(esOscuro()?cs.getPropertyValue("--bg"):cs.getPropertyValue("--accent")).trim()||"#1F4D3F"; }
+  m.content=(esOscuro()||estiloActual()!=="clasico"?cs.getPropertyValue("--bg"):cs.getPropertyValue("--accent")).trim()||"#1F4D3F"; }
 function aplicarTema(t){ t=limpiarTema(t); const r=document.documentElement;
   if(t.modo==="auto") delete r.dataset.theme; else r.dataset.theme=t.modo==="oscuro"?"dark":"light";
-  if(t.color==="bosque") delete r.dataset.color; else r.dataset.color=t.color;
+  if(t.estilo==="clasico") delete r.dataset.estilo; else r.dataset.estilo=t.estilo;
+  if(t.color==="bosque"||t.estilo!=="clasico") delete r.dataset.color; else r.dataset.color=t.color; // Lomos y Viñetas traen sus colores
+  cargarFuentesEstilo(t.estilo);
   try{ localStorage.setItem("tomo.tema",JSON.stringify(t)); }catch(e){}
-  pintarBarra(); }
+  pintarBarra(); if(S.vm) applyVm(); if(S.colVista&&S.view==="colecciones") renderCols(); } // (al abrir la app, la vista y las colecciones todavía no existen)
 try{ matchMedia("(prefers-color-scheme: dark)").addEventListener("change",pintarBarra); }catch(e){}
 // Ajustes que viajan con tu cuenta: la meta de libros de cada año y la apariencia
 function limpiarAjustes(a){ const m=a&&typeof a==="object"&&a.metas&&typeof a.metas==="object"?a.metas:{};
@@ -3179,7 +3576,7 @@ S.colAbierta=null; S.colQ="";
 function resumenCol(c){ // lo que tienes, lo que falta y la portada de adelante
   if(c.clase==="grupo"){ const L=(c.libros||[]).map(byId).filter(Boolean), total=+c.total||0, w=unidad(c);
     const frente=L.find(b=>b.portadaUrl||b.portadaLocal)||L[0];
-    return {n:L.length,total,pct:total?Math.min(100,Math.round(L.length/total*100)):0,frente,
+    return {n:L.length,total,libros:L,pct:total?Math.min(100,Math.round(L.length/total*100)):0,frente,
       txt:L.length?`${L.length}${total?` de ${total}`:""} ${L.length===1&&!total?w[0]:w[1]}`:"Sin libros todavía",completa:!!total&&L.length>=total}; }
   const have=tomosDe(c), sinNum=sinNumeroDe(c), ns=[...have.keys()].sort((a,b)=>a-b), maxH=ns.length?ns[ns.length-1]:0;
   const total=Math.max(+c.total||0,maxH*(+c.total?1:0)), tiene=have.size, w=unidad(c), tag=numTag(c).toLowerCase();
@@ -3189,13 +3586,20 @@ function resumenCol(c){ // lo que tienes, lo que falta y la portada de adelante
   const frente=conPortada!==undefined?have.get(conPortada):cat?{_cat:cat}:(have.get(ns[0])||sinNum[0]);
   const completa=!!total&&tiene>=total, n=tiene+sinNum.length;
   const txt=!n?`Ninguna ${w[0]} todavía`:`${total?`${tiene} de ${total}`:`${n} ${n===1?w[0]:w[1]}`}${completa?" · completa":sig&&tiene?` · sigue ${c.distribuye?"el n.º":tag==="tomo"?"el tomo":"el n.º"}\u00a0${sig}`:""}`;
-  return {n,total,pct:total?Math.min(100,Math.round(tiene/total*100)):0,frente,txt,completa}; }
+  return {n,total,pct:total?Math.min(100,Math.round(tiene/total*100)):0,frente,txt,completa,have,sig:completa?0:sig,maxH,sinNum}; }
+// Los tomos de una colección en fila: los que tienes, los que faltan y el que sigue. En Lomos son lomos con huecos; en Viñetas, tiras.
+function filaTomos(c,r){ const sl=[], lomo=(b,n)=>{ const src=srcPortada(b); return `<i class="pr si" style="--lomo:hsl(${hue(b.isbn||b.titulo||b.id)} 30% 33%)"${src?` data-lc="${esc(src)}"`:""}><b>${n}</b></i>`; };
+  if(c.clase==="grupo"){ for(const b of r.libros) sl.push(lomo(b,"")); for(let i=r.n;i<r.total;i++) sl.push(`<i class="pr no"><b></b></i>`); }
+  else { const tope=Math.min(400,Math.max(r.total,r.maxH,r.sig));
+    for(let n=1;n<=tope;n++){ const b=r.have.get(n); sl.push(b?lomo(b,n):`<i class="pr ${n===r.sig?"sig":"no"}"><b>${n}</b></i>`); }
+    for(const b of r.sinNum) sl.push(lomo(b,"")); }
+  return sl.length?`<span class="pila-run" aria-hidden="true">${sl.join("")}</span>`:""; }
 function pilaHtml(c){ const r=resumenCol(c), capas=Math.min(2,Math.max(0,r.n-1));
   const frente=r.frente?coverHtml(r.frente):coverHtml({id:c.id,titulo:c.nombre});
   return `<button type="button" class="pila capas-${capas}" data-pila="${esc(c.id)}" aria-label="${esc(c.nombre)}: ${esc(r.txt)}">
     <span class="pila-libros"><span class="pila-f">${frente}</span>${r.completa?`<span class="pila-ok" aria-hidden="true">${ICO_OK}</span>`:r.n?`<span class="pila-n">${r.total?`${r.pct}%`:r.n}</span>`:""}</span>
     <span class="pila-t">${esc(c.nombre)}</span><span class="pila-s">${esc(r.txt)}</span>
-    ${r.total?`<span class="pila-prog" aria-hidden="true"><i style="width:${r.pct}%"></i></span>`:""}</button>`; }
+    ${r.total?`<span class="pila-prog" aria-hidden="true"><i style="width:${r.pct}%"></i></span>`:""}${estiloActual()!=="clasico"?filaTomos(c,r):""}</button>`; }
 const colFiltro=L=>{ const q=normSerie(S.colQ); return q?L.filter(c=>normSerie([c.nombre,c.editorial,c.nombreBusqueda].join(" ")).includes(q)):L; };
 function pilasHtml(series,grps){ const fs=colFiltro(series), fg=colFiltro(grps);
   if(S.colQ&&!fs.length&&!fg.length) return `<p class="w-vacio">Ninguna colección se llama así.</p>`;
@@ -3230,7 +3634,7 @@ function renderCols(){
   if(buscaba){ const q=$("#colQ"); if(q){ q.focus({preventScroll:true}); try{ q.setSelectionRange(buscaba[0],buscaba[1]); }catch(e){} } }
   if(pilaFoco) document.querySelector(`[data-pila="${CSS.escape(pilaFoco)}"]`)?.focus({preventScroll:true}); // un redibujo de fondo no te quita el lugar
   if(S.pick){ const q=$("#pk-q"); if(q&&document.activeElement!==q&&S.pickFocus){ q.focus(); q.setSelectionRange(q.value.length,q.value.length); S.pickFocus=false; } }
-  vigilarSeries(); setTimeout(detectarPendientes,900); }
+  pintarLomos($("#pilasRoot")); vigilarSeries(); setTimeout(detectarPendientes,900); }
 // Muchas series: se dibujan de a 10 (la que estás editando siempre entra) y las demás al bajar
 const COLS_TANDA=10;
 function seriesTanda(lista){ const marcada=lista.findIndex(c=>c.id===S.colEdit||c.id===S.priceEdit||c.id===S.pick);
@@ -3386,7 +3790,7 @@ $("#v-colecciones").addEventListener("change",e=>{ const p=e.target.closest("[da
   const nuevo=val?(+val).toFixed(2):""; if(nuevo!==b.precio) b.precioFuente=""; b.precio=nuevo; b.actualizado=Date.now(); p.value=b.precio; persist(); });
 $("#v-colecciones").addEventListener("keydown",e=>{ const p=e.target.closest("[data-price]"); if(p&&e.key==="Enter"){ e.preventDefault(); const all=[...document.querySelectorAll("#v-colecciones .pin")]; (all[all.indexOf(p)+1]||p).focus(); } });
 $("#v-colecciones").addEventListener("input",e=>{ if(e.target.id!=="colQ") return; S.colQ=e.target.value;
-  if(S.colVista==="pilas"){ const all=colecciones().filter(c=>!c.oculta), r=$("#pilasRoot"); if(r) r.innerHTML=pilasHtml(all.filter(c=>c.clase==="serie").sort((a,b)=>((b.distribuye?1:0)-(a.distribuye?1:0))||a.nombre.localeCompare(b.nombre,"es")),all.filter(c=>c.clase==="grupo").sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"))); }
+  if(S.colVista==="pilas"){ const all=colecciones().filter(c=>!c.oculta), r=$("#pilasRoot"); if(r) r.innerHTML=pilasHtml(all.filter(c=>c.clase==="serie").sort((a,b)=>((b.distribuye?1:0)-(a.distribuye?1:0))||a.nombre.localeCompare(b.nombre,"es")),all.filter(c=>c.clase==="grupo").sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"))); pintarLomos(r); }
   else renderCols(); });
 $("#v-colecciones").addEventListener("input",e=>{ if(e.target.id!=="pk-q") return; S.pickQ=e.target.value; const c=colecciones().find(x=>x.id===S.pick); if(!c) return;
   const tmp=document.createElement("div"); tmp.innerHTML=pickerHtml(c); $("#pk-list").replaceWith(tmp.querySelector("#pk-list")); });
@@ -3490,10 +3894,22 @@ async function copyText(t,ok="Lista copiada. Pégala en WhatsApp o en tus notas.
     try{ document.execCommand("copy"); toast(ok); }catch(err){ toast("No pude copiar. Mantén presionado el texto para copiarlo."); } ta.remove(); } }
 
 /* ---------- vista de portadas o lista, y menú de copias ---------- */
-S.vm="portadas"; try{ S.vm=localStorage.getItem(NS+"vm")||"portadas"; }catch(e){}
-function applyVm(){ $("#list").classList.toggle("gallery",S.vm==="portadas"); for(const b of document.querySelectorAll("#viewMode [data-vm]")) b.setAttribute("aria-pressed",b.dataset.vm===S.vm); }
-$("#viewMode").addEventListener("click",e=>{ const b=e.target.closest("[data-vm]"); if(!b) return; S.vm=b.dataset.vm; try{ localStorage.setItem(NS+"vm",S.vm); }catch(err){} applyVm(); });
-applyVm();
+// si en este dispositivo nunca elegiste cómo verlo, con el estilo Lomos se ve lomo a lomo
+S.vm=estiloActual()==="lomos"?"lomos":"portadas"; try{ const v=localStorage.getItem(NS+"vm"); if(v==="lista"||v==="lomos"||v==="portadas") S.vm=v; }catch(e){}
+// «Lomos» existe solo con el estilo Lomos; con otro estilo se ve en portadas (sin olvidar que lo elegiste)
+function vmVisible(){ return S.vm==="lomos"&&estiloActual()!=="lomos"?"portadas":S.vm; }
+// En un estante de verdad los tomos de una serie van juntos y en orden: la serie queda donde está su tomo más reciente
+function juntarSeries(arr){ const pos=new Map(), grupos=new Map(); arr.forEach((b,i)=>{ const k=b.serie?normSerie(b.serie):""; if(k&&!pos.has(k)) pos.set(k,i); if(k){ if(!grupos.has(k)) grupos.set(k,[]); grupos.get(k).push(b); } });
+  const out=[]; arr.forEach((b,i)=>{ const k=b.serie?normSerie(b.serie):""; if(!k) out.push(b); else if(pos.get(k)===i) out.push(...grupos.get(k).slice().sort((x,y)=>(+x.tomo||999)-(+y.tomo||999))); });
+  return out; }
+function applyVm(inicio){ const vm=vmVisible(), l=$("#list"), antes=l.classList.contains("lomos");
+  l.classList.toggle("gallery",vm==="portadas"); l.classList.toggle("lomos",vm==="lomos");
+  for(const b of document.querySelectorAll("#viewMode [data-vm]")) b.setAttribute("aria-pressed",b.dataset.vm===vm);
+  if(vm==="lomos") pintarLomos(l);
+  if(!inicio&&antes!==(vm==="lomos")) render(); } // el orden cambia: cada serie junta
+function ponerVm(v){ S.vm=v; try{ localStorage.setItem(NS+"vm",v); }catch(err){} applyVm(); }
+$("#viewMode").addEventListener("click",e=>{ const b=e.target.closest("[data-vm]"); if(b) ponerVm(b.dataset.vm); });
+applyVm(true);
 document.addEventListener("click",e=>{ const m=$("#dataMenu"); if(!m.open) return;
   if(!m.contains(e.target)||e.target===m) m.open=false; /* e.target===m: tocaste el fondo oscuro del panel */ else if(e.target.closest("button.menu-item,label.menu-item")&&e.target.closest("#autoBtn")===null) setTimeout(()=>m.open=false,0); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&S.view==="colecciones"&&S.colAbierta&&!$("#dataMenu").open&&!document.querySelector(".sheet,.dlg,.overlay,.welcome")&&!e.target.closest?.("input,textarea,select")) cerrarColeccion(); });
@@ -3877,7 +4293,7 @@ function sugerencias(modo){
     if(x.s&&x.s.sigue) R.push([3,`Ya leíste el anterior: sigue con el ${x.s.n} de ${x.s.nombre}.`]);
     if(a&&gustados.has(a)) R.push([2,`Te gustó otro libro de ${a}.`]);
     if(g&&!lastGen[g]&&leidos.length) R.push([1.2,`Todavía no has leído nada de ${g}.`]);
-    else if(g&&lastGen[g]&&diasDesde(lastGen[g])>60) R.push([1,`Hace ${diasDesde(lastGen[g])} días que no lees ${g}.`]);
+    else if(g&&lastGen[g]&&lastGen[g]!=="0000"&&diasDesde(lastGen[g])>60) R.push([1,`Hace ${diasDesde(lastGen[g])} días que no lees ${g}.`]);
     if(ultimo&&g&&g!==ultimo.genero) R.push([.6,`Un cambio después de ${ultimo.titulo}.`]);
     if(x.p&&x.p<260) R.push([.5,`Es corto: ${x.p} páginas.`]);
     if(x.s&&!x.s.sigue&&!x.s.falta&&x.s.n===1) R.push([.4,`Empieza una serie: tienes ${x.s.tomos} ${x.s.tomos===1?"tomo":"tomos"} de ${x.s.nombre}.`]);
@@ -4065,18 +4481,27 @@ function abrirApariencia(){ let t=temaActual();
     <div class="dlg-ico" aria-hidden="true">${ICO_TEMA}</div>
     <h2 id="dlgT">Apariencia</h2>
     <p>Los cambios se ven al instante y se guardan en tu cuenta.</p>
+    <div class="tema-f"><span class="tema-l" id="temaEstiloL">Estilo</span>
+      <div class="estilos" id="temaEstilo" role="group" aria-labelledby="temaEstiloL">${ESTILOS.map(([k,l,d])=>`<button type="button" class="est" data-estilo="${k}" aria-pressed="${t.estilo===k}"><i class="est-prev ep-${k}" aria-hidden="true"><b></b><b></b><b></b><b></b></i><span>${l}</span><small>${d}</small></button>`).join("")}</div></div>
     <div class="tema-f"><span class="tema-l" id="temaModoL">Modo</span>
       <div class="seg" id="temaModo" role="group" aria-labelledby="temaModoL">${MODOS.map(([k,l])=>`<button type="button" data-modo="${k}" aria-pressed="${t.modo===k}">${l}</button>`).join("")}</div>
       <small class="tema-nota">Automático sigue el modo claro u oscuro de tu celular o computadora.</small></div>
-    <div class="tema-f"><span class="tema-l" id="temaColorL">Color</span>
+    <div class="tema-f" id="temaColorF"${t.estilo!=="clasico"?" hidden":""}><span class="tema-l" id="temaColorL">Color</span>
       <div class="swatches" id="temaColor" role="group" aria-labelledby="temaColorL">${COLORES.map(([k,l,c1,c2])=>`<button type="button" class="sw" data-color="${k}" aria-pressed="${t.color===k}" style="--c1:${c1};--c2:${c2}"><i aria-hidden="true"></i><span>${l}</span></button>`).join("")}</div></div>
+    <small class="tema-nota" id="temaColorNota"${t.estilo==="clasico"?" hidden":""}>Lomos y Viñetas tienen sus propios colores; el color que elijas se usa en Clásico.</small>
     <div class="dlg-acc"><button class="btn primary" type="button" id="temaOk">Listo</button></div></div>`);
   $("#temaOk").onclick=cerrar;
+  $("#temaEstilo").onclick=e=>{ const b=e.target.closest("[data-estilo]"); if(!b) return; const antes=t.estilo; t={...t,estilo:b.dataset.estilo};
+    // en Lomos, el estante se ve lomo a lomo (si lo estabas viendo en portadas); al salir de Lomos vuelve a portadas
+    if(t.estilo==="lomos"&&antes!=="lomos"&&S.vm==="portadas") ponerVm("lomos"); else if(t.estilo!=="lomos"&&S.vm==="lomos") ponerVm("portadas");
+    ponerTema(t);
+    $("#temaEstilo").querySelectorAll("[data-estilo]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    $("#temaColorF").hidden=t.estilo!=="clasico"; $("#temaColorNota").hidden=t.estilo==="clasico"; };
   $("#temaModo").onclick=e=>{ const b=e.target.closest("[data-modo]"); if(!b) return; t={...t,modo:b.dataset.modo}; ponerTema(t);
     $("#temaModo").querySelectorAll("[data-modo]").forEach(x=>x.setAttribute("aria-pressed",x===b)); };
   $("#temaColor").onclick=e=>{ const b=e.target.closest("[data-color]"); if(!b) return; t={...t,color:b.dataset.color}; ponerTema(t);
     $("#temaColor").querySelectorAll("[data-color]").forEach(x=>x.setAttribute("aria-pressed",x===b)); };
-  setTimeout(()=>$('#temaModo [aria-pressed="true"]')?.focus({preventScroll:true}),30); }
+  setTimeout(()=>$('#temaEstilo [aria-pressed="true"]')?.focus({preventScroll:true}),30); }
 $("#temaBtn").addEventListener("click",()=>{ $("#dataMenu").open=false; abrirApariencia(); });
 
 /* ---------- enviar comentario: llega a la tabla "comentarios" de Supabase y al correo del administrador ---------- */
