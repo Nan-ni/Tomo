@@ -1,7 +1,7 @@
 // Tomo · service worker: permite instalar la app, abrirla al instante y usarla aunque no haya internet.
 // Al publicar cambios, sube el número de VERSION para que todos reciban la versión nueva
 // (y el mismo número en index.html, en "Tomo · versión N" del menú Mi cuenta).
-const VERSION = "tomo-v39";
+const VERSION = "tomo-v40";
 const BASE = ["./", "./index.html", "./css/tomo.css", "./css/lomos.css", "./css/vinetas.css", "./cuenta.js", "./config.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/favicon-64.png", "./icons/apple-touch-icon.png"];
 // La librería de Supabase: sin ella la app no abre, así que se guarda desde el principio (si falla, se guardará al usarla)
 const LIBS = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"];
