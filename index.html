@@ -124,7 +124,7 @@
           <span class="avatar lg" data-avatar aria-hidden="true"></span>
           <div class="menu-who"><b id="menuNombre">Mi estante</b>
             <span class="menu-id">Tu ID <b class="mono" id="menuId">—</b><button class="linkbtn" type="button" id="copyIdBtn">Copiar</button></span>
-            <small class="menu-ver">Tomo · versión 39</small></div>
+            <small class="menu-ver">Tomo · versión 40</small></div>
           <button class="menu-x" type="button" id="menuX" aria-label="Cerrar el menú"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
         <small class="menu-aviso" id="menuBuscador" hidden></small>
@@ -2916,7 +2916,8 @@ function sugerencias(modo){
         :ultimo?`Vienes de ${ultimo.genero||"otro género"} y aún no has leído nada de ${g}.`:`Todavía no has leído nada de ${g}.`})); }
   // Para ti: mezcla de razones con un poco de azar
   return C.map(x=>{ const b=x.b, R=[]; const a=(b.autor||"").split(",")[0].trim(), g=b.genero;
-    const aj=ajenoActivo(b); if(aj) R.push([3.5,`Te lo prestó ${aj.de}${aj.vence?`: devuélvelo antes del ${fmtDate(aj.vence)}`:""}.`]);
+    const aj=ajenoActivo(b), dh=aj&&aj.vence?diasHasta(aj.vence):null;
+    if(aj) R.push([3.5,dh!==null&&dh<0?`Te lo prestó ${aj.de} y el plazo venció el ${fmtDate(aj.vence)}: léelo ya o devuélvelo.`:`Te lo prestó ${aj.de}${aj.vence?`: devuélvelo antes del ${fmtDate(aj.vence)}`:""}.`]);
     if(b.estado==="pausado") R.push([2.5,pagActual(b)?`Lo dejaste en pausa en la página ${pagActual(b)}${totalPags(b)?` de ${totalPags(b)}`:""}: retómalo.`:"Lo dejaste en pausa: retómalo."]);
     if(x.s&&x.s.sigue) R.push([3,`Ya leíste el anterior: sigue con el ${x.s.n} de ${x.s.nombre}.`]);
     if(a&&gustados.has(a)) R.push([2,`Te gustó otro libro de ${a}.`]);
@@ -2928,8 +2929,10 @@ function sugerencias(modo){
     const dias=((Date.now()-(b.creado||Date.now()))/864e5); if(dias>30&&b.estado!=="pausado") R.push([Math.min(1,dias/180),`Lo tienes hace ${Math.round(dias)} días sin empezar.`]);
     R.sort((p,q)=>q[0]-p[0]);
     const score=R.reduce((s,r)=>s+r[0],0)+azarDelDia(b.id)*1.5;
-    return {b,score,why:R.length?R.slice(0,2).map(r=>r[1]).join(" "):`${g?`${g}. `:""}Una buena opción para variar${b.autor?`, de ${b.autor.split(",")[0]}`:""}.`}; })
-    .sort((p,q)=>q.score-p.score); }
+    // lo que tienes que devolver pronto (vencido o en 7 días) va primero, el que vence antes adelante; el resto, por puntaje
+    const urg=dh!==null&&dh<=7?dh:null;
+    return {b,score,urg,why:R.length?R.slice(0,2).map(r=>r[1]).join(" "):`${g?`${g}. `:""}Una buena opción para variar${b.autor?`, de ${b.autor.split(",")[0]}`:""}.`}; })
+    .sort((p,q)=>p.urg!==null&&q.urg!==null?p.urg-q.urg:p.urg!==null?-1:q.urg!==null?1:q.score-p.score); }
 function renderReadNext(){ const el=$("#readNext"); if(!el||!S.rn) return;
   if(VER){ el.hidden=true; return; }
   // solo se recalcula si cambió algo que la afecta (no al buscar ni al filtrar)
